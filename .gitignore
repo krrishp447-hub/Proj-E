@@ -1,15 +1,14 @@
 # ==========================================
 # Excluded files & folders per instructions
 # ==========================================
-launch-video/
 app.html
 DECISIONS.md
 demo-video.html
 index.html
 
-# Excluded demo / launch assets inside web
+# Excluded demo assets inside web
 web/public/demo-video.html
-web/public/video/scout-launch*
+
 
 # ==========================================
 # Environment & Confidential Files

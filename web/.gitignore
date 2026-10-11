@@ -46,8 +46,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# excluded demo and launch assets
+# excluded demo assets
 public/demo-video.html
 demo-video.html
-public/video/scout-launch*
 

@@ -1,0 +1,33 @@
+{
+  "name": "scout-launch-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "music": "node scripts/make-music.ts",
+    "render": "remotion render Launch out/scout-launch.mp4",
+    "still": "remotion still Launch out/still.png",
+    "typecheck": "tsc --noEmit",
+    "niches": "node --no-warnings scripts/make-niches.ts"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.1",
+    "@remotion/cli": "4.0.534",
+    "@remotion/google-fonts": "4.0.534",
+    "@remotion/gsap": "4.0.534",
+    "@remotion/three": "4.0.534",
+    "gsap": "3.15.0",
+    "lucide-react": "1.55.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.534",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "typescript": "7.0.2"
+  }
+}

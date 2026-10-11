@@ -1,0 +1,112 @@
+[
+  {
+    "slug": "tech",
+    "name": "Tech & Audio",
+    "niche": "Tech",
+    "icon": "Headphones",
+    "bg": "#4D74FF",
+    "fg": "#0C0D0B",
+    "index": 1,
+    "count": 10,
+    "eng": 6.5,
+    "auth": 78,
+    "growth": 10.1,
+    "top": [
+      {
+        "name": "Kiran Tech Tamil",
+        "platform": "YouTube",
+        "eng": 9.1
+      },
+      {
+        "name": "AudioPhile Akash",
+        "platform": "YouTube",
+        "eng": 8.3
+      },
+      {
+        "name": "EarbudExpert",
+        "platform": "YouTube",
+        "eng": 7.9
+      }
+    ]
+  },
+  {
+    "slug": "fitness",
+    "name": "Fitness",
+    "niche": "Fitness",
+    "icon": "Dumbbell",
+    "bg": "#FF3DA6",
+    "fg": "#0C0D0B",
+    "index": 2,
+    "count": 1,
+    "eng": 6.2,
+    "auth": 81,
+    "growth": 8,
+    "top": [
+      {
+        "name": "Fit With Kabir",
+        "platform": "Instagram",
+        "eng": 6.2
+      }
+    ]
+  },
+  {
+    "slug": "finance",
+    "name": "Finance",
+    "niche": "Finance",
+    "icon": "IndianRupee",
+    "bg": "#16C98D",
+    "fg": "#0C0D0B",
+    "index": 3,
+    "count": 1,
+    "eng": 6,
+    "auth": 76,
+    "growth": 10.5,
+    "top": [
+      {
+        "name": "MintMoney Ria",
+        "platform": "YouTube",
+        "eng": 6
+      }
+    ]
+  },
+  {
+    "slug": "gaming",
+    "name": "Gaming",
+    "niche": "Gaming",
+    "icon": "Gamepad2",
+    "bg": "#FFC53D",
+    "fg": "#0C0D0B",
+    "index": 4,
+    "count": 1,
+    "eng": 7.1,
+    "auth": 79,
+    "growth": 9,
+    "top": [
+      {
+        "name": "Play With Vivaan",
+        "platform": "YouTube",
+        "eng": 7.1
+      }
+    ]
+  },
+  {
+    "slug": "fashion",
+    "name": "Fashion",
+    "niche": "Fashion",
+    "icon": "Shirt",
+    "bg": "#FF6A3D",
+    "fg": "#0C0D0B",
+    "index": 5,
+    "count": 1,
+    "eng": 4.8,
+    "auth": 75,
+    "growth": 5.2,
+    "top": [
+      {
+        "name": "Style By Meera",
+        "platform": "Instagram",
+        "eng": 4.8
+      }
+    ]
+  }
+]
