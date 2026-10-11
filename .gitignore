@@ -1,0 +1,53 @@
+# ==========================================
+# Excluded files & folders per instructions
+# ==========================================
+launch-video/
+app.html
+DECISIONS.md
+demo-video.html
+index.html
+
+# Excluded demo / launch assets inside web
+web/public/demo-video.html
+web/public/video/scout-launch*
+
+# ==========================================
+# Environment & Confidential Files
+# ==========================================
+.env*
+*.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+*.pem
+*.key
+*.cert
+*.pfx
+*.secret
+*.token
+*.credentials
+
+# ==========================================
+# Dependencies & Build Artifacts
+# ==========================================
+node_modules/
+*/node_modules/
+.next/
+*/.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# ==========================================
+# OS & Debug Logs
+# ==========================================
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

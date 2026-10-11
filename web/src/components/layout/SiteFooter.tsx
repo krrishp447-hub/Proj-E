@@ -1,0 +1,40 @@
+import { site } from "@/config/site";
+
+const navigate = [
+  { href: "#manifesto", label: "Platform" },
+  { href: "#feature", label: "Niches" },
+  { href: "#listing", label: "Results" },
+  { label: "Pricing" }, // no pricing page yet
+];
+
+const maybeLink = (l: { href?: string; label: string }) => (l.href ? <a href={l.href}>{l.label}</a> : <span>{l.label}</span>);
+
+export function SiteFooter() {
+  return (
+    <footer id="footer" className="site-footer">
+      <div className="fgrid">
+        <div>
+          <div className="wm">SCOUT</div>
+          <p className="desc mt-4 max-w-[24ch] text-earth!">THE CREATOR INTELLIGENCE LAYER FOR BRANDS &amp; AGENCIES.</p>
+        </div>
+        <div>
+          <h2 className="fhead">Navigate</h2>
+          <ul>{navigate.map((l) => <li key={l.label}>{maybeLink(l)}</li>)}</ul>
+        </div>
+        <div>
+          <h2 className="fhead">Social</h2>
+          <ul>{site.social.map((s) => <li key={s.label}>{maybeLink({ href: s.href, label: s.footerLabel ?? s.label })}</li>)}</ul>
+        </div>
+        <div>
+          <h2 className="fhead">Contact</h2>
+          <ul>
+            <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+            <li className="mono normal-case opacity-80">{site.address}</li>
+            <li className="mono opacity-80">{site.coords}</li>
+          </ul>
+        </div>
+      </div>
+      <div className="legal"><span>© 2025 SCOUT — ALL RIGHTS RESERVED</span><span>PRIVACY · TERMS · COOKIES</span></div>
+    </footer>
+  );
+}
