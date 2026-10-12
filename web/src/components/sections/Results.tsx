@@ -1,34 +1,15 @@
 import { site } from "@/config/site";
+import { ResultsFunnel } from "./ResultsFunnel";
+import { getCreators } from "@/server/creators";
 
-const shortlist = [
-  { lab: "YT · INDIA · TECH", name: "Tech With Arjun", match: 95, subs: 312 },
-  { lab: "YT · INDIA · AUDIO", name: "EarbudExpert", match: 91, subs: 132 },
-  { lab: "YT · INDIA · TECH", name: "GadgetGirl Priya", match: 87, subs: 189 },
-  { lab: "YT · TAMIL · TWS", name: "Kiran Tech Tamil", match: 84, subs: 98 },
-  { lab: "IG · INDIA · TECH", name: "Neha Unboxed", match: 82, subs: 240 },
-  { lab: "YT · INDIA · AUDIO", name: "AudioPhile Akash", match: 80, subs: 74 },
-  { lab: "YT · US · ANC", name: "TechSavvy Sam", match: 74, subs: 275 },
-  { lab: "YT · INDIA · BUDGET", name: "Rohit Reviews", match: 71, subs: 468 },
-  { lab: "YT · INDIA · DEV", name: "Dev Codes", match: 68, subs: 410 },
-];
-
-export function Listing() {
+export async function Listing() {
+  const { creators } = await getCreators();
   return (
     <section id="listing" className="sec listing wipe" data-io>
       <div className="edge">
         <div className="mono mb-[26px]">RESULTS · THE SHORTLIST</div>
         <h2 className="disp huge rev mb-[50px]">FROM 500<br />TO 10.</h2>
-        <div className="lgrid">
-          {shortlist.map((c) => (
-            <div key={c.name} className="lcell">
-              <div className="lab" data-type={c.lab}>{c.lab}</div>
-              <h3 className="lname">{c.name}</h3>
-              <div className="met">
-                <span data-count={c.match}>{c.match}</span> MATCH · <span data-count={c.subs} data-suf="K">{c.subs}K</span> SUBS
-              </div>
-            </div>
-          ))}
-        </div>
+        <ResultsFunnel creators={creators} />
       </div>
     </section>
   );

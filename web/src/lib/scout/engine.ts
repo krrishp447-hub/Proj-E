@@ -11,9 +11,9 @@ export type Brief = {
   wantGrowth?: boolean;
 };
 
-const KEYWORDS = ["tws", "earbud", "audio", "anc", "headphone", "smartphone", "gaming", "recipe", "investing", "fashion", "coding", "programming", "travel", "fitness", "budget", "premium"];
+export const KEYWORDS = ["tws", "earbud", "audio", "anc", "headphone", "smartphone", "gaming", "recipe", "investing", "fashion", "coding", "programming", "travel", "fitness", "budget", "premium"];
 
-const SYNONYMS: Record<string, string[]> = {
+export const SYNONYMS: Record<string, string[]> = {
   Tech: ["gadget", "earbud", "tws", "smartphone", "audio"],
   Food: ["cook", "recipe", "chef", "kitchen"],
   Fitness: ["gym", "workout", "nutrition"],
@@ -117,10 +117,12 @@ export function score(c: Creator, b: Brief): Match {
 /** Estimated shared audience between two creators (0–93%), from geo, niche, age, gender and platform. */
 export function overlap(a: Creator, b: Creator): number {
   let s = 0;
-  if (a.geo[0][0] === b.geo[0][0]) s += 34;
+  // Without connected demographics, fall back to channel country and neutral midpoints.
+  const market = (c: Creator) => c.geo[0]?.[0] ?? c.country;
+  if (market(a) === market(b)) s += 34;
   if (a.niche === b.niche) s += 24;
-  s += Math.max(0, 20 - a.age.reduce((d, v, i) => d + Math.abs(v - b.age[i]), 0) / 2);
-  s += Math.max(0, 14 - Math.abs(a.male - b.male) / 2);
+  s += a.age.length && b.age.length ? Math.max(0, 20 - a.age.reduce((d, v, i) => d + Math.abs(v - b.age[i]), 0) / 2) : 10;
+  s += a.male !== null && b.male !== null ? Math.max(0, 14 - Math.abs(a.male - b.male) / 2) : 7;
   if (a.platform === b.platform) s += 6;
   return Math.min(93, Math.round(s));
 }

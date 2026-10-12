@@ -1,6 +1,7 @@
 import { ChefHat, Dumbbell, Gamepad2, Headphones, IndianRupee, Plane, Smartphone } from "lucide-react";
 import { NichePanel, nicheStats } from "@/components/ui/NichePanel";
-import { BriefTry } from "./BriefTry";
+import { PillarExplorer } from "./PillarExplorer";
+import { getCreators } from "@/server/creators";
 import { Showreel } from "./Showreel";
 
 export function Manifesto() {
@@ -21,30 +22,13 @@ export function Manifesto() {
   );
 }
 
-const pillars = [
-  { title: "Search in plain English", desc: "DESCRIBE THE CAMPAIGN · NICHE · SUB-NICHE · AUDIENCE · SIZE · NO FILTER MAZES", more: "HOW IT PARSES →" },
-  { title: "Ranked on eight signals", desc: "SUB-NICHE FIT · ENGAGEMENT · GROWTH · REACH · AUTHENTICITY · PROVEN RESULTS · NOT FOLLOWER COUNT", more: "THE SCORE MODEL →" },
-  { title: "Verified, not inflated", desc: "AUTHENTICITY SCORES · SUSPICIOUS-FOLLOWER FLAGS · FRESHNESS STAMPS · AUDIENCE OVERLAP", more: "TRUST LAYER →" },
-];
-
-export function Pillars() {
+export async function Pillars() {
+  const { creators } = await getCreators();
   return (
     <section className="sec pillars" data-io>
       <div className="edge">
         <div className="dash-h mb-[60px]" />
-        <div className="pcols">
-          <div className="divV dash-v left-1/3" />
-          <div className="divV dash-v left-2/3" />
-          {pillars.map((p, i) => (
-            <div key={p.title} className="pcol rev" style={{ "--d": `${i * 0.12}s` } as React.CSSProperties}>
-              <div className="pnum" aria-hidden="true">0{i + 1}</div>
-              <h2 className="ptitle">{p.title}</h2>
-              <p className="desc">{p.desc}</p>
-              <div className="mt-[22px]"><span className="arrow">{p.more}</span></div>
-            </div>
-          ))}
-        </div>
-        <BriefTry />
+        <PillarExplorer creators={creators} />
       </div>
     </section>
   );
@@ -61,7 +45,8 @@ const collage = [
   { par: 1.05, left: "86%", top: "38%", bg: "var(--signal)", tag: "TRAVEL", niche: "Travel", icon: Plane },
 ];
 
-export function Collage() {
+export async function Collage() {
+  const { creators } = await getCreators();
   return (
     <section className="sec collage" data-io>
       <span className="plus c-tl" /><span className="plus c-tr" />
@@ -69,7 +54,7 @@ export function Collage() {
         <div className="cstrip" aria-hidden="true">
           {collage.map((c) => (
             <div key={c.tag} className="ccard" data-par={c.par} style={{ left: c.left, top: c.top }}>
-              <NichePanel icon={c.icon} bg={c.bg} fg={c.fg} tag={c.tag} stats={`ENG ${nicheStats(c.niche).eng}%`} className="h-full" />
+              <NichePanel icon={c.icon} bg={c.bg} fg={c.fg} tag={c.tag} stats={`ENG ${nicheStats(c.niche, creators).eng}%`} className="h-full" />
             </div>
           ))}
         </div>

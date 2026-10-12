@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env and confidential files
 .env*
+!.env.example
 *.env
 *.pem
 *.key

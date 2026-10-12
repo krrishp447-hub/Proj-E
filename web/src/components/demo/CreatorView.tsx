@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CREATORS, authTone, type Creator } from "@/lib/scout/data";
+import { authTone, type Creator } from "@/lib/scout/data";
 import { fmt, parseBrief, score } from "@/lib/scout/engine";
 import { Bar } from "./DetailPanel";
 
@@ -27,16 +27,16 @@ const REQUESTS: Record<string, Omit<Request, "id" | "status">[]> = {
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 /** Rank of `me` among all creators that fit a brief (using a possibly edited profile). */
-function rankFor(me: Creator, brief: string) {
+function rankFor(creators: Creator[], me: Creator, brief: string) {
   const b = parseBrief(brief);
-  const pool = CREATORS.map((c) => score(c.id === me.id ? me : c, b)).filter((m) => m.fits).sort((a, z) => z.score - a.score);
+  const pool = creators.map((c) => score(c.id === me.id ? me : c, b)).filter((m) => m.fits).sort((a, z) => z.score - a.score);
   const i = pool.findIndex((m) => m.creator.id === me.id);
   return { rank: i < 0 ? null : i + 1, of: pool.length, score: score(me, b).score };
 }
 
-export function CreatorView() {
+export function CreatorView({ creators }: { creators: Creator[] }) {
   const [id, setId] = useState(0);
-  const base = CREATORS[id];
+  const base = creators[id];
   const [tagsById, setTagsById] = useState<Record<number, string[]>>({});
   const [status, setStatus] = useState<Record<string, Status>>({});
   const [newTag, setNewTag] = useState("");
@@ -72,7 +72,7 @@ export function CreatorView() {
         <label className="d-viewas">
           <span className="d-lbl">Viewing as</span>
           <select value={id} onChange={(e) => setId(Number(e.target.value))}>
-            {CREATORS.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.niche}</option>)}
+            {creators.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.niche}</option>)}
           </select>
         </label>
         <span className="d-lbl">{base.handle} · {base.platform} · {base.country} · data verified {base.verifiedDays}d ago</span>
@@ -104,7 +104,7 @@ export function CreatorView() {
                 </thead>
                 <tbody>
                   {requests.map((r) => {
-                    const fit = rankFor(me, r.brief);
+                    const fit = rankFor(creators, me, r.brief);
                     const decided = r.status === "Accepted" || r.status === "Declined";
                     return (
                       <tr key={r.id} className="is-static">
@@ -148,7 +148,7 @@ export function CreatorView() {
               </thead>
               <tbody>
                 {requests.map((r) => {
-                  const fit = rankFor(me, r.brief);
+                  const fit = rankFor(creators, me, r.brief);
                   return (
                     <tr key={r.id} className="is-static">
                       <td className="d-wrap">{r.brief}</td>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { site } from "@/config/site";
 
 const navigate = [
@@ -34,7 +35,7 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="legal"><span>© 2025 SCOUT — ALL RIGHTS RESERVED</span><span>PRIVACY · TERMS · COOKIES</span></div>
+      <div className="legal"><span>© 2026 SCOUT — ALL RIGHTS RESERVED</span><span><Link href="/privacy">PRIVACY</Link> · <Link href="/terms">TERMS</Link></span></div>
     </footer>
   );
 }

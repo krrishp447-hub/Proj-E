@@ -54,19 +54,29 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
 
       <h3>Track record</h3>
       <dl className="d-grid">
-        <div><dt>Campaigns</dt><dd>{c.campaigns}</dd></div>
-        <div><dt>Delivered ÷ promised</dt><dd className={c.delivery >= 1 ? "is-good" : "is-warn"}>{c.delivery}×</dd></div>
-        <div><dt>Data verified</dt><dd>{c.verifiedDays}d ago</dd></div>
+        <div><dt>Campaigns</dt><dd>{c.campaigns || "—"}</dd></div>
+        <div><dt>Delivered ÷ promised</dt><dd className={c.campaigns ? (c.delivery >= 1 ? "is-good" : "is-warn") : ""}>{c.campaigns ? `${c.delivery}×` : "—"}</dd></div>
+        <div><dt>Data verified</dt><dd>{c.verifiedDays ? `${c.verifiedDays}d ago` : "today"}</dd></div>
       </dl>
 
       <h3>Audience</h3>
-      {c.geo.map(([g, v]) => <Bar key={g} label={g} value={v} text={`${v}%`} />)}
-      <div className="d-gap" />
-      {c.age.map((v, i) => <Bar key={AGE_BANDS[i]} label={AGE_BANDS[i]} value={v} text={`${v}%`} />)}
-      <Bar label="Male / female" value={c.male} text={`${c.male} / ${100 - c.male}`} />
+      {c.geo.length ? (
+        <>
+          {c.geo.map(([g, v]) => <Bar key={g} label={g} value={v} text={`${v}%`} />)}
+          <div className="d-gap" />
+          {c.age.map((v, i) => <Bar key={AGE_BANDS[i]} label={AGE_BANDS[i]} value={v} text={`${v}%`} />)}
+          {c.male !== null && <Bar label="Male / female" value={c.male} text={`${c.male} / ${100 - c.male}`} />}
+        </>
+      ) : (
+        <p className="d-hint">Audience demographics appear once {c.name} connects their channel — platforms only share them with the creator.</p>
+      )}
 
-      <h3>Reach · 12 months</h3>
-      <Sparkline data={c.trend} />
+      {c.trend.length > 1 && (
+        <>
+          <h3>Subscribers · trend</h3>
+          <Sparkline data={c.trend} />
+        </>
+      )}
     </div>
   );
 }

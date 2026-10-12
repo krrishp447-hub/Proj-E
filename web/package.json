@@ -8,10 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test \"tests/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.ts",
+    "discover": "node --env-file-if-exists=.env.local scripts/discover.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@neondatabase/serverless": "1.2.0",
     "gsap": "^3.15.0",
     "lenis": "1.3.26",
     "lucide-react": "1.55.0",

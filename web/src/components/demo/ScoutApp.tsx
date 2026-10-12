@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CREATORS, type Platform } from "@/lib/scout/data";
+import type { Creator, Platform } from "@/lib/scout/data";
 import { describe, parseBrief, score } from "@/lib/scout/engine";
 import { ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
@@ -26,7 +26,9 @@ const median = (xs: number[]) => {
 };
 
 /** `embedded`: running inside the homepage, so no top bar and no URL rewriting. */
-export function ScoutApp({ initialQuery, embedded = false }: { initialQuery: string; embedded?: boolean }) {
+type Props = { initialQuery: string; creators: Creator[]; source?: "demo" | "youtube"; embedded?: boolean };
+
+export function ScoutApp({ initialQuery, creators, source = "demo", embedded = false }: Props) {
   const [draft, setDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [platform, setPlatform] = useState<"All" | Platform>("All");
@@ -39,7 +41,7 @@ export function ScoutApp({ initialQuery, embedded = false }: { initialQuery: str
 
   const brief = useMemo(() => parseBrief(query), [query]);
   const understood = describe(brief);
-  const scored = useMemo(() => CREATORS.map((c) => score(c, brief)), [brief]);
+  const scored = useMemo(() => creators.map((c) => score(c, brief)), [creators, brief]);
 
   const { rows, misses } = useMemo(() => {
     const onPlatform = scored.filter((m) => platform === "All" || m.creator.platform === platform);
@@ -68,7 +70,7 @@ export function ScoutApp({ initialQuery, embedded = false }: { initialQuery: str
     setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
 
   const kpis = [
-    { label: "Matches", value: fits.length, note: `of ${CREATORS.length}` },
+    { label: "Matches", value: fits.length, note: `of ${creators.length}` },
     { label: "Median match", value: median(fits.map((m) => m.score)) },
     { label: "Avg authenticity", value: fits.length ? Math.round(fits.reduce((s, m) => s + m.creator.auth, 0) / fits.length) : 0 },
     { label: "Proven", value: fits.filter((m) => m.creator.proven).length, note: "on-platform record" },
@@ -80,7 +82,7 @@ export function ScoutApp({ initialQuery, embedded = false }: { initialQuery: str
       {!embedded && (
       <header className="d-top">
         <Link href="/" className="d-wm">Scout</Link>
-        <span className="d-tag">Demo · illustrative data</span>
+        <span className="d-tag">{source === "youtube" ? "Live · YouTube public data" : "Demo · illustrative data"}</span>
         <Link href="/" className="d-back">← Site</Link>
       </header>
       )}
@@ -90,7 +92,7 @@ export function ScoutApp({ initialQuery, embedded = false }: { initialQuery: str
         <button type="button" role="radio" aria-checked={role === "creator"} onClick={() => setRole("creator")}>Creator</button>
       </div>
 
-      {role === "creator" ? <CreatorView /> : <>
+      {role === "creator" ? <CreatorView creators={creators} /> : <>
       <form className="d-search" role="search" onSubmit={(e) => { e.preventDefault(); run(draft); }}>
         <label htmlFor="brief" className="sr-only">Describe the creators you need</label>
         <input id="brief" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Describe the creators you need…" autoComplete="off" />

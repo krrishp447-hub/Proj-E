@@ -1,9 +1,9 @@
 import type { LucideIcon } from "lucide-react";
-import { CREATORS } from "@/lib/scout/data";
+import type { Creator } from "@/lib/scout/data";
 
 /** Live numbers for a niche from the demo dataset, so the visuals show data rather than decoration. */
-export function nicheStats(niche: string) {
-  const cs = CREATORS.filter((c) => c.niche === niche);
+export function nicheStats(niche: string, creators: Creator[]) {
+  const cs = creators.filter((c) => c.niche === niche);
   const avg = (f: (c: (typeof cs)[number]) => number) => (cs.length ? cs.reduce((s, c) => s + f(c), 0) / cs.length : 0);
   return { count: cs.length, eng: avg((c) => c.eng).toFixed(1), auth: Math.round(avg((c) => c.auth)) };
 }

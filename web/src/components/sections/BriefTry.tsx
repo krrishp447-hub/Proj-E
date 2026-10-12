@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CREATORS } from "@/lib/scout/data";
+import type { Creator } from "@/lib/scout/data";
 import { describe, parseBrief, score } from "@/lib/scout/engine";
 
 /** Live version of pillar 01: type a brief, see what Scout understood and how many creators fit. */
-export function BriefTry() {
+export function BriefTry({ creators }: { creators: Creator[] }) {
   const [text, setText] = useState("Fast-growing Instagram fitness creators in India");
   const { tokens, fits, top } = useMemo(() => {
     const b = parseBrief(text);
-    const ranked = CREATORS.map((c) => score(c, b)).filter((m) => m.fits).sort((a, z) => z.score - a.score);
+    const ranked = creators.map((c) => score(c, b)).filter((m) => m.fits).sort((a, z) => z.score - a.score);
     return { tokens: describe(b), fits: ranked.length, top: ranked[0] };
-  }, [text]);
+  }, [text, creators]);
 
   return (
     <div className="brief rev">

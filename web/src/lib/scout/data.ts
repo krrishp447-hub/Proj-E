@@ -15,9 +15,11 @@ type Raw = {
   views: number; // avg views
   growth: number; // 90-day follower growth %
   consistency: number; // 0–100 posting consistency
+  // Audience demographics only exist once a creator connects their account (platform APIs don't
+  // expose them to third parties), so live public-data creators carry empty geo/age and null male.
   geo: [string, number][];
   age: number[]; // 13-17, 18-24, 25-34, 35+
-  male: number; // % male audience
+  male: number | null; // % male audience
   trend: number[]; // 12-month reach (K)
   collabs: number; // past brand collaborations
 };
@@ -31,6 +33,7 @@ export type Creator = Raw & {
   delivery: number; // delivered ÷ promised reach
   proven: boolean;
   verifiedDays: number; // data freshness
+  source: "demo" | "youtube";
 };
 
 const RAW: Raw[] = [
@@ -68,6 +71,7 @@ export const CREATORS: Creator[] = RAW.map((c, id) => {
     delivery,
     proven: campaigns >= 12 && repeat >= 65 && delivery >= 1.1,
     verifiedDays: 1 + ((id * 29) % 9),
+    source: "demo" as const,
   };
 });
 
