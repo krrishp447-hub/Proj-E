@@ -36,3 +36,120 @@ create table if not exists snapshots (
 );
 
 create index if not exists creators_niche_idx on creators (niche);
+-- added later: detected content language, and official brand channels (kept for share of voice, not creator search)
+alter table creators add column if not exists language text not null default 'English';
+alter table creators add column if not exists is_brand boolean not null default false;
+
+-- ============ Campaigns, deals & deliverables ============
+
+create table if not exists brands (
+  id         text primary key,
+  name       text not null,
+  created_at timestamptz not null default now()
+);
+
+-- rules: {"hashtags":[], "links":[], "mentions":[], "keywords":[]} (see src/lib/scout/campaigns.ts)
+create table if not exists campaigns (
+  id         text primary key,
+  brand_id   text not null references brands (id) on delete cascade,
+  name       text not null,
+  status     text not null default 'Planned' check (status in ('Planned', 'Live', 'Completed')),
+  start_date date not null,
+  end_date   date not null,
+  rules      jsonb not null default '{"hashtags":[],"links":[],"mentions":[],"keywords":[]}',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists campaign_creators (
+  campaign_id text not null references campaigns (id) on delete cascade,
+  channel_id  text not null references creators (channel_id) on delete cascade,
+  primary key (campaign_id, channel_id)
+);
+
+-- Every recent upload of a tracked channel, refreshed daily by the ingest.
+create table if not exists videos (
+  video_id     text primary key,
+  channel_id   text not null references creators (channel_id) on delete cascade,
+  platform     text not null default 'YouTube',
+  title        text not null,
+  description  text not null default '',
+  published_at timestamptz not null,
+  url          text not null,
+  paid_flag    boolean,                 -- only known for creator-connected channels
+  views        integer not null default 0,
+  likes        integer not null default 0,
+  comments     integer not null default 0,
+  fetched_at   timestamptz not null default now()
+);
+create index if not exists videos_channel_published_idx on videos (channel_id, published_at desc);
+
+-- Daily per-video stats: the campaign "views over time" curve.
+create table if not exists video_snapshots (
+  video_id text not null references videos (video_id) on delete cascade,
+  taken_on date not null default current_date,
+  views    integer not null,
+  likes    integer not null,
+  comments integer not null,
+  primary key (video_id, taken_on)
+);
+
+-- The campaign folder. status filed/review/organic is set by the matcher; decided_by marks a human call that
+-- the daily matcher must never overwrite (including 'rejected').
+create table if not exists campaign_posts (
+  campaign_id text not null references campaigns (id) on delete cascade,
+  video_id    text not null references videos (video_id) on delete cascade,
+  confidence  integer not null,
+  reasons     text[] not null default '{}',
+  status      text not null check (status in ('filed', 'review', 'organic', 'rejected')),
+  disclosed   boolean not null default false,
+  decided_by  text,
+  matched_at  timestamptz not null default now(),
+  primary key (campaign_id, video_id)
+);
+
+create table if not exists deals (
+  id           text primary key,
+  campaign_id  text references campaigns (id) on delete set null,
+  brand_id     text not null references brands (id) on delete cascade,
+  channel_id   text not null references creators (channel_id) on delete cascade,
+  title        text not null,
+  stage        text not null default 'Inbound' check (stage in ('Inbound', 'Negotiating', 'Contracted', 'In production', 'Live', 'Paid', 'Declined')),
+  requirements text[] not null default '{}',
+  created_at   timestamptz not null default now()
+);
+
+-- Append-only negotiation thread: both sides read the same history.
+create table if not exists offers (
+  id           bigint generated always as identity primary key,
+  deal_id      text not null references deals (id) on delete cascade,
+  by_party     text not null check (by_party in ('brand', 'creator')),
+  fee          integer not null check (fee >= 0),
+  deliverables text not null,
+  usage_rights text not null,
+  timeline     text not null,
+  note         text,
+  created_at   timestamptz not null default now()
+);
+
+create table if not exists deliverables (
+  id              text primary key,
+  deal_id         text not null references deals (id) on delete cascade,
+  campaign_id     text references campaigns (id) on delete set null,
+  channel_id      text not null references creators (channel_id) on delete cascade,
+  kind            text not null,
+  due             date not null,
+  status          text not null default 'Planned' check (status in ('Planned', 'In production', 'Submitted', 'Live')),
+  video_id        text references videos (video_id) on delete set null,
+  projected_views integer not null default 0,
+  fee             integer not null default 0
+);
+
+-- Automated discovery: pruned seeds (tiny or inactive channels) stop costing quota; each query pages deeper per run.
+alter table channel_seeds add column if not exists active boolean not null default true;
+create table if not exists discovery_queries (
+  q          text primary key,
+  page_token text,
+  last_run   date,
+  added      int not null default 0,
+  done       boolean not null default false
+);

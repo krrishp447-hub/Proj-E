@@ -6,7 +6,7 @@ import { sql } from "./db";
 type Row = {
   channel_id: string; name: string; handle: string; country: string; niche: string; tags: string[];
   subs: number; avg_views: number; eng: number; growth: number; consistency: number; auth: number; suspicious: number;
-  age_days: number; trend: number[] | null;
+  language: string; age_days: number; trend: number[] | null;
 };
 
 /** Down-sample a daily series to at most 12 points for the sparkline. */
@@ -27,7 +27,7 @@ export async function getCreators(): Promise<CreatorSource> {
   const rows = (await sql`
     select c.*, extract(day from now() - c.fetched_at)::int as age_days,
       (select array_agg(s.subs order by s.taken_on) from snapshots s where s.channel_id = c.channel_id and s.taken_on > current_date - 365) as trend
-    from creators c order by c.subs desc limit 2000`) as Row[];
+    from creators c where not c.is_brand order by c.subs desc limit 2000`) as Row[];
   if (!rows.length) return { creators: CREATORS, source: "demo", updatedAt: null };
 
   const creators: Creator[] = rows.map((r, id) => ({
@@ -48,6 +48,7 @@ export async function getCreators(): Promise<CreatorSource> {
     male: null,
     trend: twelve((r.trend ?? [r.subs]).map((s) => Math.round(s / 1000))),
     collabs: 0,
+    language: r.language,
     auth: r.auth,
     suspicious: r.suspicious,
     campaigns: 0, // outcome data accrues from campaigns run on Scout

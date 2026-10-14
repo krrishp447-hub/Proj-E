@@ -13,7 +13,8 @@ export type YtChannel = {
 
 /** The subset of a `videos.list` item we request (part=snippet,statistics). */
 export type YtVideo = {
-  snippet: { title: string; description?: string; tags?: string[]; publishedAt: string };
+  id: string;
+  snippet: { title: string; description?: string; tags?: string[]; publishedAt: string; defaultAudioLanguage?: string };
   statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
 };
 
@@ -33,6 +34,8 @@ export type ChannelMetrics = {
   consistency: number; // 0–100
   auth: number; // estimated
   suspicious: number; // estimated %
+  language: string;
+  isBrand: boolean;
 };
 
 const COUNTRY: Record<string, string> = { IN: "India", US: "US", GB: "UK", AE: "UAE" };
@@ -57,6 +60,77 @@ export function classify(text: string): { niche: string; tags: string[] } {
   return { niche: best.niche, tags: KEYWORDS.filter((k) => new RegExp(`\\b${k}`).test(t)) };
 }
 
+// Indian scripts by Unicode block. Devanagari is reported as Hindi (Marathi uses the same script).
+const SCRIPTS: [string, RegExp][] = [
+  ["Hindi", /[ऀ-ॿ]/], ["Bengali", /[ঀ-৿]/], ["Punjabi", /[਀-੿]/], ["Gujarati", /[઀-૿]/],
+  ["Tamil", /[஀-௿]/], ["Telugu", /[ఀ-౿]/], ["Kannada", /[ಀ-೿]/], ["Malayalam", /[ഀ-ൿ]/],
+];
+// Romanised Hindi ("Hinglish") markers — common function words that don't occur in English titles.
+const HINGLISH = /\b(kya|kaise|kaisa|sabse|hai|hain|nahi|mein|wala|wale|bhai|kyu|kyun|lene|kharido|sasta|mat)\b/i;
+const NAMED = ["Hindi", "Tamil", "Telugu", "Bengali", "Bangla", "Marathi", "Kannada", "Malayalam", "Gujarati", "Punjabi"];
+
+/** Primary content language: a script or language name in ≥30% of recent titles (min 2), else English. */
+// YouTube language codes → Scout language names ("hi", "en-IN", "ta"…).
+const CODES: Record<string, string> = { hi: "Hindi", en: "English", ta: "Tamil", te: "Telugu", bn: "Bengali", mr: "Marathi", kn: "Kannada", ml: "Malayalam", gu: "Gujarati", pa: "Punjabi" };
+
+/**
+ * Primary content language. Best evidence first: the spoken-audio language creators set on their videos
+ * (majority, if at least 40% of recent uploads declare one); otherwise scripts / language names / Hinglish
+ * in titles and the channel description.
+ */
+export function contentLanguage(recent: YtVideo[], channelDescription = ""): string {
+  const codes = recent.map((v) => CODES[(v.snippet.defaultAudioLanguage ?? "").split("-")[0].toLowerCase()]).filter(Boolean);
+  if (recent.length && codes.length / recent.length >= 0.4) {
+    const tally = codes.reduce<Record<string, number>>((m, l) => ({ ...m, [l]: (m[l] ?? 0) + 1 }), {});
+    return Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
+  }
+  return detectLanguage([...recent.map((v) => v.snippet.title), channelDescription, channelDescription]);
+}
+
+/** Primary language from text alone: a script, language name or Hinglish in ≥30% of samples (min 2), else English. */
+export function detectLanguage(titles: string[]): string {
+  if (!titles.length) return "English";
+  const need = Math.max(2, Math.ceil(titles.length * 0.3));
+  const count = (test: (t: string) => boolean) => titles.filter(test).length;
+  let best = { lang: "English", n: 0 };
+  for (const [lang, re] of SCRIPTS) { const n = count((t) => re.test(t)); if (n > best.n) best = { lang, n }; }
+  for (const name of NAMED) {
+    const n = count((t) => new RegExp(`\\b${name}\\b`, "i").test(t));
+    if (n > best.n) best = { lang: name === "Bangla" ? "Bengali" : name, n };
+  }
+  const hinglish = count((t) => HINGLISH.test(t));
+  if (hinglish > best.n) best = { lang: "Hindi", n: hinglish };
+  return best.n >= need ? best.lang : "English";
+}
+
+/**
+ * Known consumer-tech brands and retailers in India. A channel whose title IS one of these (optionally followed by
+ * "India", "Official" or "Mobile") is the company, not a creator. Extend this list as new brands show up in seeds.
+ */
+export const KNOWN_BRANDS = [
+  "nothing", "samsung", "oneplus", "apple", "google", "xiaomi", "redmi", "poco", "realme", "vivo", "oppo", "iqoo", "motorola", "lava",
+  "infinix", "tecno", "itel", "honor", "asus", "lenovo", "hp", "dell", "acer", "sony", "lg", "jbl", "sennheiser", "bose", "skullcandy",
+  "boat", "noise", "boult", "ptron", "mivi", "fire-boltt", "zebronics", "truke", "amazfit", "amazon", "flipkart", "croma", "reliance digital",
+];
+const BRAND_TITLE = new RegExp(`^(${KNOWN_BRANDS.join("|")})( india| official| mobiles?| global)*$`, "i");
+
+/** Official brand/company channels aren't creators: they're kept for share of voice but out of creator search. */
+export function isBrandChannel(ch: Pick<YtChannel, "snippet">): boolean {
+  const text = `${ch.snippet.title}\n${ch.snippet.description ?? ""}`;
+  return (
+    BRAND_TITLE.test(ch.snippet.title.trim()) ||
+    /\bofficial (youtube )?channel of\b|\bthe official (youtube )?channel\b|\bofficial account of\b|\bcustomer (care|support)\b|\bwelcome to the official\b/i.test(text)
+  );
+}
+
+/** Sub-niche tags that recur: in at least 20% of recent uploads (titles + video tags), minimum 2 uploads. */
+export function recurringTags(recent: YtVideo[]): string[] {
+  if (!recent.length) return [];
+  const need = Math.max(2, Math.ceil(recent.length * 0.2));
+  const per = recent.map((v) => classify([v.snippet.title, ...(v.snippet.tags ?? [])].join(" ")).tags);
+  return [...new Set(per.flat())].filter((t) => per.filter((ts) => ts.includes(t)).length >= need);
+}
+
 /** 90-day growth from stored daily snapshots; 0 until ~30 days of history exist (no history → no claim). */
 export function growthFrom(snaps: Snapshot[], subsNow: number, today: Date): number {
   const DAY = 86_400_000;
@@ -71,9 +145,10 @@ export function growthFrom(snaps: Snapshot[], subsNow: number, today: Date): num
  * Authenticity is an estimate from public signals: healthy engagement and a plausible views-to-subscribers
  * ratio score high; near-zero engagement or views far below the subscriber base suggest bought followers.
  */
-export function estimateAuthenticity(eng: number, avgViews: number, subs: number): number {
+export function estimateAuthenticity(eng: number | null, avgViews: number, subs: number): number {
   let a = 72;
-  if (eng >= 2 && eng <= 15) a += 12;
+  if (eng === null) a += 0; // likes hidden by the creator: no engagement evidence either way
+  else if (eng >= 2 && eng <= 15) a += 12;
   else if (eng < 0.8) a -= 18;
   else if (eng > 25) a -= 10;
   const ratio = subs ? avgViews / subs : 0;
@@ -86,23 +161,23 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
   const subs = n(ch.statistics.subscriberCount);
   const views = recent.map((v) => n(v.statistics.viewCount)).filter((v) => v > 0);
   const avgViews = Math.round(median(views));
+  // creators can hide like counts (likeCount absent) — those videos say nothing about engagement
   const engs = recent
-    .filter((v) => n(v.statistics.viewCount) > 0)
+    .filter((v) => n(v.statistics.viewCount) > 0 && v.statistics.likeCount !== undefined)
     .map((v) => ((n(v.statistics.likeCount) + n(v.statistics.commentCount)) / n(v.statistics.viewCount)) * 100);
-  const eng = Math.round(median(engs) * 10) / 10;
+  const engKnown = engs.length > 0;
+  const eng = engKnown ? Math.round(median(engs) * 10) / 10 : 0;
 
   // posting consistency: uploads in the last 90 days vs. a weekly cadence (≈13 uploads = 100)
   const recent90 = recent.filter((v) => today.getTime() - new Date(v.snippet.publishedAt).getTime() <= 90 * 86_400_000).length;
   const consistency = clamp(Math.round((recent90 / 13) * 100), 0, 100);
 
-  const corpus = [
-    ch.snippet.title,
-    ch.snippet.description,
-    ch.brandingSettings?.channel?.keywords,
-    ...recent.flatMap((v) => [v.snippet.title, v.snippet.description?.slice(0, 300), ...(v.snippet.tags ?? [])]),
-  ].join(" ");
-  const { niche, tags } = classify(corpus);
-  const auth = estimateAuthenticity(eng, avgViews, subs);
+  // Niche from everything the channel says about itself; sub-niche tags only from what recurs in uploads.
+  // Video descriptions are excluded from tags: creators paste the same affiliate/link list into every one.
+  const { niche } = classify([ch.snippet.title, ch.snippet.description, ch.brandingSettings?.channel?.keywords, ...recent.map((v) => v.snippet.title)].join(" "));
+  const tags = recurringTags(recent);
+  const auth = estimateAuthenticity(engKnown ? eng : null, avgViews, subs);
+  const language = contentLanguage(recent, ch.snippet.description);
 
   return {
     channelId: ch.id,
@@ -118,5 +193,7 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
     consistency,
     auth,
     suspicious: Math.max(1, Math.round((100 - auth) * 0.4)),
+    language,
+    isBrand: isBrandChannel(ch),
   };
 }

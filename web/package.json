@@ -9,8 +9,9 @@
     "lint": "eslint",
     "test": "node --test \"tests/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.ts",
-    "discover": "node --env-file-if-exists=.env.local scripts/discover.ts"
+    "db:migrate": "node --no-warnings --env-file-if-exists=.env.local scripts/db-migrate.ts",
+    "discover": "node --no-warnings --env-file-if-exists=.env.local scripts/discover.ts",
+    "doctor": "node --no-warnings --env-file-if-exists=.env.local scripts/doctor.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

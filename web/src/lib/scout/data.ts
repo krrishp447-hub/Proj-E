@@ -22,9 +22,11 @@ type Raw = {
   male: number | null; // % male audience
   trend: number[]; // 12-month reach (K)
   collabs: number; // past brand collaborations
+  language?: string; // primary content language (detected from titles for live channels)
 };
 
-export type Creator = Raw & {
+export type Creator = Omit<Raw, "language"> & {
+  language: string;
   id: number;
   auth: number; // authenticity score
   suspicious: number; // % suspicious followers
@@ -48,7 +50,7 @@ const RAW: Raw[] = [
   { name: "Simran Cooks", handle: "@simrancooks", platform: "YouTube", country: "India", niche: "Food", tags: ["food", "recipes", "cooking", "vegetarian"], subs: 1200000, eng: 5.1, views: 420000, growth: 4.5, consistency: 93, geo: [["India", 76], ["US", 8], ["UK", 6], ["Other", 10]], age: [20, 41, 29, 10], male: 34, trend: [380, 385, 390, 395, 400, 405, 410, 414, 418, 420, 420, 421], collabs: 3 },
   { name: "Dev Codes", handle: "@devcodes", platform: "YouTube", country: "India", niche: "Tech", tags: ["programming", "coding", "dev", "software"], subs: 410000, eng: 6.6, views: 160000, growth: 12.0, consistency: 86, geo: [["India", 72], ["US", 10], ["DE", 4], ["Other", 14]], age: [48, 44, 6, 2], male: 83, trend: [100, 110, 118, 125, 133, 140, 146, 150, 154, 157, 159, 160], collabs: 3 },
   { name: "Ananya Travels", handle: "@ananyatravels", platform: "Instagram", country: "India", niche: "Travel", tags: ["travel", "lifestyle", "vlog"], subs: 680000, eng: 5.5, views: 250000, growth: 6.0, consistency: 80, geo: [["India", 80], ["US", 6], ["UAE", 5], ["Other", 9]], age: [42, 44, 10, 4], male: 47, trend: [200, 210, 220, 228, 235, 240, 244, 247, 249, 250, 250, 251], collabs: 3 },
-  { name: "Kiran Tech Tamil", handle: "@kirantechtamil", platform: "YouTube", country: "India", niche: "Tech", tags: ["tws", "earbuds", "tech", "tamil", "reviews"], subs: 98000, eng: 9.1, views: 58000, growth: 19.2, consistency: 77, geo: [["India", 91], ["SG", 3], ["MY", 3], ["Other", 3]], age: [41, 43, 12, 4], male: 74, trend: [10, 14, 18, 22, 29, 36, 44, 53, 65, 78, 95, 112], collabs: 2 },
+  { name: "Kiran Tech Tamil", language: "Tamil", handle: "@kirantechtamil", platform: "YouTube", country: "India", niche: "Tech", tags: ["tws", "earbuds", "tech", "tamil", "reviews"], subs: 98000, eng: 9.1, views: 58000, growth: 19.2, consistency: 77, geo: [["India", 91], ["SG", 3], ["MY", 3], ["Other", 3]], age: [41, 43, 12, 4], male: 74, trend: [10, 14, 18, 22, 29, 36, 44, 53, 65, 78, 95, 112], collabs: 2 },
   { name: "Style By Meera", handle: "@stylebymeera", platform: "Instagram", country: "India", niche: "Fashion", tags: ["fashion", "beauty", "lifestyle"], subs: 830000, eng: 4.8, views: 300000, growth: 5.2, consistency: 88, geo: [["India", 78], ["US", 7], ["UK", 5], ["Other", 10]], age: [45, 42, 10, 3], male: 22, trend: [260, 268, 275, 282, 288, 292, 296, 298, 300, 300, 301, 302], collabs: 3 },
   { name: "TechSavvy Sam", handle: "@techsavvysam", platform: "YouTube", country: "US", niche: "Tech", tags: ["tws", "earbuds", "audio", "reviews", "anc"], subs: 275000, eng: 5.0, views: 130000, growth: 5.5, consistency: 90, geo: [["US", 71], ["CA", 9], ["UK", 7], ["Other", 13]], age: [27, 43, 24, 6], male: 66, trend: [110, 114, 118, 120, 123, 125, 127, 128, 129, 130, 130, 131], collabs: 3 },
   { name: "MintMoney Ria", handle: "@mintmoneyria", platform: "YouTube", country: "India", niche: "Finance", tags: ["finance", "investing", "money", "stocks"], subs: 520000, eng: 6.0, views: 190000, growth: 10.5, consistency: 91, geo: [["India", 82], ["US", 6], ["UAE", 5], ["Other", 7]], age: [22, 51, 22, 5], male: 64, trend: [140, 150, 158, 165, 172, 178, 183, 186, 188, 189, 190, 190], collabs: 3 },
@@ -71,11 +73,12 @@ export const CREATORS: Creator[] = RAW.map((c, id) => {
     delivery,
     proven: campaigns >= 12 && repeat >= 65 && delivery >= 1.1,
     verifiedDays: 1 + ((id * 29) % 9),
+    language: c.language ?? "English",
     source: "demo" as const,
   };
 });
 
-export const NICHES = ["Tech", "Fitness", "Food", "Travel", "Fashion", "Finance", "Gaming"];
+export const NICHES = ["Tech", "Fitness", "Food", "Travel", "Fashion", "Beauty", "Finance", "Gaming", "Education", "Automotive", "Entertainment", "Parenting"];
 export const AGE_BANDS = ["13–17", "18–24", "25–34", "35+"];
 
 /** Colour only the outliers, so colour stays meaningful in a table of mostly-normal values. */

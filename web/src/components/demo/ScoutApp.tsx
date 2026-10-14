@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Creator, Platform } from "@/lib/scout/data";
-import { describe, parseBrief, score } from "@/lib/scout/engine";
+import { contextualize, describe, parseBrief, score } from "@/lib/scout/engine";
+import { CampaignsView } from "./CampaignsView";
 import { ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
 import { DetailPanel } from "./DetailPanel";
 import { ResultsTable, type SortKey } from "./ResultsTable";
+import { ShareOfVoice } from "./ShareOfVoice";
 import "./demo.css";
 
 export const DEFAULT_QUERY = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
@@ -38,8 +40,9 @@ export function ScoutApp({ initialQuery, creators, source = "demo", embedded = f
   const [shortlist, setShortlist] = useState<number[]>([]);
   const [tab, setTab] = useState<"detail" | "compare">("detail");
   const [role, setRole] = useState<"brand" | "creator">("brand");
+  const [brandTab, setBrandTab] = useState<"discover" | "campaigns" | "sov">("discover");
 
-  const brief = useMemo(() => parseBrief(query), [query]);
+  const brief = useMemo(() => contextualize(parseBrief(query), creators), [query, creators]);
   const understood = describe(brief);
   const scored = useMemo(() => creators.map((c) => score(c, brief)), [creators, brief]);
 
@@ -93,6 +96,14 @@ export function ScoutApp({ initialQuery, creators, source = "demo", embedded = f
       </div>
 
       {role === "creator" ? <CreatorView creators={creators} /> : <>
+      <div className="d-tabs d-tabs-top" role="tablist" aria-label="Brand sections">
+        <button role="tab" aria-selected={brandTab === "discover"} onClick={() => setBrandTab("discover")}>Discover</button>
+        <button role="tab" aria-selected={brandTab === "campaigns"} onClick={() => setBrandTab("campaigns")}>Campaigns</button>
+        <button role="tab" aria-selected={brandTab === "sov"} onClick={() => setBrandTab("sov")}>Share of voice</button>
+      </div>
+      {brandTab === "campaigns" && <CampaignsView />}
+      {brandTab === "sov" && <ShareOfVoice />}
+      {brandTab === "discover" && <>
       <form className="d-search" role="search" onSubmit={(e) => { e.preventDefault(); run(draft); }}>
         <label htmlFor="brief" className="sr-only">Describe the creators you need</label>
         <input id="brief" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Describe the creators you need…" autoComplete="off" />
@@ -165,6 +176,7 @@ export function ScoutApp({ initialQuery, creators, source = "demo", embedded = f
           {tab === "detail" && shortlist.length === 1 && <p className="d-hint">Shortlist one more creator to compare and check audience overlap.</p>}
         </aside>
       </div>
+      </>}
       </>}
     </div>
   );

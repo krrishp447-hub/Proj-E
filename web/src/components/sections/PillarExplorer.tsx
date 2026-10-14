@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { authTone, suspiciousTone, type Creator } from "@/lib/scout/data";
-import { overlap, parseBrief, score } from "@/lib/scout/engine";
+import { overlap, contextualize, parseBrief, score } from "@/lib/scout/engine";
 import { BriefTry } from "./BriefTry";
 
 const PILLARS = [
@@ -64,14 +64,14 @@ export function PillarExplorer({ creators }: { creators: Creator[] }) {
 function ScoreModel({ creators }: { creators: Creator[] }) {
   const [brief, setBrief] = useState(BRIEFS[0]);
   const [id, setId] = useState(0);
-  const b = parseBrief(brief);
+  const b = contextualize(parseBrief(brief), creators);
   const m = score(creators[id], b);
   const top = Math.max(...m.signals.map((s) => Math.abs(s.points)), 1);
   // the creators worth comparing for this brief: best fits first
   const pool = creators.map((c) => score(c, b)).sort((a, z) => z.score - a.score).slice(0, 6).map((x) => x.creator);
   const pick = (q: string) => {
     setBrief(q);
-    setId(creators.map((c) => score(c, parseBrief(q))).sort((a, z) => z.score - a.score)[0].creator.id);
+    setId(creators.map((c) => score(c, contextualize(parseBrief(q), creators))).sort((a, z) => z.score - a.score)[0].creator.id);
   };
 
   return (

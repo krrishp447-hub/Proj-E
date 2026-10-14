@@ -3,24 +3,36 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Creator } from "@/lib/scout/data";
-import { fmt, parseBrief, score } from "@/lib/scout/engine";
+import { contextualize, fmt, parseBrief, score } from "@/lib/scout/engine";
 
 const BRIEF = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
 
+type Step = { label: string; keep: (c: Creator) => boolean };
+
+/** Median engagement of creators with known engagement — the "strong engagement" bar adapts to the data. */
+const medianEng = (cs: Creator[]) => {
+  const xs = cs.map((c) => c.eng).filter((e) => e > 0).sort((a, b) => a - b);
+  return xs.length ? Math.round(xs[Math.floor(xs.length / 2)] * 10) / 10 : 0;
+};
+
 // Each step is one filter Scout applies; toggling them shows how the field narrows.
-const STEPS: { label: string; keep: (c: Creator) => boolean }[] = [
-  { label: "Tech niche", keep: (c) => c.niche === "Tech" },
-  { label: "YouTube", keep: (c) => c.platform === "YouTube" },
-  { label: "India audience", keep: (c) => c.country === "India" },
-  { label: "50K–500K subs", keep: (c) => c.subs >= 50_000 && c.subs <= 500_000 },
-  { label: "Engagement ≥ 6%", keep: (c) => c.eng >= 6 },
-  { label: "Authenticity ≥ 75", keep: (c) => c.auth >= 75 },
-];
+function steps(creators: Creator[]): Step[] {
+  const eng = medianEng(creators.filter((c) => c.niche === "Tech"));
+  return [
+    { label: "Tech niche", keep: (c) => c.niche === "Tech" },
+    { label: "YouTube", keep: (c) => c.platform === "YouTube" },
+    { label: "India audience", keep: (c) => c.country === "India" },
+    { label: "50K–500K subs", keep: (c) => c.subs >= 50_000 && c.subs <= 500_000 },
+    { label: `Engagement ≥ ${eng}% (median)`, keep: (c) => c.eng >= eng },
+    { label: "Authenticity ≥ 75", keep: (c) => c.auth >= 75 },
+  ];
+}
 
 /** Live "from many to the right few": toggle Scout's filters and watch the shortlist narrow. */
 export function ResultsFunnel({ creators }: { creators: Creator[] }) {
+  const STEPS = useMemo(() => steps(creators), [creators]);
   const [on, setOn] = useState(() => STEPS.map(() => true));
-  const brief = useMemo(() => parseBrief(BRIEF), []);
+  const brief = useMemo(() => contextualize(parseBrief(BRIEF), creators), [creators]);
 
   const { counts, rows } = useMemo(() => {
     // cumulative: each step filters what the previous steps left
@@ -32,7 +44,7 @@ export function ResultsFunnel({ creators }: { creators: Creator[] }) {
     }
     const rows = pool.map((c) => score(c, brief)).sort((a, z) => z.score - a.score);
     return { counts, rows };
-  }, [on, brief, creators]);
+  }, [on, brief, creators, STEPS]);
 
   return (
     <>

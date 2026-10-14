@@ -33,13 +33,22 @@ export async function fetchChannels(ids: string[]): Promise<YtChannel[]> {
 
 /** The channel's most recent uploads (2 units: one playlist page + one videos batch). */
 export async function fetchRecentVideos(uploadsPlaylistId: string, max = 20): Promise<YtVideo[]> {
+  // channels with no public uploads have no uploads playlist (YouTube answers 404) — that means "no videos"
   const list = await get<{ items?: { contentDetails: { videoId: string } }[] }>("playlistItems", {
     part: "contentDetails",
     playlistId: uploadsPlaylistId,
     maxResults: String(max),
-  });
+  }).catch((e: Error) => { if (e.message.includes(" 404:")) return { items: [] }; throw e; });
   const ids = (list.items ?? []).map((i) => i.contentDetails.videoId);
   if (!ids.length) return [];
   const vids = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics", id: ids.join(",") });
   return vids.items ?? [];
+}
+
+/** One page of channel search results in India (100 units — 100× a list call, so discovery is budgeted). */
+export async function searchChannels(q: string, pageToken?: string): Promise<{ ids: string[]; next: string | null }> {
+  const r = await get<{ items?: { id: { channelId: string } }[]; nextPageToken?: string }>("search", {
+    part: "snippet", type: "channel", q, regionCode: "IN", maxResults: "50", ...(pageToken ? { pageToken } : {}),
+  });
+  return { ids: (r.items ?? []).map((i) => i.id.channelId), next: r.nextPageToken ?? null };
 }

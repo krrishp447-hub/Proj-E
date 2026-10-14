@@ -41,8 +41,11 @@ Without the variables below the site runs on the illustrative demo dataset (labe
 1. **Database:** Vercel project → Storage → add **Neon** (Postgres). It injects `DATABASE_URL`.
 2. **YouTube key:** Google Cloud console → new project → enable *YouTube Data API v3* → Credentials → API key
    (restrict it to that API). Add it as `YOUTUBE_API_KEY` in Vercel.
-3. **Cron secret:** add `CRON_SECRET` (any long random string) in Vercel. `vercel.json` schedules `/api/cron/ingest`
-   daily at 03:00 IST; Vercel sends the secret automatically.
+3. **Cron secret:** add `CRON_SECRET` (any long random string) in Vercel; Vercel sends it automatically. `vercel.json`
+   runs, every night (IST): `/api/cron/discover` at 02:30, which adds new channels from a niche × language query list
+   using only the quota the refresh leaves over, then `/api/cron/ingest` passes at 03:00, 04:00, 05:00 and 06:00
+   (1,000 stalest channels each). The ingest stops refreshing channels under 5K subs or with no upload in 90 days.
+   Discovery stops by itself at ~4,000 active channels, the free quota's ceiling.
 4. Locally: `vercel env pull .env.local`, then
    ```bash
    npm run db:migrate                     # create tables (db/schema.sql)

@@ -2,13 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { authTone, type Creator } from "@/lib/scout/data";
-import { fmt, parseBrief, score } from "@/lib/scout/engine";
+import { contextualize, fmt, parseBrief, score } from "@/lib/scout/engine";
+import type { Deal } from "@/lib/scout/campaigns";
+import { DEMO_DEALS, DEMO_TODAY } from "@/lib/scout/campaign-demo";
+import { DealsView } from "./DealsView";
+import { DeliverablesView } from "./DeliverablesView";
 import { Bar } from "./DetailPanel";
 
 // Illustrative inbound requests per niche (generic advertisers — no real brands).
-type Status = "New" | "Negotiating" | "Accepted" | "Declined";
-type Request = { id: string; from: string; ask: string; brief: string; budget: number; status: Status };
-const REQUESTS: Record<string, Omit<Request, "id" | "status">[]> = {
+type Request = { from: string; ask: string; brief: string; budget: number };
+const REQUESTS: Record<string, Request[]> = {
   Tech: [
     { from: "Audio D2C brand", ask: "TWS launch · dedicated review", brief: "Indian YouTube tech creators who review earbuds, 50K–500K", budget: 85000 },
     { from: "Smartphone maker", ask: "Unboxing · 2 shorts", brief: "Indian tech creators smartphone reviews", budget: 60000 },
@@ -26,9 +29,20 @@ const REQUESTS: Record<string, Omit<Request, "id" | "status">[]> = {
 };
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
+/** A creator's deals: the demo campaign deals, or inbound requests from their niche as Inbound/Negotiating deals. */
+function initialDeals(c: Creator): Deal[] {
+  const demo = c.source === "demo" ? DEMO_DEALS.filter((d) => d.creatorId === c.id) : [];
+  if (demo.length) return demo;
+  return (REQUESTS[c.niche] ?? []).map((r, i) => ({
+    id: `req-${c.id}-${i}`, creatorId: c.id, brand: r.from, title: r.ask, stage: i === 1 ? "Negotiating" : "Inbound",
+    requirements: [r.ask, `Brief: “${r.brief}”`],
+    offers: [{ by: "brand", fee: r.budget, deliverables: r.ask, usage: "Organic only · 30 days", timeline: "Within 3 weeks", at: DEMO_TODAY }],
+  }));
+}
+
 /** Rank of `me` among all creators that fit a brief (using a possibly edited profile). */
 function rankFor(creators: Creator[], me: Creator, brief: string) {
-  const b = parseBrief(brief);
+  const b = contextualize(parseBrief(brief), creators);
   const pool = creators.map((c) => score(c.id === me.id ? me : c, b)).filter((m) => m.fits).sort((a, z) => z.score - a.score);
   const i = pool.findIndex((m) => m.creator.id === me.id);
   return { rank: i < 0 ? null : i + 1, of: pool.length, score: score(me, b).score };
@@ -38,18 +52,18 @@ export function CreatorView({ creators }: { creators: Creator[] }) {
   const [id, setId] = useState(0);
   const base = creators[id];
   const [tagsById, setTagsById] = useState<Record<number, string[]>>({});
-  const [status, setStatus] = useState<Record<string, Status>>({});
+  const [dealsById, setDealsById] = useState<Record<number, Deal[]>>({});
+  const [tab, setTab] = useState<"overview" | "deals" | "deliverables">("overview");
   const [newTag, setNewTag] = useState("");
 
   const tags = tagsById[id] ?? base.tags;
   const me = useMemo(() => ({ ...base, tags }), [base, tags]);
-  const requests: Request[] = (REQUESTS[base.niche] ?? []).map((r, i) => {
-    const rid = `${id}-${i}`;
-    return { ...r, id: rid, status: status[rid] ?? (i === 0 ? "New" : i === 1 ? "Negotiating" : "New") };
-  });
+  const requests = (REQUESTS[base.niche] ?? []).map((r, i) => ({ ...r, id: `${id}-${i}` }));
+  const deals = dealsById[id] ?? initialDeals(base);
+  const setDeals = (d: Deal[]) => setDealsById((x) => ({ ...x, [id]: d }));
   const quality = score(me, parseBrief("")).score; // fit-free quality: engagement, growth, authenticity, track record
-  const open = requests.filter((r) => r.status === "New" || r.status === "Negotiating").length;
-  const accepted = requests.filter((r) => r.status === "Accepted").reduce((s, r) => s + r.budget, 0);
+  const open = deals.filter((d) => d.stage === "Inbound" || d.stage === "Negotiating").length;
+  const contracted = deals.filter((d) => !["Inbound", "Negotiating"].includes(d.stage)).reduce((s, d) => s + d.offers.at(-1)!.fee, 0);
 
   const setTags = (next: string[]) => setTagsById((t) => ({ ...t, [id]: next }));
   const addTag = () => {
@@ -63,7 +77,7 @@ export function CreatorView({ creators }: { creators: Creator[] }) {
     { label: "Subscribers", value: fmt(base.subs) },
     { label: "Engagement", value: `${base.eng}%` },
     { label: "Authenticity", value: base.auth, tone: authTone(base.auth) },
-    { label: "Open requests", value: open, note: accepted ? `${inr(accepted)} accepted` : undefined },
+    { label: "Open deals", value: open, note: contracted ? `${inr(contracted)} contracted` : undefined },
   ];
 
   return (
@@ -87,55 +101,17 @@ export function CreatorView({ creators }: { creators: Creator[] }) {
         ))}
       </dl>
 
+      <div className="d-tabs d-tabs-top" role="tablist" aria-label="Creator sections">
+        <button role="tab" aria-selected={tab === "overview"} onClick={() => setTab("overview")}>Overview</button>
+        <button role="tab" aria-selected={tab === "deals"} onClick={() => setTab("deals")}>Deals ({deals.length})</button>
+        <button role="tab" aria-selected={tab === "deliverables"} onClick={() => setTab("deliverables")}>Deliverables</button>
+      </div>
+
+      {tab === "deals" && <DealsView key={id} creator={me} deals={deals} onChange={setDeals} />}
+      {tab === "deliverables" && <DeliverablesView creatorId={id} deals={deals} />}
+      {tab === "overview" && (
       <div className="d-main">
         <div className="d-stack">
-          <section className="d-tablewrap" aria-label="Brand requests">
-            <h3 className="d-cardh">Brand requests</h3>
-            {requests.length ? (
-              <table className="d-table">
-                <thead>
-                  <tr>
-                    <th scope="col">From</th>
-                    <th scope="col" className="d-c-opt">Brief</th>
-                    <th scope="col" className="d-num">Budget</th>
-                    <th scope="col" className="d-num">Your fit</th>
-                    <th scope="col">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requests.map((r) => {
-                    const fit = rankFor(creators, me, r.brief);
-                    const decided = r.status === "Accepted" || r.status === "Declined";
-                    return (
-                      <tr key={r.id} className="is-static">
-                        <td><b>{r.from}</b><div className="d-sub">{r.ask}</div></td>
-                        <td className="d-c-opt d-sub d-wrap">“{r.brief}”</td>
-                        <td className="d-num d-mono">{inr(r.budget)}</td>
-                        <td className="d-num d-c-match">
-                          <span className="d-meter" aria-hidden="true"><i style={{ width: `${fit.score}%` }} /></span>
-                          <b className="d-mono">{fit.score}</b>
-                        </td>
-                        <td>
-                          {decided ? (
-                            <span className={`d-pill ${r.status === "Accepted" ? "is-good" : "d-muted"}`}>{r.status}</span>
-                          ) : (
-                            <span className="d-actions">
-                              <span className="d-pill">{r.status}</span>
-                              <button type="button" className="d-mini" onClick={() => setStatus((s) => ({ ...s, [r.id]: "Accepted" }))}>Accept</button>
-                              <button type="button" className="d-mini ghost" onClick={() => setStatus((s) => ({ ...s, [r.id]: "Declined" }))}>Decline</button>
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            ) : (
-              <p className="d-empty">No requests yet for this niche.</p>
-            )}
-          </section>
-
           <section className="d-tablewrap" aria-label="Where you rank">
             <h3 className="d-cardh">Where you rank</h3>
             <table className="d-table">
@@ -191,6 +167,7 @@ export function CreatorView({ creators }: { creators: Creator[] }) {
           <p className="d-hint">{base.proven ? "◆ Proven on-platform record — brands see this badge in search." : "Complete more campaigns on Scout to earn the ◆ Proven badge."}</p>
         </aside>
       </div>
+      )}
     </>
   );
 }

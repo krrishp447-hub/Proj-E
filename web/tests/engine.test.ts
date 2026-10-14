@@ -54,3 +54,41 @@ test("keywords match at word starts only", () => {
   assert.deepEqual(parseBrief("YouTube finance creators").keywords, []);
   assert.deepEqual(parseBrief("ANC earbuds").keywords, ["earbud", "anc"]);
 });
+
+test("no size in the brief → creators under 10K are excluded; asking for small creators includes them", () => {
+  const tiny = { ...CREATORS[0], subs: 800, views: 300, eng: 40 };
+  assert.equal(score(tiny, parseBrief("tech creators")).fits, false);
+  assert.equal(score(tiny, parseBrief("tech creators under 5k")).fits, true);
+});
+
+test("engagement on few views earns partial credit only", () => {
+  const b = parseBrief("tech");
+  const big = score({ ...CREATORS[0], views: 50_000, eng: 8 }, b).score;
+  const small = score({ ...CREATORS[0], views: 500, eng: 8 }, b).score;
+  assert.ok(big > small);
+});
+
+test("headphones / ANC briefs resolve to the Tech niche", () => {
+  assert.equal(parseBrief("ANC headphones review").niche, "Tech");
+});
+
+test("reach: more average views ranks higher, all else equal", () => {
+  const b = parseBrief("tech");
+  assert.ok(score({ ...CREATORS[0], views: 90_000 }, b).score > score({ ...CREATORS[0], views: 2_000 }, b).score);
+});
+
+test("language in a brief is a hard filter", () => {
+  const b = parseBrief("Tamil tech reviewers");
+  assert.equal(b.language, "Tamil");
+  assert.equal(score({ ...CREATORS[0], language: "Tamil" }, b).fits, true);
+  assert.equal(score({ ...CREATORS[0], language: "English" }, b).fits, false);
+  assert.equal(parseBrief("bangla unboxing").language, "Bengali");
+});
+
+test("'strong engagement' bar is the niche median, not a fixed 6.5%", async () => {
+  const { contextualize } = await import("../src/lib/scout/engine.ts");
+  const pool = [2, 3, 4, 5, 9].map((eng, i) => ({ ...CREATORS[0], id: i, eng }));
+  const b = contextualize(parseBrief("tech creators with strong engagement"), pool);
+  assert.equal(b.engBar, 4);
+  assert.ok(score({ ...CREATORS[0], eng: 4.5 }, b).signals.some((s) => s.label.startsWith("High engagement") && s.points > 0));
+});
