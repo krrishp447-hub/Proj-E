@@ -53,9 +53,11 @@ export function PillarExplorer({ creators }: { creators: Creator[] }) {
             </button>
           ))}
         </div>
-        {tab === 0 && <BriefTry creators={creators} />}
-        {tab === 1 && <ScoreModel creators={creators} />}
-        {tab === 2 && <TrustLayer creators={creators} />}
+        {!creators.length ? <p className="funnel-empty">Creator data appears here after the first data ingest.</p> : <>
+          {tab === 0 && <BriefTry creators={creators} />}
+          {tab === 1 && <ScoreModel creators={creators} />}
+          {tab === 2 && <TrustLayer creators={creators} />}
+        </>}
       </div>
     </>
   );
@@ -107,8 +109,8 @@ function ScoreModel({ creators }: { creators: Creator[] }) {
 }
 
 function TrustLayer({ creators }: { creators: Creator[] }) {
-  const [a, setA] = useState(0); // Tech With Arjun
-  const [b, setB] = useState(Math.min(6, creators.length - 1)); // demo: EarbudExpert — a high-overlap pair worth showing first
+  const [a, setA] = useState(0);
+  const [b, setB] = useState(Math.min(1, creators.length - 1));
   const A = creators[a], B = creators[b];
   const o = a === b ? 100 : overlap(A, B);
   const select = (v: number, set: (n: number) => void, label: string) => (

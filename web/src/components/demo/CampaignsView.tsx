@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CREATORS } from "@/lib/scout/data";
 import { fmt } from "@/lib/scout/engine";
 import { isLate, matchVideo, rollup, type Campaign, type TrackingRules } from "@/lib/scout/campaigns";
-import { DEMO_CAMPAIGNS, DEMO_DELIVERABLES, DEMO_TODAY, DEMO_VIDEOS } from "@/lib/scout/campaign-demo";
+import { DEMO_CAMPAIGNS, DEMO_CREATOR_NAMES, DEMO_DELIVERABLES, DEMO_TODAY, DEMO_VIDEOS } from "@/lib/scout/campaign-demo";
 import { LineChart } from "./LineChart";
 
-const name = (id: number) => CREATORS[id]?.name ?? `Creator ${id}`;
+const name = (id: number) => DEMO_CREATOR_NAMES[id] ?? `Creator ${id}`;
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const date = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 const RULE_LABELS: Record<keyof TrackingRules, string> = { hashtags: "Hashtags", links: "Tracking links", mentions: "Brand mentions", keywords: "Product keywords" };

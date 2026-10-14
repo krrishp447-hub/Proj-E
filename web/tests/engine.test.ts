@@ -1,7 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CREATORS } from "../src/lib/scout/data.ts";
+import type { Creator } from "../src/lib/scout/data.ts";
 import { describe, overlap, parseBrief, score } from "../src/lib/scout/engine.ts";
+
+// Test fixtures: a strong Indian tech/earbuds YouTuber and an off-niche food creator.
+const base: Creator = {
+  id: 0, name: "Fixture Tech", handle: "@fixturetech", platform: "YouTube", country: "India", niche: "Tech",
+  tags: ["tws", "earbuds", "audio", "reviews"], subs: 312_000, eng: 5.8, views: 148_000, growth: 7.2, consistency: 92,
+  geo: [["India", 74], ["US", 9]], age: [31, 47, 15, 7], male: 68, trend: [], collabs: 4, language: "English",
+  auth: 88, suspicious: 5, campaigns: 14, repeat: 72, delivery: 1.2, proven: true, verifiedDays: 1, source: "youtube",
+};
+const CREATORS: Creator[] = [
+  base,
+  { ...base, id: 1, name: "Fixture Food", handle: "@fixturefood", niche: "Food", tags: ["recipes", "cooking"], subs: 1_200_000, eng: 5.1, views: 420_000, male: 34 },
+];
 
 test("parseBrief reads niche, platform, country, sub-niche, size and intent", () => {
   const b = parseBrief("Indian YouTube tech creators who review TWS/earbuds, 50K–500K subs, strong engagement");
@@ -29,8 +41,8 @@ test("no false hits: 'us' inside words, 'tech' inside 'fintech'", () => {
 
 test("score is absolute: a perfect-fit creator scores high, a mismatch scores low", () => {
   const b = parseBrief("Indian YouTube tech earbuds 50k-500k strong engagement");
-  const arjun = score(CREATORS.find((c) => c.name === "Tech With Arjun")!, b);
-  const simran = score(CREATORS.find((c) => c.name === "Simran Cooks")!, b);
+  const arjun = score(CREATORS[0], b);
+  const simran = score(CREATORS[1], b);
   assert.ok(arjun.fits && arjun.score >= 70, `fit scored ${arjun.score}`);
   assert.ok(!simran.fits && simran.score < 30, `mismatch scored ${simran.score}`);
   for (const c of CREATORS) {

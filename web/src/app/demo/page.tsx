@@ -6,7 +6,7 @@ import { getCreators } from "@/server/creators";
 
 export const metadata: Metadata = {
   title: "Demo — Scout",
-  description: "Search, rank and compare creators on Scout's 8 signals. Illustrative demo data.",
+  description: "Search, rank and compare creators on Scout's 8 signals. Live YouTube public data.",
   alternates: { canonical: "/demo" },
 };
 

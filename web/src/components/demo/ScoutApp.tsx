@@ -28,9 +28,9 @@ const median = (xs: number[]) => {
 };
 
 /** `embedded`: running inside the homepage, so no top bar and no URL rewriting. */
-type Props = { initialQuery: string; creators: Creator[]; source?: "demo" | "youtube"; embedded?: boolean };
+type Props = { initialQuery: string; creators: Creator[]; source?: "youtube" | "none"; embedded?: boolean };
 
-export function ScoutApp({ initialQuery, creators, source = "demo", embedded = false }: Props) {
+export function ScoutApp({ initialQuery, creators, source = "none", embedded = false }: Props) {
   const [draft, setDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [platform, setPlatform] = useState<"All" | Platform>("All");
@@ -85,7 +85,7 @@ export function ScoutApp({ initialQuery, creators, source = "demo", embedded = f
       {!embedded && (
       <header className="d-top">
         <Link href="/" className="d-wm">Scout</Link>
-        <span className="d-tag">{source === "youtube" ? "Live · YouTube public data" : "Demo · illustrative data"}</span>
+        <span className="d-tag">{source === "youtube" ? "Live · YouTube public data" : "No creator data yet"}</span>
         <Link href="/" className="d-back">← Site</Link>
       </header>
       )}
@@ -95,7 +95,7 @@ export function ScoutApp({ initialQuery, creators, source = "demo", embedded = f
         <button type="button" role="radio" aria-checked={role === "creator"} onClick={() => setRole("creator")}>Creator</button>
       </div>
 
-      {role === "creator" ? <CreatorView creators={creators} /> : <>
+      {role === "creator" ? (creators.length ? <CreatorView creators={creators} /> : <p className="d-empty">No creators yet — they appear after the first data ingest.</p>) : <>
       <div className="d-tabs d-tabs-top" role="tablist" aria-label="Brand sections">
         <button role="tab" aria-selected={brandTab === "discover"} onClick={() => setBrandTab("discover")}>Discover</button>
         <button role="tab" aria-selected={brandTab === "campaigns"} onClick={() => setBrandTab("campaigns")}>Campaigns</button>

@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { CREATORS, type Creator } from "@/lib/scout/data";
+import type { Creator } from "@/lib/scout/data";
 import { sql } from "./db";
 
 type Row = {
@@ -12,23 +12,23 @@ type Row = {
 /** Down-sample a daily series to at most 12 points for the sparkline. */
 const twelve = (xs: number[]) => (xs.length <= 12 ? xs : Array.from({ length: 12 }, (_, i) => xs[Math.round((i * (xs.length - 1)) / 11)]));
 
-export type CreatorSource = { creators: Creator[]; source: "demo" | "youtube"; updatedAt: string | null };
+export type CreatorSource = { creators: Creator[]; source: "youtube" | "none"; updatedAt: string | null };
 
 /**
  * Every view reads creators through here. Live YouTube data when DATABASE_URL is set and ingest has run;
- * otherwise the illustrative demo set, so the site always works. Cached; the ingest cron revalidates the tag.
+ * otherwise an empty list (views show an empty state until the first ingest). Cached; the ingest cron revalidates the tag.
  */
 export async function getCreators(): Promise<CreatorSource> {
   "use cache";
   cacheTag("creators");
   cacheLife("hours");
-  if (!sql) return { creators: CREATORS, source: "demo", updatedAt: null };
+  if (!sql) return { creators: [], source: "none", updatedAt: null };
 
   const rows = (await sql`
     select c.*, extract(day from now() - c.fetched_at)::int as age_days,
       (select array_agg(s.subs order by s.taken_on) from snapshots s where s.channel_id = c.channel_id and s.taken_on > current_date - 365) as trend
     from creators c where not c.is_brand order by c.subs desc limit 2000`) as Row[];
-  if (!rows.length) return { creators: CREATORS, source: "demo", updatedAt: null };
+  if (!rows.length) return { creators: [], source: "none", updatedAt: null };
 
   const creators: Creator[] = rows.map((r, id) => ({
     id, // array index — the UI looks creators up by position

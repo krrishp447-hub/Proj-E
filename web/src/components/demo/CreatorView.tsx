@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { authTone, type Creator } from "@/lib/scout/data";
 import { contextualize, fmt, parseBrief, score } from "@/lib/scout/engine";
 import type { Deal } from "@/lib/scout/campaigns";
-import { DEMO_DEALS, DEMO_TODAY } from "@/lib/scout/campaign-demo";
+import { DEMO_TODAY } from "@/lib/scout/campaign-demo";
 import { DealsView } from "./DealsView";
 import { DeliverablesView } from "./DeliverablesView";
 import { Bar } from "./DetailPanel";
@@ -29,10 +29,8 @@ const REQUESTS: Record<string, Request[]> = {
 };
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
-/** A creator's deals: the demo campaign deals, or inbound requests from their niche as Inbound/Negotiating deals. */
+/** A creator's deals: inbound requests from their niche as Inbound/Negotiating deals (until real brands send them). */
 function initialDeals(c: Creator): Deal[] {
-  const demo = c.source === "demo" ? DEMO_DEALS.filter((d) => d.creatorId === c.id) : [];
-  if (demo.length) return demo;
   return (REQUESTS[c.niche] ?? []).map((r, i) => ({
     id: `req-${c.id}-${i}`, creatorId: c.id, brand: r.from, title: r.ask, stage: i === 1 ? "Negotiating" : "Inbound",
     requirements: [r.ask, `Brief: “${r.brief}”`],

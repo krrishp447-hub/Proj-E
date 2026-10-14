@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CREATORS } from "@/lib/scout/data";
 import { fmt } from "@/lib/scout/engine";
 import { shareOfVoice, type Platform } from "@/lib/scout/campaigns";
-import { DEMO_VIDEOS, SOV_BRANDS } from "@/lib/scout/campaign-demo";
+import { DEMO_CREATOR_NAMES, DEMO_VIDEOS, SOV_BRANDS } from "@/lib/scout/campaign-demo";
 
 const YOU = "Kestrel Audio";
 const PLATFORMS: ("All" | Platform)[] = ["All", "YouTube", "Instagram"];
@@ -57,7 +56,7 @@ export function ShareOfVoice() {
           {posts.map(({ p, brands }) => (
             <div key={p.id} className="d-organic">
               <a className="d-postlink" href={p.url} target="_blank" rel="noreferrer">{p.title}</a>
-              <div className="d-sub">{CREATORS[p.creatorId]?.name} · {p.platform === "YouTube" ? "YT" : "IG"} · {fmt(p.views)} views · {brands.join(", ")}</div>
+              <div className="d-sub">{DEMO_CREATOR_NAMES[p.creatorId]} · {p.platform === "YouTube" ? "YT" : "IG"} · {fmt(p.views)} views · {brands.join(", ")}</div>
             </div>
           ))}
         </aside>

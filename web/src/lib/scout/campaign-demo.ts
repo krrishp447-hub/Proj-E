@@ -1,5 +1,12 @@
-// Illustrative campaign/deal data. Brands are fictional; creators are the demo dataset (ids from data.ts).
-import type { Campaign, Deal, Deliverable, VideoPost } from "./campaigns.ts";
+// Illustrative campaign data for the Campaigns and Share of voice tabs. Brands and creators are fictional,
+// and live separately from the real creator list, until brands run real campaigns on Scout.
+import type { Campaign, Deliverable, VideoPost } from "./campaigns.ts";
+
+/** Names of the fictional creators referenced by `creatorId` below. */
+export const DEMO_CREATOR_NAMES: Record<number, string> = {
+  0: "Tech With Arjun", 1: "GadgetGirl Priya", 2: "AudioPhile Akash", 3: "Rohit Reviews", 4: "Neha Unboxed",
+  6: "EarbudExpert", 11: "Kiran Tech Tamil", 13: "TechSavvy Sam",
+};
 
 export const DEMO_TODAY = "2026-10-14";
 
@@ -67,25 +74,3 @@ export const DEMO_DELIVERABLES: Deliverable[] = [
   D({ id: "d7", dealId: "deal-kiran", creatorId: 11, due: "2026-10-18", status: "In production", projectedViews: 55_000, fee: 40_000 }),
 ];
 
-const usage = "Organic only · 30 days";
-export const DEMO_DEALS: Deal[] = [
-  {
-    id: "deal-arjun", creatorId: 0, brand: "Kestrel Audio", campaignId: "budsx", title: "Buds X launch — review + 2 Shorts", stage: "Live",
-    requirements: ["1 dedicated YouTube review (8–12 min)", "2 YouTube Shorts", "Tracking link + #KestrelBudsX in description", "#ad disclosure"],
-    offers: [
-      { by: "brand", fee: 70_000, deliverables: "1 video + 2 Shorts", usage: "Organic + paid ads · 90 days", timeline: "Live by 2 Oct", at: "2026-09-18" },
-      { by: "creator", fee: 95_000, deliverables: "1 video + 2 Shorts", usage, timeline: "Live by 2 Oct", at: "2026-09-19", note: "Paid-ads usage is priced separately; my last 10 videos average 148K views." },
-      { by: "brand", fee: 85_000, deliverables: "1 video + 2 Shorts", usage, timeline: "Live by 2 Oct", at: "2026-09-20", note: "Agreed on organic-only at ₹85K." },
-    ],
-  },
-  { id: "deal-priya", creatorId: 1, brand: "Kestrel Audio", campaignId: "budsx", title: "Buds X — 7-day test video", stage: "Paid", requirements: ["1 YouTube video", "#KestrelBudsX + @kestrelaudio"], offers: [{ by: "brand", fee: 60_000, deliverables: "1 video", usage, timeline: "Live by 5 Oct", at: "2026-09-21" }] },
-  { id: "deal-akash", creatorId: 2, brand: "Kestrel Audio", campaignId: "budsx", title: "Buds X — technical deep-dive", stage: "Live", requirements: ["1 YouTube video", "Tracking link + #KestrelBudsX", "#ad disclosure"], offers: [{ by: "brand", fee: 30_000, deliverables: "1 video", usage, timeline: "Live by 6 Oct", at: "2026-09-21" }] },
-  { id: "deal-ee", creatorId: 6, brand: "Kestrel Audio", campaignId: "budsx", title: "Buds X — ANC comparison", stage: "Live", requirements: ["1 YouTube comparison video", "Tracking link"], offers: [{ by: "brand", fee: 55_000, deliverables: "1 video", usage, timeline: "Live by 9 Oct", at: "2026-09-22" }] },
-  { id: "deal-neha", creatorId: 4, brand: "Kestrel Audio", campaignId: "budsx", title: "Buds X — unboxing Reel", stage: "Live", requirements: ["1 Instagram Reel", "#KestrelBudsX #ad"], offers: [{ by: "brand", fee: 65_000, deliverables: "1 Reel", usage, timeline: "Live by 10 Oct", at: "2026-09-22" }] },
-  { id: "deal-kiran", creatorId: 11, brand: "Kestrel Audio", campaignId: "budsx", title: "Buds X — Tamil review", stage: "In production", requirements: ["1 YouTube video (Tamil)", "Tracking link + #KestrelBudsX"], offers: [{ by: "brand", fee: 40_000, deliverables: "1 video", usage, timeline: "Live by 18 Oct", at: "2026-09-24" }] },
-  {
-    id: "deal-arjun-festive", creatorId: 0, brand: "Kestrel Audio", campaignId: "festive", title: "Festive sale — integration", stage: "Inbound",
-    requirements: ["60-second integration in a video", "Tracking link + #KestrelFestive"],
-    offers: [{ by: "brand", fee: 40_000, deliverables: "1 integration", usage, timeline: "Live 20–25 Oct", at: "2026-10-12" }],
-  },
-];
