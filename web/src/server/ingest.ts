@@ -14,12 +14,12 @@ export type IngestResult = { seeds: number; updated: number; failed: { channelId
  */
 const PRUNE_BELOW_SUBS = 5_000; // half the search floor (MIN_AUDIENCE), so channels near it still get tracked
 
-export async function runIngest(limit = 1000): Promise<IngestResult> {
+export async function runIngest(limit = 1000, only?: string[]): Promise<IngestResult> {
   if (!sql) throw new Error("DATABASE_URL is not set");
   const db = sql; // keeps the non-null narrowing inside the parallel workers below
-  // Stalest first, skipping channels refreshed in the last 20h: re-runs only spend quota on new seeds,
-  // and when seeds outgrow one run's limit, consecutive runs rotate through them.
-  const seeds = (await db`
+  // `only`: refresh exactly these channels now (a creator just connected). Otherwise stalest first, skipping
+  // channels refreshed in the last 20h: re-runs only spend quota on new seeds, and consecutive runs rotate through them.
+  const seeds = only ? only.map((channel_id) => ({ channel_id })) : (await db`
     select s.channel_id from channel_seeds s left join creators c using (channel_id)
     where s.active and (c.fetched_at is null or c.fetched_at < now() - interval '20 hours')
     order by c.fetched_at nulls first, s.added_at limit ${limit}`) as { channel_id: string }[];
@@ -58,10 +58,11 @@ export async function runIngest(limit = 1000): Promise<IngestResult> {
   // ponytail: fixed pool of 8; raise it (or move to a queue) if channel counts outgrow one 300s cron run
   for (let i = 0; i < channels.length; i += 8) await Promise.all(channels.slice(i, i + 8).map(one));
   // Prune: tiny channels and ones with no upload in 90 days stop being refreshed (their row stays, frozen).
-  // Creators in a campaign or deal are always kept.
+  // Creators who claimed their channel, or are in a campaign or deal, are always kept.
   await db`
     update channel_seeds s set active = false from creators c
     where c.channel_id = s.channel_id and s.channel_id = any(${ids}) and (c.subs < ${PRUNE_BELOW_SUBS} or c.consistency = 0)
+      and not exists (select 1 from channel_connections x where x.channel_id = c.channel_id)
       and not exists (select 1 from campaign_creators cc where cc.channel_id = c.channel_id)
       and not exists (select 1 from deals d where d.channel_id = c.channel_id)`;
   result.filing = await fileCampaignPosts();

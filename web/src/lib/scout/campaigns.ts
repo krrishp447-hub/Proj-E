@@ -72,7 +72,7 @@ export type Deal = {
 
 const DAY = 86_400_000;
 const lc = (s: string) => s.toLowerCase();
-const DISCLOSURE = /(#ad\b|#sponsored|#paidpartnership|#collab|paid promotion|sponsored by|in partnership with)/i;
+export const DISCLOSURE = /(#ad\b|#sponsored|#paidpartnership|#collab|paid promotion|sponsored by|in partnership with)/i;
 
 /** Thresholds for filing. Above FILE → straight into the campaign folder; between REVIEW and FILE → human check. */
 export const FILE = 60;

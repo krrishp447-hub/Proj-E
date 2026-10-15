@@ -55,6 +55,20 @@ Without the variables below the site runs on the illustrative demo dataset (labe
    The app switches to "Live · YouTube public data" as soon as rows exist; growth fills in after ~30 days of daily
    snapshots. Quota: ingest costs ≈2 units per channel per day (10,000/day free).
 
+### 3 · Accounts (login, onboarding, creator channel connect)
+`/login` → Google sign-in as a **brand/agency** or a **creator** → `/onboarding` (3 steps) → `/account`. Creators also grant
+read-only YouTube access: Scout confirms the channel they own and syncs its private audience (age, gender, countries,
+retention) from the YouTube Analytics API nightly; brands see it as a "Verified" audience. Disconnect and account
+deletion are on `/account`.
+1. Google Cloud (same project as the API key) → enable **YouTube Analytics API**.
+2. **OAuth consent screen**: External; app name, support email, privacy policy URL (`/privacy`); scopes `openid`, `email`,
+   `profile`, `youtube.readonly`, `yt-analytics.readonly`. While in *Testing*, add test users (up to 100). Going public
+   needs Google's verification for the two YouTube scopes (privacy policy + demo video).
+3. **Credentials → OAuth client ID** (Web application). Redirect URIs: `http://localhost:3000/api/auth/google/callback`
+   and `https://<your-domain>/api/auth/google/callback`.
+4. Env (local `.env.local` and Vercel): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` (32+ random chars;
+   changing it signs everyone out and makes stored tokens unreadable). `NEXT_PUBLIC_SITE_URL` must be the real domain.
+
 **What live data does and doesn't include:** public stats (subs, views, engagement, cadence, growth, niche/sub-niche
 from titles and tags, estimated authenticity). Audience demographics need creators to connect their channel (YouTube
 Analytics / Instagram insights OAuth — not built yet); outcome metrics (campaigns, repeat, delivered) accrue from

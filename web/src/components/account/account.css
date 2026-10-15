@@ -1,0 +1,136 @@
+/* Login, onboarding and account pages: the site's ink / paper / signal palette, one column, form-first. */
+.acct { max-width: 760px; margin: 0 auto; padding: clamp(40px, 6vw, 88px) 16px 96px; }
+.acct-back { display: inline-block; margin-bottom: 28px; color: var(--signal); font-family: var(--mono); font-size: 13px; }
+.acct h1 { color: var(--signal); }
+.acct-lede { margin: 14px 0 32px; max-width: 56ch; opacity: .8; line-height: 1.5; }
+.acct-alert { margin: 0 0 24px; padding: 12px 16px; border-radius: 12px; background: var(--paper); color: var(--ink); font-weight: 600; }
+.acct-alert.is-bad { background: #ff6b5b; }
+
+.acct-roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.acct-card { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 16px; background: var(--paper); color: var(--ink); }
+.acct-card h2 { font: 400 30px/1 var(--disp); text-transform: uppercase; }
+.acct-card ul { margin: 0; padding-left: 18px; list-style: disc; line-height: 1.6; font-size: 14.5px; }
+.acct-card .acct-fine { font-size: 12.5px; opacity: .7; line-height: 1.45; }
+.acct-card .acct-btn { margin-top: auto; }
+
+.acct-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 999px;
+  border: 1.5px solid var(--ink); background: var(--ink); color: var(--paper); font: 700 15px var(--body); cursor: pointer; text-decoration: none; }
+.acct-btn:hover { background: var(--signal); border-color: var(--signal); color: var(--ink); }
+.acct-btn.on-ink { border-color: var(--signal); background: var(--signal); color: var(--ink); }
+.acct-btn.on-ink:hover { background: var(--paper); border-color: var(--paper); }
+.acct-btn.ghost { background: transparent; color: inherit; border-color: currentColor; }
+.acct-btn.danger { background: transparent; color: #ff6b5b; border-color: #ff6b5b; }
+
+/* stepper */
+.acct-steps { display: flex; gap: 6px; margin: 0 0 24px; padding: 0; list-style: none; flex-wrap: wrap; }
+.acct-steps li { font: 600 12px var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 6px 12px; border-radius: 999px; border: 1px solid rgb(239 237 230 / .25); opacity: .55; }
+.acct-steps li[aria-current="step"] { opacity: 1; background: var(--signal); border-color: var(--signal); color: var(--ink); }
+.acct-steps li.is-done { opacity: .9; }
+
+.acct-form fieldset { border: 0; margin: 0; padding: 24px; border-radius: 16px; background: var(--paper); color: var(--ink); display: grid; gap: 18px; }
+.acct-form fieldset[hidden] { display: none; }
+.acct-form legend { float: left; width: 100%; font: 400 30px/1 var(--disp); text-transform: uppercase; margin-bottom: 4px; }
+.acct-form label, .acct-q { display: grid; gap: 6px; font-weight: 700; font-size: 14px; }
+.acct-form .acct-help { font-weight: 400; font-size: 13px; opacity: .7; }
+.acct-form input[type="text"], .acct-form input[type="url"], .acct-form input[type="number"], .acct-form select, .acct-form textarea {
+  font: 500 16px var(--body); color: var(--ink); background: #fff; border: 1.5px solid var(--ink); border-radius: 12px; padding: 12px 14px; width: 100%; }
+.acct-form textarea { min-height: 96px; resize: vertical; }
+.acct-form :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+/* chip groups are fieldsets too: undo the step-panel styling above */
+.acct-form fieldset.acct-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; border-radius: 0; background: none; }
+.acct-chips label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1.5px solid var(--ink); border-radius: 999px; font-weight: 600; cursor: pointer; }
+.acct-chips input { accent-color: var(--ink); }
+.acct-chips label:has(input:checked) { background: var(--ink); color: var(--paper); }
+.acct-inline { display: flex !important; align-items: center; gap: 10px; font-weight: 600 !important; }
+.acct-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.acct-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; }
+
+/* summaries */
+.acct-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 0; }
+.acct-stats div { padding: 14px; border-radius: 12px; border: 1px solid rgb(12 13 11 / .15); }
+.acct-stats dt { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; opacity: .65; }
+.acct-stats dd { margin: 4px 0 0; font: 700 20px var(--body); }
+.acct-bars { display: grid; gap: 8px; }
+.acct-bar { display: grid; grid-template-columns: 90px 1fr 48px; align-items: center; gap: 10px; font-size: 13.5px; }
+.acct-bar i { display: block; height: 8px; border-radius: 4px; background: var(--signal-deep); }
+.acct-bar span:last-child { font-family: var(--mono); text-align: right; }
+.acct-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--signal); color: var(--ink); font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: .04em; width: fit-content; }
+.acct-section { margin-top: 20px; }
+.acct-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.acct-actions form { margin: 0; }
+.acct-actions summary { list-style: none; }
+.acct-actions summary::-webkit-details-marker { display: none; }
+
+/* dashboard */
+.dash { max-width: 1100px; }
+.dash-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.dash-head nav { display: flex; gap: 16px; font-family: var(--mono); font-size: 13px; }
+.dash-head nav a { color: var(--signal); }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.dash-grid > .acct-card { gap: 14px; }
+.dash-wide { grid-column: 1 / -1; }
+.dash-search { display: flex; flex-wrap: wrap; gap: 10px; }
+.dash-search input { flex: 1 1 260px; min-width: 0; font: 500 16px var(--body); color: var(--ink); background: #fff; border: 1.5px solid var(--ink); border-radius: 999px; padding: 12px 18px; }
+.dash-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.dash-list li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid rgb(12 13 11 / .12); font-size: 14px; }
+.dash-list li:first-child { border-top: 0; }
+.dash-list a { color: inherit; font-weight: 700; text-decoration: none; }
+.dash-list a:hover { text-decoration: underline; }
+.dash-meta { grid-column: 1 / -1; font-size: 12.5px; opacity: .7; }
+.dash-num { font: 700 14px var(--mono); text-align: right; }
+.dash-tag { font: 700 10.5px var(--mono); text-transform: uppercase; padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor; margin-left: 6px; vertical-align: 1px; }
+.dash-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dash-check li::before { content: "○ "; font-family: var(--mono); }
+.dash-check li.is-done::before { content: "✓ "; color: var(--signal-deep); }
+.dash-check li.is-done { opacity: .6; }
+.dash-big { font: 400 clamp(40px, 6vw, 64px)/1 var(--disp); }
+.acct-card .d-chart { width: 100%; height: auto; display: block; }
+.acct-card .d-chart-grid { stroke: rgb(12 13 11 / .12); stroke-width: 1; }
+.acct-card .d-chart-tick { fill: rgb(12 13 11 / .55); font: 11px var(--mono); }
+.acct-card .d-chart-line { stroke: var(--signal-deep); stroke-width: 2.5; stroke-linejoin: round; }
+.acct-card .d-chart-dot { fill: var(--signal-deep); }
+.acct-card .dash-list, .acct-card .dash-check { list-style: none; padding-left: 0; }
+
+/* deals workspace */
+.deals-page { max-width: 1480px; }
+.deals-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+.deals-bar input[type="search"] { flex: 0 1 280px; min-width: 0; font: 500 15px var(--body); color: var(--ink); background: var(--paper); border: 0; border-radius: 999px; padding: 10px 16px; }
+.deals-seg { display: inline-flex; border: 1px solid rgb(239 237 230 / .3); border-radius: 999px; overflow: hidden; }
+.deals-seg button { background: none; border: 0; color: inherit; padding: 9px 16px; font: 700 13px var(--body); cursor: pointer; }
+.deals-seg button[aria-pressed="true"] { background: var(--signal); color: var(--ink); }
+.deals-saving { font: 600 12px var(--mono); opacity: .7; }
+.deals-main { display: grid; gap: 16px; align-items: start; }
+.deals-main.has-drawer { grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); }
+@media (max-width: 960px) { .deals-main.has-drawer { grid-template-columns: 1fr; } }
+.deals-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+.deals-col { background: rgb(239 237 230 / .06); border: 1px solid rgb(239 237 230 / .12); border-radius: 14px; padding: 10px; min-height: 200px; display: grid; align-content: start; gap: 8px; }
+.deals-col.is-target { border-color: var(--signal); background: rgb(77 116 255 / .12); }
+.deals-col h3 { display: flex; justify-content: space-between; font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: .05em; opacity: .8; margin: 2px 4px 4px; }
+.deals-card { display: grid; gap: 4px; text-align: left; width: 100%; background: var(--paper); color: var(--ink); border: 2px solid transparent; border-radius: 10px; padding: 10px 12px; cursor: pointer; font: 500 13.5px var(--body); }
+.deals-card[draggable="true"] { cursor: grab; }
+.deals-card.is-active { border-color: var(--signal); }
+.deals-card.is-turn { box-shadow: inset 4px 0 0 var(--signal-deep); }
+.deals-cardmeta { font: 600 11.5px var(--mono); opacity: .7; }
+.deals-turn { display: inline-block; width: fit-content; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--signal); color: var(--ink); font: 700 10.5px var(--mono); text-transform: uppercase; }
+.deals-card .deals-turn { margin-left: 0; }
+.deals-tablewrap { overflow-x: auto; background: var(--paper); color: var(--ink); border-radius: 14px; padding: 6px 12px; }
+.deals-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.deals-table th { text-align: left; font: 700 11px var(--mono); text-transform: uppercase; opacity: .6; padding: 10px 8px; }
+.deals-table td { padding: 10px 8px; border-top: 1px solid rgb(12 13 11 / .1); white-space: nowrap; }
+.deals-table tr.is-active td { background: rgb(77 116 255 / .12); }
+.deals-link { background: none; border: 0; padding: 0; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.deals-drawer { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; gap: 14px; }
+.deals-drawer h2 { font: 400 26px/1.05 var(--disp); text-transform: uppercase; }
+.deals-drawer h3 { font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: .05em; opacity: .7; margin-top: 6px; }
+.deals-drawerhead { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.deals-drawerhead .acct-btn { min-height: 40px; padding: 0 14px; }
+.deals-drawer select, .deals-drawer input[type="date"] { font: 500 15px var(--body); color: var(--ink); background: #fff; border: 1.5px solid var(--ink); border-radius: 10px; padding: 8px 10px; }
+.deals-callout { padding: 14px; border-radius: 12px; background: rgb(77 116 255 / .14); line-height: 1.45; }
+.deals-callout .acct-actions { margin-top: 12px; }
+.deals-counter { display: grid; gap: 12px; }
+.deals-thread { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.deals-thread li { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgb(12 13 11 / .15); font-size: 13.5px; }
+.deals-thread li.is-mine { background: rgb(12 13 11 / .06); }
+.deals-thread q { font-style: italic; }
+.deals-checklist li::before { content: none; }
+.deals-compose { margin-bottom: 24px; }

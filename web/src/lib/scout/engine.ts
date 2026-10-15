@@ -148,7 +148,13 @@ export function score(c: Creator, b: Brief): Match {
   return { creator: c, score: Math.max(0, Math.min(100, Math.round((earned / max) * 100))), signals, fits };
 }
 
-/** Estimated shared audience between two creators (0–93%), from geo, niche, age, gender and platform. */
+/** Audience demographics exist only for creators who connected their channel (YouTube shares them with owners only). */
+export const audienceVerified = (c: Creator) => c.geo.length > 0 && c.age.length > 0;
+
+/**
+ * Estimated shared audience between two creators (0–93%), from geo, niche, age, gender and platform.
+ * Only a real signal when both audiences are verified; otherwise it mostly reflects niche + country.
+ */
 export function overlap(a: Creator, b: Creator): number {
   let s = 0;
   // Without connected demographics, fall back to channel country and neutral midpoints.

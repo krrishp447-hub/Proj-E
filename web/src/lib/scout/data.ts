@@ -4,6 +4,7 @@ export type Platform = "YouTube" | "Instagram";
 
 export type Creator = {
   id: number;
+  channelId: string; // YouTube channel id (stable; `id` is just the list position)
   name: string;
   handle: string;
   platform: Platform;
@@ -34,6 +35,7 @@ export type Creator = {
 };
 
 export const NICHES = ["Tech", "Fitness", "Food", "Travel", "Fashion", "Beauty", "Finance", "Gaming", "Education", "Automotive", "Entertainment", "Parenting"];
+export const BUDGETS = ["Under ₹50K", "₹50K–₹2L", "₹2L–₹10L", "₹10L+"]; // brand campaign budget bands (onboarding)
 export const AGE_BANDS = ["13–17", "18–24", "25–34", "35+"];
 
 /** Colour only the outliers, so colour stays meaningful in a table of mostly-normal values. */

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Creator, Platform } from "@/lib/scout/data";
 import { contextualize, describe, parseBrief, score } from "@/lib/scout/engine";
 import { CampaignsView } from "./CampaignsView";
@@ -26,6 +26,9 @@ const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.floor(s.length / 2)];
 };
+
+const MAX_SHORTLIST = 4;
+const SHORTLIST_KEY = "scout:shortlist";
 
 /** `embedded`: running inside the homepage, so no top bar and no URL rewriting. */
 type Props = { initialQuery: string; creators: Creator[]; source?: "youtube" | "none"; embedded?: boolean };
@@ -67,8 +70,19 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
     setSelected(null);
     if (!embedded) window.history.replaceState(null, "", `?q=${encodeURIComponent(q)}`); // shareable briefs
   };
+  // Up to 4 (the compare table's width). Persisted by channel id, which is stable across data refreshes; list positions aren't.
   const toggleShortlist = (id: number) =>
-    setShortlist((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+    setShortlist((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= MAX_SHORTLIST ? s : [...s, id]));
+  useEffect(() => {
+    try {
+      const saved: string[] = JSON.parse(localStorage.getItem(SHORTLIST_KEY) ?? "[]");
+      const ids = saved.map((ch) => creators.findIndex((c) => c.channelId === ch)).filter((i) => i >= 0).slice(0, MAX_SHORTLIST);
+      if (ids.length) setShortlist(ids); // eslint-disable-line react-hooks/set-state-in-effect -- one-time restore after hydration
+    } catch {} // storage blocked or corrupt: start empty
+  }, [creators]);
+  useEffect(() => {
+    try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist.map((i) => creators[i]?.channelId).filter(Boolean))); } catch {}
+  }, [shortlist, creators]);
   const onSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
 
@@ -77,7 +91,7 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
     { label: "Median match", value: median(fits.map((m) => m.score)) },
     { label: "Avg authenticity", value: fits.length ? Math.round(fits.reduce((s, m) => s + m.creator.auth, 0) / fits.length) : 0 },
     { label: "Proven", value: fits.filter((m) => m.creator.proven).length, note: "on-platform record" },
-    { label: "Shortlist", value: shortlist.length },
+    { label: "Shortlist", value: shortlist.length, note: `of ${MAX_SHORTLIST}` },
   ];
 
   return (
@@ -166,6 +180,9 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
               Compare{shortlist.length ? ` (${shortlist.length})` : ""}
             </button>
           </div>
+          {shortlist.length >= 2 && tab === "detail" && (
+            <button type="button" className="d-btn d-cmpgo" onClick={() => setTab("compare")}>Compare {shortlist.length} shortlisted →</button>
+          )}
           {tab === "compare" && shortlist.length >= 2 ? (
             <ComparePanel matches={shortlist.map((id) => scored[id])} onRemove={toggleShortlist} />
           ) : active ? (
@@ -174,6 +191,7 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
             <p className="d-muted">Select a creator to see why they ranked.</p>
           )}
           {tab === "detail" && shortlist.length === 1 && <p className="d-hint">Shortlist one more creator to compare and check audience overlap.</p>}
+          {tab === "detail" && shortlist.length >= MAX_SHORTLIST && active && !shortlist.includes(active.creator.id) && <p className="d-hint">Shortlist is full ({MAX_SHORTLIST}). Remove someone in Compare to add {active.creator.name}.</p>}
         </aside>
       </div>
       </>}

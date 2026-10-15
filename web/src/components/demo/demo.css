@@ -229,3 +229,5 @@
   .d-meter { width: 48px; }
   .d-c-match { min-width: 96px; }
 }
+.d-actions a.d-btn { display: inline-flex; align-items: center; text-decoration: none; }
+.d-cmpgo { width: 100%; margin: 12px 0 4px; }

@@ -34,9 +34,13 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
         </div>
         <div className={`d-score ${m.fits ? "" : "is-miss"}`}><b className="d-mono">{m.score}</b><span>match</span></div>
       </div>
-      <button type="button" className={`d-btn ${inShortlist ? "is-on" : "ghost"}`} onClick={onToggle}>
-        {inShortlist ? "✓ Shortlisted" : "+ Shortlist"}
-      </button>
+<div className="d-actions">
+        <button type="button" className={`d-btn ${inShortlist ? "is-on" : "ghost"}`} onClick={onToggle}>
+          {inShortlist ? "✓ Shortlisted" : "+ Shortlist"}
+        </button>
+        {/* brand accounts: opens the offer composer (signed-out visitors are sent to log in first) */}
+        <a className="d-btn ghost" href={`/dashboard/deals?new=${encodeURIComponent(c.channelId)}`}>Send offer →</a>
+      </div>
 
       <dl className="d-grid">
         <div><dt>Subscribers</dt><dd>{fmt(c.subs)}</dd></div>
@@ -62,13 +66,14 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
       <h3>Audience</h3>
       {c.geo.length ? (
         <>
+          <p className="d-tag">✓ Verified · shared by the creator from YouTube Analytics</p>
           {c.geo.map(([g, v]) => <Bar key={g} label={g} value={v} text={`${v}%`} />)}
           <div className="d-gap" />
           {c.age.map((v, i) => <Bar key={AGE_BANDS[i]} label={AGE_BANDS[i]} value={v} text={`${v}%`} />)}
           {c.male !== null && <Bar label="Male / female" value={c.male} text={`${c.male} / ${100 - c.male}`} />}
         </>
       ) : (
-        <p className="d-hint">Audience demographics appear once {c.name} connects their channel — platforms only share them with the creator.</p>
+        <p className="d-hint">Audience demographics appear once {c.name} claims their channel on Scout — YouTube only shares them with the channel owner.</p>
       )}
 
       {c.trend.length > 1 && (

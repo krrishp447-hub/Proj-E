@@ -1,0 +1,41 @@
+/* Pricing page: the site's ink / paper / signal palette; solid colours, one featured plan in signal. */
+.pr { max-width: 1180px; }
+.pr-controls { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin: 8px 0 20px; }
+.pr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.pr-grid.is-two { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); max-width: 820px; }
+.pr-card { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: 16px; background: var(--paper); color: var(--ink); }
+.pr-card.is-featured { background: var(--signal); }
+.pr-card.is-featured .acct-btn.on-ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.pr-card h3 { font: 400 32px/1 var(--disp); text-transform: uppercase; }
+.pr-card > p { line-height: 1.5; }
+.pr-flag { position: absolute; top: 18px; right: 18px; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; background: var(--ink); color: var(--paper); padding: 4px 10px; border-radius: 999px; }
+.pr-price { font: 400 clamp(44px, 5vw, 60px)/1 var(--disp); margin-top: 4px; }
+.pr-price small { font: 600 15px var(--body); margin-left: 4px; }
+.pr-billing { font: 600 12px var(--mono); opacity: .65; margin-top: -4px; }
+.pr-blurb { min-height: 3em; }
+.pr-feats { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; font-size: 14.5px; }
+.pr-feats li { padding-left: 22px; position: relative; line-height: 1.4; }
+.pr-feats li::before { content: "✓"; position: absolute; left: 0; font-weight: 800; }
+.pr-soon { margin-left: 8px; font: 700 10px var(--mono); text-transform: uppercase; padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor; opacity: .7; vertical-align: 1px; }
+
+.pr-section { margin-top: clamp(56px, 8vw, 96px); }
+.pr-h2 { font: 400 clamp(34px, 5vw, 56px)/1 var(--disp); text-transform: uppercase; color: var(--signal); margin-bottom: 20px; }
+.pr-principles .pr-card h3 { font-size: 26px; }
+
+.pr-calc { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.pr-calc-in, .pr-calc-out { padding: 24px; border-radius: 16px; background: var(--paper); color: var(--ink); display: grid; gap: 18px; align-content: start; }
+.pr-calc-out { background: var(--signal); gap: 4px; }
+.pr-calc-out b { font: 400 clamp(40px, 5vw, 60px)/1.05 var(--disp); }
+.pr-calc-out .acct-help { margin-top: 12px; opacity: .85; }
+.pr-range { display: grid; gap: 8px; font-weight: 600; }
+.pr-range span { display: flex; justify-content: space-between; }
+.pr-range b { font-family: var(--mono); }
+.pr-range input { width: 100%; accent-color: var(--ink); }
+
+.pr-faq { display: grid; gap: 10px; max-width: 820px; }
+.pr-faq details { background: var(--paper); color: var(--ink); border-radius: 14px; padding: 16px 20px; }
+.pr-faq summary { font-weight: 700; cursor: pointer; }
+.pr-faq details p { margin-top: 10px; line-height: 1.55; }
+.pr .acct-help a { color: var(--signal); }
+.pr-principles .pr-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.pr-faq + .acct-help { margin-top: 16px; }

@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { syncAudiences } from "@/server/accounts";
 import { rejectUnlessCron } from "@/server/cron";
 import { runIngest } from "@/server/ingest";
 
@@ -11,8 +12,9 @@ export async function GET(request: Request) {
   if (rejected) return rejected;
   try {
     const result = await runIngest();
+    const audiences = await syncAudiences(); // connected creators' private audience (YouTube Analytics quota, not Data API)
     revalidateTag("creators", "max"); // views pick up the fresh numbers
-    return Response.json(result);
+    return Response.json({ ...result, audiences });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Ingest failed" }, { status: 500 });
   }

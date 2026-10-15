@@ -153,3 +153,59 @@ create table if not exists discovery_queries (
   added      int not null default 0,
   done       boolean not null default false
 );
+
+-- Accounts. Google sign-in for both sides; role decides the onboarding.
+create table if not exists users (
+  id           uuid primary key default gen_random_uuid(),
+  google_sub   text not null unique,
+  email        text not null,
+  name         text not null default '',
+  role         text not null check (role in ('creator', 'brand')),
+  created_at   timestamptz not null default now(),
+  onboarded_at timestamptz
+);
+
+-- A creator's connected YouTube channel: refresh token (AES-GCM sealed) and the private audience it unlocks.
+-- No FK to creators: a newly connected channel gets its creators row from the ingest a moment later.
+create table if not exists channel_connections (
+  channel_id    text primary key,
+  user_id       uuid not null unique references users (id) on delete cascade,
+  refresh_token text not null,
+  age           int[] not null default '{}',
+  male          int,
+  geo           jsonb not null default '[]',
+  avg_view_pct  real,
+  connected_at  timestamptz not null default now(),
+  synced_at     timestamptz
+);
+
+create table if not exists creator_profiles (
+  user_id         uuid primary key references users (id) on delete cascade,
+  focus           text[] not null default '{}',
+  languages       text[] not null default '{}',
+  rate_video      int,
+  rate_short      int,
+  open_to_collabs boolean not null default true,
+  updated_at      timestamptz not null default now()
+);
+
+create table if not exists brand_profiles (
+  user_id    uuid primary key references users (id) on delete cascade,
+  company    text not null,
+  kind       text not null check (kind in ('brand', 'agency')),
+  website    text,
+  category   text,
+  brief      text,
+  budget     text,
+  tracked    text[] not null default '{}', -- brand names / hashtags for share of voice
+  updated_at timestamptz not null default now()
+);
+
+-- Real deals between brand accounts and creators. brands.id = the brand user's id (text); offers keep the thread.
+alter table deals add column if not exists initiated_by text not null default 'brand' check (initiated_by in ('brand', 'creator'));
+alter table deals add column if not exists due date;
+alter table deals add column if not exists checklist jsonb not null default '[]'; -- [{ "text": "...", "done": false }]
+alter table deals add column if not exists updated_at timestamptz not null default now();
+create index if not exists deals_brand_idx on deals (brand_id, updated_at desc);
+create index if not exists deals_channel_idx on deals (channel_id, updated_at desc);
+create index if not exists offers_deal_idx on offers (deal_id, created_at);

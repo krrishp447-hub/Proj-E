@@ -38,7 +38,7 @@ export type ChannelMetrics = {
   isBrand: boolean;
 };
 
-const COUNTRY: Record<string, string> = { IN: "India", US: "US", GB: "UK", AE: "UAE" };
+export const COUNTRY: Record<string, string> = { IN: "India", US: "US", GB: "UK", AE: "UAE" };
 const n = (s?: string) => Number(s ?? 0) || 0;
 const median = (xs: number[]) => {
   if (!xs.length) return 0;

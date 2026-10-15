@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Creator } from "../src/lib/scout/data.ts";
-import { describe, overlap, parseBrief, score } from "../src/lib/scout/engine.ts";
+import { audienceVerified, describe, overlap, parseBrief, score } from "../src/lib/scout/engine.ts";
 
 // Test fixtures: a strong Indian tech/earbuds YouTuber and an off-niche food creator.
 const base: Creator = {
-  id: 0, name: "Fixture Tech", handle: "@fixturetech", platform: "YouTube", country: "India", niche: "Tech",
+  id: 0, channelId: "UC_fixture_tech", name: "Fixture Tech", handle: "@fixturetech", platform: "YouTube", country: "India", niche: "Tech",
   tags: ["tws", "earbuds", "audio", "reviews"], subs: 312_000, eng: 5.8, views: 148_000, growth: 7.2, consistency: 92,
   geo: [["India", 74], ["US", 9]], age: [31, 47, 15, 7], male: 68, trend: [], collabs: 4, language: "English",
   auth: 88, suspicious: 5, campaigns: 14, repeat: 72, delivery: 1.2, proven: true, verifiedDays: 1, source: "youtube",
@@ -103,4 +103,13 @@ test("'strong engagement' bar is the niche median, not a fixed 6.5%", async () =
   const b = contextualize(parseBrief("tech creators with strong engagement"), pool);
   assert.equal(b.engBar, 4);
   assert.ok(score({ ...CREATORS[0], eng: 4.5 }, b).signals.some((s) => s.label.startsWith("High engagement") && s.points > 0));
+});
+
+test("overlap: verified audiences that differ score lower than the niche+country fallback", () => {
+  const unverified = { ...CREATORS[0], geo: [] as [string, number][], age: [] as number[], male: null };
+  assert.equal(audienceVerified(unverified), false);
+  assert.equal(audienceVerified(CREATORS[0]), true);
+  const teen = { ...CREATORS[0], age: [70, 25, 5, 0], male: 20 };
+  const older = { ...CREATORS[0], id: 9, age: [0, 10, 40, 50], male: 85 };
+  assert.ok(overlap(teen, older) < overlap(unverified, { ...unverified, id: 9 }));
 });

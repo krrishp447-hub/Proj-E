@@ -5,7 +5,7 @@ const navigate = [
   { href: "#manifesto", label: "Platform" },
   { href: "#feature", label: "Niches" },
   { href: "#listing", label: "Results" },
-  { label: "Pricing" }, // no pricing page yet
+  { href: "/pricing", label: "Pricing" },
 ];
 
 const maybeLink = (l: { href?: string; label: string }) => (l.href ? <a href={l.href}>{l.label}</a> : <span>{l.label}</span>);

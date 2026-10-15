@@ -23,6 +23,8 @@ export function SiteNav() {
         </div>
         <div className="wm">SCOUT</div>
         <div className="r">
+          <a href="/pricing">PRICING</a>
+          <a href="/login">LOG IN</a>
           <a href="#footer">CONTACT</a>
           <button className="menu" type="button" aria-haspopup="dialog" aria-label="Open menu" onClick={openMenu}>
             •••
@@ -43,6 +45,8 @@ export function SiteNav() {
             <a key={l.href} href={l.href} onClick={closeMenu}>{l.label}</a>
           ))}
           <a href={site.demoHref}>Live demo ↗</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/login">Log in</a>
           <a href="#footer" onClick={closeMenu}>Contact</a>
         </nav>
         <div className="mfoot">
