@@ -35,7 +35,7 @@ export function unseal(sealed: string): string | null {
 
 export const SESSION_COOKIE = "scout_session";
 const SESSION_DAYS = 30;
-const sign = (v: string) => b64(createHmac("sha256", secret()).update(v).digest());
+export const sign = (v: string) => b64(createHmac("sha256", secret()).update(v).digest());
 
 /**
  * Cookie value: userId.sessionVersion.expiresMs.signature. The version must match users.session_version, so bumping it

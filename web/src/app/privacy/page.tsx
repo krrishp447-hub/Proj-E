@@ -25,6 +25,15 @@ export default function PrivacyPage() {
         private data obtained through that connection.
       </p>
 
+      <p>
+        If a creator wrote a business email in their own channel or video description, Scout may show it to signed-in brand
+        accounts, one channel at a time and labelled as coming from the public description. It never appears in public
+        search results or exports, and it is not shown once the creator manages contact on Scout. When a brand sends an
+        offer to a channel that isn&apos;t on Scout, we may email that address once to say an offer is waiting. Every email
+        has an unsubscribe link, and creators can ask us to stop showing their email on the{" "}
+        <a href="/contact-removal">Remove my contact</a> page.
+      </p>
+
       <h2>YouTube API Services</h2>
       <p>
         Scout uses YouTube API Services. By using features that display YouTube data you agree to the{" "}

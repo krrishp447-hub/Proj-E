@@ -1,7 +1,9 @@
 import { NICHES, type Creator, type Platform } from "./data.ts";
-import { contentWords, idfOf, stem, topicMatch } from "./topics.ts";
+import { canon, contentWords, editDistance, idfOf, stem, topicMatch } from "./topics.ts";
 
 export type Brief = {
+  text: string; // as typed (typo fixes re-parse it)
+  corrected?: [string, string][]; // "did you mean": [typed, read as] (set by contextualize)
   niches: string[]; // any of these (empty = any niche)
   excludeNiches: string[];
   platform?: Platform;
@@ -18,6 +20,7 @@ export type Brief = {
   minEng?: number; // explicit "engagement above 5%"
   wantEng?: boolean;
   wantGrowth?: boolean;
+  safeOnly?: boolean; // "brand safe", "family friendly": flagged channels don't fit
   likeName?: string; // "creators like X"
   // set from the data by contextualize():
   engBar?: number; // "strong engagement" = the niche median
@@ -31,7 +34,7 @@ export const KEYWORDS = ["tws", "earbud", "audio", "anc", "headphone", "smartpho
 export const SYNONYMS: Record<string, string[]> = {
   // Matched at word starts ("earbud" finds "earbuds"), so avoid short stems: "car" would hit "career", "mom" "moment",
   // "rap" "rapid", "art" "article". Words shared by two genres go to neither, or to the one they nearly always mean.
-  Tech: ["gadget", "earbud", "tws", "smartphone", "phone", "mobile", "audio", "headphone", "anc", "speaker", "laptop", "camera", "unboxing", "android", "iphone", "processor", "technology", "technical"],
+  Tech: ["gadget", "earbud", "tws", "smartphone", "phone", "mobile", "audio", "headphone", "earphone", "anc", "speaker", "laptop", "camera", "smartwatch", "unboxing", "android", "iphone", "processor", "technology", "technical"],
   Gaming: ["gamer", "esports", "bgmi", "pubg", "free fire", "freefire", "valorant", "minecraft", "gta", "gameplay", "walkthrough"],
   // music-release phrases ("Official Audio", "Lyrical Video") are folded into "music" by classify()
   Music: ["song", "lyric", "rapper", "rap song", "hip hop", "hiphop", "album", "singer", "singing", "remix", "music video", "cover song", "beatbox", "ghazal", "qawwali"],
@@ -43,7 +46,7 @@ export const SYNONYMS: Record<string, string[]> = {
   Beauty: ["makeup", "skincare", "skin care", "hair care", "lipstick", "grwm", "nail art"],
   Fashion: ["style", "outfit", "haul", "ethnic wear", "lookbook", "saree", "kurti"],
   Travel: ["trip", "tourism", "travel vlog", "itinerary", "trek", "travell"],
-  Automotive: ["automobile", "car review", "cars", "bike review", "motorcycle", "superbike", "scooter", "test drive", "royal enfield", "sports bike", "sport bike"],
+  Automotive: ["automobile", "car review", "cars", "bike review", "motorcycle", "superbike", "scooter", "test drive", "royal enfield", "sports bike", "sport bike", "bike ride", "motovlog", "moto vlog"],
   // children's content (rhymes, cartoons) is Kids; content *for parents* is Parenting
   Kids: ["nursery rhyme", "rhymes", "kids song", "cartoon", "for kids", "children", "baby song", "bedtime stor", "moral stor", "kids stor", "toys"],
   Parenting: ["parenting", "mommy", "newborn", "toddler", "pregnancy", "baby", "baby care", "mom vlog", "mom life", "motherhood", "breastfeed"],
@@ -71,14 +74,73 @@ const FILTER_WORDS = new Set(["youtube", "insta", "instagram", "reel", "india", 
   "mid", "celebrity", "south", "north", "find", "looking", "want", "need", "show", "list", "brand", "campaign", "rate", "avg", "average", "above",
   "below", "least", "less", "per", "hinglish", "bangla", ...NICHES.map((n) => stem(n.toLowerCase()))]);
 
+// Briefs in Indian scripts and Hinglish: common words → the English words the rest of the parser knows. Other words
+// stay as they are (Indian-script words still match titles in that script). " " drops a filler word.
+const WORDS = new Map(Object.entries({
+  // Hindi / Marathi (Devanagari)
+  टेक: "tech", टेक्नोलॉजी: "technology", रिव्यू: "review", रिव्यु: "review", अनबॉक्सिंग: "unboxing", मोबाइल: "mobile", फोन: "phone", फ़ोन: "phone",
+  लैपटॉप: "laptop", कैमरा: "camera", ईयरबड्स: "earbuds", गेमिंग: "gaming", गेम: "game", खाना: "food", रेसिपी: "recipe", कुकिंग: "cooking",
+  क्रिकेट: "cricket", खेल: "sports", भजन: "bhajan", भक्ति: "bhakti", कॉमेडी: "comedy", फिटनेस: "fitness", जिम: "gym", योग: "yoga",
+  पैसा: "money", पैसे: "money", बचत: "money", निवेश: "invest", शेयर: "share", बाजार: "market", बाज़ार: "market", पढ़ाई: "study", ब्यूटी: "beauty",
+  मेकअप: "makeup", स्किनकेयर: "skincare", ट्यूटोरियल: "tutorial", फैशन: "fashion", यात्रा: "travel", ट्रैवल: "travel", बाइक: "bike",
+  गाना: "song", गाने: "songs", गीत: "songs", संगीत: "music", म्यूजिक: "music", समाचार: "news", न्यूज़: "news", न्यूज: "news", कहानी: "kids stories",
+  कहानियां: "kids stories", बच्चों: "kids", बच्चे: "kids", सस्ता: "budget", सस्ते: "budget", सस्ती: "budget", हिंदी: "hindi", हिन्दी: "hindi",
+  मराठी: "marathi", पंजाबी: "punjabi", जेवण: "food", स्वयंपाक: "cooking", पाककृती: "recipe", गाणी: "songs", बातम्या: "news", प्रवास: "travel",
+  क्रिएटर: "creator", क्रिएटर्स: "creators", यूट्यूबर: "youtuber", और: "and", में: "in", के: " ", की: " ", का: " ", लिए: " ", वाले: " ",
+  // Tamil
+  விமர்சனம்: "review", சமையல்: "cooking", உணவு: "food", பாடல்: "songs", பாடல்கள்: "songs", குழந்தை: "kids", குழந்தைகள்: "kids",
+  தொழில்நுட்பம்: "technology", கேமிங்: "gaming", பயணம்: "travel", அழகு: "beauty", உடற்பயிற்சி: "workout", கிரிக்கெட்: "cricket",
+  செய்தி: "news", செய்திகள்: "news", பக்தி: "bhakti", தமிழ்: "tamil", மொபைல்: "mobile",
+  // Telugu
+  రివ్యూ: "review", వంట: "cooking", వంటలు: "recipe", ఆహారం: "food", పాట: "songs", పాటలు: "songs", పిల్లల: "kids", పిల్లలు: "kids", టెక్: "tech",
+  గేమింగ్: "gaming", ప్రయాణం: "travel", అందం: "beauty", వార్తలు: "news", భక్తి: "bhakti", తెలుగు: "telugu", మొబైల్: "mobile", క్రికెట్: "cricket",
+  రుచికరమైన: " ",
+  // Bengali
+  রান্না: "cooking", খাবার: "food", গান: "songs", শিশু: "kids", বাচ্চাদের: "kids", খবর: "news", ভ্রমণ: "travel", রূপচর্চা: "beauty",
+  প্রযুক্তি: "technology", রিভিউ: "review", বাংলা: "bangla", ক্রিকেট: "cricket", ভক্তি: "bhakti",
+  // Kannada, Malayalam, Gujarati, Punjabi
+  ಅಡುಗೆ: "cooking", ಹಾಡು: "songs", ಹಾಡುಗಳು: "songs", ಸುದ್ದಿ: "news", ಪ್ರವಾಸ: "travel", ಕನ್ನಡ: "kannada", ರಿವ್ಯೂ: "review",
+  പാചകം: "cooking", പാട്ട്: "songs", പാട്ടുകൾ: "songs", വാർത്ത: "news", യാത്ര: "travel", മലയാളം: "malayalam", റിവ്യൂ: "review",
+  રસોઈ: "cooking", ગીતો: "songs", સમાચાર: "news", ગુજરાતી: "gujarati", ਗੀਤ: "songs", ਪੰਜਾਬੀ: "punjabi",
+  // Hinglish intents
+  paisa: "money", paise: "money", bachat: "money", bachaye: "save", bachana: "save", kamai: "earn money", kamaye: "earn money",
+  gaana: "song", gaane: "songs", gana: "song", gane: "songs", geet: "songs", khane: "food", rasoi: "kitchen", padhai: "study",
+  kasrat: "workout", vyayam: "workout", bachon: "kids", bacchon: "kids", kahani: "kids stories", kahaniyan: "kids stories",
+  sunao: " ", dikhao: " ", batao: " ", chahiye: " ", accha: " ", achha: " ", sabse: " ", wale: " ", vale: " ",
+}));
+
+// Words a typo can be corrected to without data: niche names, their single-word synonyms, languages.
+const STATIC_VOCAB = [...NICHES, ...LANGUAGES].map((w) => w.toLowerCase()).concat(Object.values(SYNONYMS).flat().filter((w) => !w.includes(" ")));
+
+/** Brief words no creator uses, within 1–2 edits of a word they do ("ernbuds" → earbud, "fitnes" → fitness). */
+function typoFixes(text: string, idf: Map<string, number>, n: number): [string, string][] {
+  const common = Math.log(1 + n / 3); // only correct to words at least 3 creators use
+  const fixes: [string, string][] = [];
+  for (const w of new Set(text.toLowerCase().match(/[a-z]{5,}/g) ?? [])) {
+    const [term] = contentWords(w);
+    if (!term || WORDS.has(w) || FILTER_WORDS.has(term) || idf.has(term) || STATIC_VOCAB.includes(term)) continue;
+    const max = w.length >= 6 ? 2 : 1;
+    let best: [string, number, number] | undefined; // word, distance, idf (static words count as most common)
+    const consider = (v: string, weight: number) => {
+      const d = Math.min(editDistance(term, v, max), editDistance(w, v, max)); // stemmed or as typed ("fitnes" stems to "fitne")
+      if (d <= max && (!best || d < best[1] || (d === best[1] && weight < best[2]))) best = [v, d, weight];
+    };
+    for (const v of STATIC_VOCAB) consider(v, 0);
+    for (const [v, weight] of idf) if (weight <= common && v.length >= 4) consider(v, weight);
+    if (best) fixes.push([w, best[0]]);
+  }
+  return fixes;
+}
+
 const amount = (n: string, unit = "") => Number(n) * (unit === "m" ? 1e6 : unit === "k" ? 1e3 : 1);
 const nicheRe = (n: string) => new RegExp(`\\b(${[n.toLowerCase(), ...(SYNONYMS[n] ?? [])].join("|")})`);
 const langOf = (w: string) => LANGUAGES.find((l) => [l.toLowerCase(), ...(LANG_ALIASES[l] ?? [])].includes(w));
 
 /** Plain-English brief → structured filters. Transparent rules, not ML; every step shows up in describe(). */
-export function parseBrief(text: string): Brief {
+export function parseBrief(typed: string): Brief {
+  const text = typed.normalize("NFC").replace(/[\p{L}\p{M}]+/gu, (w) => WORDS.get(w.toLowerCase()) ?? w);
   let t = ` ${text.toLowerCase()} `;
-  const b: Brief = { niches: [], excludeNiches: [], languages: [], excludeLanguages: [], terms: [], excludeTerms: [] };
+  const b: Brief = { text: typed, niches: [], excludeNiches: [], languages: [], excludeLanguages: [], terms: [], excludeTerms: [] };
   const take = (re: RegExp, f: (m: RegExpMatchArray) => void) => { const m = t.match(re); if (m) { f(m); t = t.replace(m[0], " "); } };
 
   // 1. Numbers that aren't subscriber counts come out first, so "100k views" isn't read as 100K subs.
@@ -92,7 +154,9 @@ export function parseBrief(text: string): Brief {
   // 3. Exclusions: "not gaming", "no hindi", "except finance", "without pranks"
   for (const m of t.matchAll(/\b(?:not|no|except|excluding|without)\s+([a-z][\w-]*(?:\s+care)?)/g)) {
     const w = m[1];
-    const niche = NICHES.find((n) => nicheRe(n).test(` ${w}`));
+    // "not gaming" (a niche's own name) drops the niche; "not bgmi" (one of its keywords) drops that topic only:
+    // excluding the whole Gaming niche for "gaming creators but not bgmi" returned everything except gamers
+    const niche = NICHES.find((n) => n.toLowerCase() === w);
     const lang = langOf(w);
     if (niche) b.excludeNiches.push(niche);
     else if (lang) b.excludeLanguages.push(lang);
@@ -130,6 +194,7 @@ export function parseBrief(text: string): Brief {
 
   if (/strong engagement|high engagement|good engagement|engaged/.test(t)) b.wantEng = true;
   if (/growing|fast.?grow|rising|up.?and.?coming/.test(t)) b.wantGrowth = true;
+  take(/\b(?:brand[- ]?safe|family[- ]?friendly|clean content|kid[- ]?safe)\b/, () => (b.safeOnly = true));
 
   // 7. Everything else that carries meaning is a content term: "msi", "bgmi", "skincare", "beginner"
   b.terms = [...new Set(contentWords(t.replace(/\d+(?:\.\d+)?\s*[km%]?/g, " ")))].filter((w) => !FILTER_WORDS.has(w) && !b.excludeTerms.includes(w));
@@ -150,7 +215,14 @@ export function contextualize(b: Brief, creators: Creator[]): Brief {
   // a platform with no tracked creators would gate out everyone: say so and search what we have instead
   if (b.platform && creators.length && !creators.some((c) => c.platform === b.platform)) { out.platformMissing = b.platform; out.platform = undefined; }
   if (!idfCache.has(creators)) idfCache.set(creators, idfOf(creators.map(topicsOf)));
-  out.idf = idfCache.get(creators);
+  out.idf = idfCache.get(creators)!;
+  if (!b.corrected && creators.length) {
+    const fixes = typoFixes(b.text, out.idf, creators.length).filter(([w]) => !b.likeName?.toLowerCase().includes(w)); // names aren't typos
+    if (fixes.length) {
+      const fixed = fixes.reduce((t, [w, to]) => t.replace(new RegExp(`\\b${w}\\b`, "gi"), to), b.text);
+      return contextualize({ ...parseBrief(fixed), text: b.text, corrected: fixes }, creators);
+    }
+  }
   if (b.likeName) {
     const q = b.likeName.toLowerCase();
     out.like = creators.filter((c) => c.name.toLowerCase().includes(q) || q.includes(c.name.toLowerCase())).sort((x, y) => y.subs - x.subs)[0];
@@ -164,15 +236,21 @@ export function contextualize(b: Brief, creators: Creator[]): Brief {
 }
 
 /** A creator's content vocabulary: topics from their titles plus their sub-niche tags, in the brief's stemmed form. */
-const topicsOf = (c: Creator) => [...(c.topics ?? []), ...c.tags.map((t) => stem(t.toLowerCase()))];
+const topicsOf = (c: Creator) => [...(c.topics ?? []), ...c.tags.map((t) => stem(t.toLowerCase()))].map(canon);
 
 /** Default audience floor when a brief doesn't specify size, and the view count at which engagement rates are trusted. */
 export const MIN_AUDIENCE = 10_000;
 export const RELIABLE_VIEWS = 5_000;
 
+/** Nothing in the brief was recognised: no niche, language, size, creator, or topic any creator uses. */
+export const understoodNothing = (b: Brief) =>
+  !b.niches.length && !b.languages.length && !b.like && !b.country && b.minSubs === undefined && !b.minViews && !b.minEng && !b.excludeNiches.length &&
+  !b.excludeLanguages.length && !b.terms.some((t) => b.idf?.has(t));
+
 /** Human-readable chips for what the parser understood. */
 export function describe(b: Brief): string[] {
   const out: string[] = [];
+  for (const [w, to] of b.corrected ?? []) out.push(`“${w}” → ${to}`);
   if (b.like) out.push(`like ${b.like.name}`);
   else if (b.likeName) out.push(`like “${b.likeName}” (not found)`);
   if (b.niches.length) out.push(b.niches.join(" or "));
@@ -189,6 +267,7 @@ export function describe(b: Brief): string[] {
   if (b.minEng) out.push(`engagement ≥ ${b.minEng}%`);
   else if (b.wantEng) out.push(b.engBar ? `engagement ≥ ${b.engBar}%` : "high engagement");
   if (b.wantGrowth) out.push("fast-growing");
+  if (b.safeOnly) out.push("brand-safe only");
   for (const x of [...b.excludeNiches, ...b.excludeLanguages, ...b.excludeTerms]) out.push(`not ${x}`);
   return out;
 }
@@ -242,7 +321,8 @@ export function score(c: Creator, b: Brief): Match {
   if (b.terms.length) {
     // what the creator actually publishes, rare words weighted up ("msi" counts more than "review")
     const { score: rel, matched } = topicMatch(b.terms, vocab, b.idf ?? new Map());
-    add(matched.length ? `Topics · ${matched.slice(0, 3).join(", ")}` : "No topic match", rel * 20, 20);
+    // up to 30: when a brief names specifics ("MSI laptop"), what the creator actually makes outranks general quality
+    add(matched.length ? `Topics · ${matched.slice(0, 3).join(", ")}` : "No topic match", rel * 30, 30);
   }
   if (b.like) {
     if (b.like.channelId === c.channelId) { add("The creator you named", 0, 0); fits = false; }
@@ -263,6 +343,22 @@ export function score(c: Creator, b: Brief): Match {
   add(`Reach · ${fmt(c.views)} avg views`, Math.max(0, Math.min(1, (Math.log10(Math.max(c.views, 1)) - 3) / (Math.log10(500_000) - 3))) * 8, 8);
   add(`Authenticity ${c.auth}`, ((c.auth - 60) / 40) * 8, 8);
   add(`Track record · ${c.repeat}% repeat`, (c.repeat / 100) * 6 + (c.proven ? 4 : 0), 10);
+  // Brand signals from recent uploads (signals.ts). Unknown (not ingested yet) earns and costs nothing.
+  if (c.lastUploadDays != null) {
+    const d = c.lastUploadDays;
+    if (d > 90) add(`Inactive · last upload ${d}d ago`, 0, 6); // no credit, no penalty: an exact topic match still beats an active non-match
+    else add(`Active · uploaded ${d === 0 ? "today" : `${d}d ago`}`, d <= 14 ? 6 : d <= 30 ? 4 : 2, 6);
+  }
+  if (c.sponsoredPct != null) {
+    const p = c.sponsoredPct;
+    // some sponsorships = brands already trust them; most uploads sponsored = audiences tune ads out
+    if (p > 50) add(`Ad-heavy · ${p}% sponsored`, -4, 3);
+    else add(p > 0 ? `Brand-ready · ${p}% sponsored` : "No recent sponsorships", p > 0 ? 3 : 0, 3);
+  }
+  if (c.safety.length) {
+    add(`Brand safety · ${c.safety.join(", ")} in titles`, -10, 0);
+    if (b.safeOnly) fits = false;
+  }
   if (b.wantEng && !b.minEng) { const bar = b.engBar ?? 6.5; add(`High engagement (≥ ${bar}%)`, c.eng >= bar ? 6 : 0, 6); }
   if (b.wantGrowth) add("Fast-growing", c.growth >= 10 ? 6 : 0, 6);
 

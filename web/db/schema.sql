@@ -222,6 +222,42 @@ alter table creators add column if not exists niche_conf real not null default 0
 alter table creators add column if not exists created_at timestamptz not null default now();
 create index if not exists creators_created_idx on creators (created_at, channel_id);
 
+-- Brand signals from recent uploads (lib/scout/signals.ts), set at ingest: recency, sponsorship load, brand safety.
+alter table creators add column if not exists last_upload timestamptz;
+alter table creators add column if not exists sponsored_pct smallint; -- null = unknown (no descriptions stored)
+alter table creators add column if not exists safety text[] not null default '{}';
+
+-- Contact (server/contact.ts): the business email a creator wrote in their own channel/video description, and the
+-- DPDP guard rails around it: per-brand daily reveals, opt-outs ("remove my contact"), invites, unsubscribes.
+alter table creators add column if not exists public_email text;
+create table if not exists contact_reveals (
+  brand_id    uuid not null,
+  channel_id  text not null,
+  revealed_on date not null default current_date,
+  primary key (brand_id, channel_id, revealed_on)
+);
+create table if not exists contact_optouts (
+  channel_id   text primary key,
+  requested_at timestamptz not null default now()
+);
+create table if not exists contact_invites (
+  channel_id text not null,
+  brand_id   text not null,
+  sent_at    timestamptz not null default now(),
+  primary key (channel_id, brand_id)
+);
+create table if not exists email_unsubscribes (
+  email text primary key,
+  at    timestamptz not null default now()
+);
+
+-- Briefs the rules couldn't read (no niche, language, size or known topic): what to teach the parser next.
+create table if not exists unread_searches (
+  query   text primary key, -- lowercased, ≤200 chars
+  n       int not null default 1,
+  last_at timestamptz not null default now()
+);
+
 -- One row per audit of 100 newly added creators: segregation + calculation checks (lib/scout/audit.ts).
 create table if not exists quality_audits (
   id        bigint generated always as identity primary key,

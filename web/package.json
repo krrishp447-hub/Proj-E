@@ -12,7 +12,8 @@
     "db:migrate": "node --no-warnings --env-file-if-exists=.env.local scripts/db-migrate.ts",
     "discover": "node --no-warnings --env-file-if-exists=.env.local scripts/discover.ts",
     "doctor": "node --no-warnings --env-file-if-exists=.env.local scripts/doctor.ts",
-    "quality": "node --no-warnings --env-file-if-exists=.env.local scripts/quality.ts"
+    "quality": "node --no-warnings --env-file-if-exists=.env.local scripts/quality.ts",
+    "benchmark": "node --no-warnings --env-file-if-exists=.env.local scripts/benchmark.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -1,14 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Creator } from "../src/lib/scout/data.ts";
-import { audienceVerified, contextualize, describe, overlap, parseBrief, score } from "../src/lib/scout/engine.ts";
+import { audienceVerified, contextualize, describe, overlap, parseBrief, score, understoodNothing } from "../src/lib/scout/engine.ts";
 
 // Test fixtures: a strong Indian tech/earbuds YouTuber and an off-niche food creator.
 const base: Creator = {
   id: 0, channelId: "UC_fixture_tech", name: "Fixture Tech", secondaryNiche: null, nicheConfidence: 0.9, handle: "@fixturetech", platform: "YouTube", country: "India", niche: "Tech",
   tags: ["tws", "earbuds", "audio", "reviews"], topics: ["earbud", "tws", "anc", "review", "boat"], subs: 312_000, eng: 5.8, views: 148_000, growth: 7.2, consistency: 92,
   geo: [["India", 74], ["US", 9]], age: [31, 47, 15, 7], male: 68, trend: [], collabs: 4, language: "English",
-  auth: 88, suspicious: 5, campaigns: 14, repeat: 72, delivery: 1.2, proven: true, verifiedDays: 1, source: "youtube",
+  auth: 88, suspicious: 5, campaigns: 14, repeat: 72, delivery: 1.2, proven: true, verifiedDays: 1, lastUploadDays: 3, sponsoredPct: 20, safety: [], claimed: false, hasEmail: false, source: "youtube",
 };
 const CREATORS: Creator[] = [
   base,
@@ -160,4 +160,48 @@ test("secondary niche: a Tech channel that also makes Gaming fits a gaming brief
   assert.ok(g.fits && h.fits && !t.fits);
   assert.ok(g.score > h.score);
   assert.ok(h.signals.some((s) => s.label.startsWith("Also makes Gaming")));
+});
+
+test("excluding a niche keyword drops that topic, not the whole niche ('gaming but not bgmi' stays Gaming)", () => {
+  const b = parseBrief("gaming creators but not bgmi");
+  assert.deepEqual([b.niches, b.excludeNiches, b.excludeTerms], [["Gaming"], [], ["bgmi"]]);
+  assert.deepEqual(parseBrief("creators, not gaming").excludeNiches, ["Gaming"]);
+});
+
+test("phrasing: Hindi script, everyday synonyms and typos read like the plain-English brief", () => {
+  const hi = parseBrief("टेक रिव्यू हिंदी");
+  assert.deepEqual([hi.niches, hi.languages, hi.terms], [["Tech"], ["Hindi"], ["review"]]);
+  assert.deepEqual(parseBrief("affordable mobile").terms, ["budget", "phone"]);
+  const pool = [0, 1, 2, 3].map((i) => ({ ...base, id: i, channelId: `UC_${i}` }));
+  const typo = contextualize(parseBrief("ernbuds reveiw"), pool);
+  assert.deepEqual(typo.terms, ["earbud", "review"]);
+  assert.ok(describe(typo).includes("“ernbuds” → earbud"));
+  assert.deepEqual(contextualize(parseBrief("fitnes creators"), pool).niches, ["Fitness"]);
+  assert.equal(contextualize(parseBrief("creators like Fixtur Tech"), pool).corrected, undefined); // names aren't typos
+});
+
+test("brand signals: active, lightly sponsored and clean channels rank up; 'brand safe' briefs drop flagged ones", () => {
+  const b = parseBrief("tech creators");
+  const now = score(base, b).score;
+  assert.ok(score({ ...base, lastUploadDays: 200 }, b).score < now); // inactive
+  assert.ok(score({ ...base, sponsoredPct: 80 }, b).score < now); // ad-heavy
+  const flagged = { ...base, safety: ["profanity"] };
+  assert.ok(score(flagged, b).fits && score(flagged, b).score < now);
+  const safe = parseBrief("brand safe tech creators");
+  assert.equal(safe.safeOnly, true);
+  assert.deepEqual(safe.terms, []);
+  assert.equal(score(flagged, safe).fits, false);
+  assert.equal(score({ ...base, lastUploadDays: null, sponsoredPct: null }, b).signals.some((s) => /Active|sponsor/.test(s.label)), false); // unknown = neutral
+});
+
+test("Indian scripts and Hinglish map to known words; a brief with nothing recognisable is flagged", () => {
+  const pool = [0, 1, 2, 3].map((i) => ({ ...base, id: i, channelId: `UC_${i}` }));
+  assert.deepEqual(parseBrief("குழந்தை பாடல்கள்").niches, ["Kids"]);
+  assert.deepEqual(parseBrief("రుచికరమైన వంటలు").niches, ["Food"]);
+  assert.deepEqual(parseBrief("paisa kaise bachaye").niches, ["Finance"]);
+  assert.equal(contextualize(parseBrief("paisa kaise bachaye"), pool).corrected, undefined); // mapped words are not typos
+  assert.deepEqual(parseBrief("gaane sunao").niches, ["Music"]);
+  assert.deepEqual(parseBrief("রান্না").niches, ["Food"]);
+  assert.equal(understoodNothing(contextualize(parseBrief("zxqv plorb"), pool)), true);
+  assert.equal(understoodNothing(contextualize(parseBrief("earbud"), pool)), false);
 });

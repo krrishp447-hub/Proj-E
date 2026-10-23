@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { Creator, Platform } from "@/lib/scout/data";
-import { contextualize, describe, parseBrief, score } from "@/lib/scout/engine";
+import type { Creator } from "@/lib/scout/data";
+import type { Match } from "@/lib/scout/engine";
+import { searchAll, type SearchResult } from "@/lib/scout/search";
 import { CampaignsView } from "./CampaignsView";
-import { ComparePanel } from "./ComparePanel";
+import { CompareDialog, ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
 import { DetailPanel } from "./DetailPanel";
 import { ResultsTable, type SortKey } from "./ResultsTable";
@@ -17,53 +18,75 @@ const EXAMPLES = [
   DEFAULT_QUERY,
   "Fast-growing YouTube fitness creators in India",
   "YouTube finance creators in India with high engagement",
-  "US audio reviewers, ANC earbuds, under 500K",
+  "BGMI streamers in Hindi",
 ];
-const PLATFORMS: ("All" | Platform)[] = ["All", "YouTube", "Instagram"]; // only those with creators are shown
-
-const median = (xs: number[]) => {
-  if (!xs.length) return 0;
-  const s = [...xs].sort((a, b) => a - b);
-  return s[Math.floor(s.length / 2)];
-};
 
 const MAX_SHORTLIST = 4;
 const SHORTLIST_KEY = "scout:shortlist";
 
-/** `embedded`: running inside the homepage, so no top bar and no URL rewriting. */
-type Props = { initialQuery: string; creators: Creator[]; source?: "youtube" | "none"; embedded?: boolean; sampleOf?: number };
+/**
+ * Two ways to search, same results:
+ *   creators       — the homepage sample: ranked right here in the browser (`embedded`: no top bar, no URL changes)
+ *   initialResult  — /demo: every creator is ranked on the server (/api/search); only the best ~150 come down
+ * `creatorPool` feeds the Creator view (any creators; a sample is fine).
+ */
+type Props = {
+  initialQuery: string;
+  creators?: Creator[];
+  initialResult?: SearchResult;
+  creatorPool?: Creator[];
+  source?: "youtube" | "none";
+  embedded?: boolean;
+  sampleOf?: number;
+};
 
-export function ScoutApp({ initialQuery, creators, source = "none", embedded = false, sampleOf }: Props) {
+export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, source = "none", embedded = false, sampleOf }: Props) {
+  const local = creators !== undefined;
   const [draft, setDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
-  const [platform, setPlatform] = useState<"All" | Platform>("All");
   const [showMisses, setShowMisses] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "score", dir: -1 });
-  const [selected, setSelected] = useState<number | null>(null);
-  const [shortlist, setShortlist] = useState<number[]>([]);
+  const [selected, setSelected] = useState<string | null>(null); // channel ids: stable across searches
+  const [shortlist, setShortlist] = useState<string[]>([]);
   const [tab, setTab] = useState<"detail" | "compare">("detail");
   const [role, setRole] = useState<"brand" | "creator">("brand");
   const [brandTab, setBrandTab] = useState<"discover" | "campaigns" | "sov">("discover");
+  const [remote, setRemote] = useState<SearchResult | null>(initialResult ?? null);
+  const [loading, setLoading] = useState(false);
 
-  const brief = useMemo(() => contextualize(parseBrief(query), creators), [query, creators]);
-  const platforms = useMemo(() => PLATFORMS.filter((p) => p === "All" || creators.some((c) => c.platform === p)), [creators]);
-  const understood = describe(brief);
-  const scored = useMemo(() => creators.map((c) => score(c, brief)), [creators, brief]);
+  const localResult = useMemo(() => (local ? searchAll(creators, query, { pinned: shortlist }) : null), [local, creators, query, shortlist]);
+  const result = local ? localResult : remote;
 
-  const { rows, misses } = useMemo(() => {
-    const onPlatform = scored.filter((m) => platform === "All" || m.creator.platform === platform);
-    const misses = onPlatform.filter((m) => !m.fits).length;
-    const pick = (m: (typeof scored)[number]) =>
-      sort.key === "score" ? m.score : sort.key === "auth" ? m.creator.auth : m.creator[sort.key];
-    const rows = onPlatform
-      .filter((m) => showMisses || m.fits)
-      .sort((a, b) => (pick(a) - pick(b)) * sort.dir || b.score - a.score);
-    return { rows, misses };
-  }, [scored, platform, showMisses, sort]);
+  // Every creator we've seen scored for the current brief, so the shortlist / compare work across result pages.
+  const known = useMemo(() => {
+    const m = new Map<string, Match>();
+    for (const x of [...(result?.misses ?? []), ...(result?.fits ?? []), ...(result?.pinned ?? [])]) m.set(x.creator.channelId, x);
+    return m;
+  }, [result]);
+  // shortlisted creators this result doesn't include: ask the server to score them too
+  const missing = remote && remote.query === query ? shortlist.filter((id) => !known.has(id)).join(",") : "";
 
-  const activeId = selected !== null && rows.some((m) => m.creator.id === selected) ? selected : rows[0]?.creator.id;
-  const active = scored.find((m) => m.creator.id === activeId);
-  const fits = rows.filter((m) => m.fits);
+  useEffect(() => {
+    if (local || (remote?.query === query && !missing)) return;
+    const ctl = new AbortController();
+    setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- marks a fetch in flight
+    fetch(`/api/search?${new URLSearchParams({ q: query, ids: shortlist.join(",") })}`, { signal: ctl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((r: SearchResult) => { setRemote(r); setLoading(false); })
+      .catch((e: Error) => { if (e.name !== "AbortError") setLoading(false); });
+    return () => ctl.abort();
+    // shortlist is read for the request but only `missing` should trigger a refetch
+  }, [local, query, missing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { rows, missCount } = useMemo(() => {
+    if (!result) return { rows: [] as Match[], missCount: 0 };
+    const pick = (m: Match) => (sort.key === "score" ? m.score : sort.key === "auth" ? m.creator.auth : m.creator[sort.key]);
+    const rows = [...result.fits, ...(showMisses ? result.misses : [])].sort((a, b) => (pick(a) - pick(b)) * sort.dir || b.score - a.score);
+    return { rows, missCount: result.missCount };
+  }, [result, showMisses, sort]);
+
+  const activeId = selected !== null && rows.some((m) => m.creator.channelId === selected) ? selected : rows[0]?.creator.channelId;
+  const active = rows.find((m) => m.creator.channelId === activeId);
 
   const run = (q: string) => {
     setDraft(q);
@@ -71,32 +94,34 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
     setSelected(null);
     if (!embedded) window.history.replaceState(null, "", `?q=${encodeURIComponent(q)}`); // shareable briefs
   };
-  // Up to 4 (the compare table's width). Persisted by channel id, which is stable across data refreshes; list positions aren't.
-  const toggleShortlist = (id: number) =>
+  // Up to 4 (the compare table's width), by channel id.
+  const toggleShortlist = (id: string) =>
     setShortlist((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= MAX_SHORTLIST ? s : [...s, id]));
   // The embedded homepage copy runs on a sample: it must not read or overwrite the full app's saved shortlist.
   useEffect(() => {
     if (embedded) return;
     try {
-      const saved: string[] = JSON.parse(localStorage.getItem(SHORTLIST_KEY) ?? "[]");
-      const ids = saved.map((ch) => creators.findIndex((c) => c.channelId === ch)).filter((i) => i >= 0).slice(0, MAX_SHORTLIST);
+      const saved: unknown = JSON.parse(localStorage.getItem(SHORTLIST_KEY) ?? "[]");
+      const ids = Array.isArray(saved) ? saved.filter((x): x is string => typeof x === "string").slice(0, MAX_SHORTLIST) : [];
       if (ids.length) setShortlist(ids); // eslint-disable-line react-hooks/set-state-in-effect -- one-time restore after hydration
     } catch {} // storage blocked or corrupt: start empty
-  }, [creators, embedded]);
+  }, [embedded]);
   useEffect(() => {
     if (embedded) return;
-    try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist.map((i) => creators[i]?.channelId).filter(Boolean))); } catch {}
-  }, [shortlist, creators, embedded]);
+    try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist)); } catch {}
+  }, [shortlist, embedded]);
   const onSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
 
+  const compare = shortlist.map((id) => known.get(id)).filter((m): m is Match => !!m);
   const kpis = [
-    { label: "Matches", value: fits.length, note: `of ${creators.length}` },
-    { label: "Median match", value: median(fits.map((m) => m.score)) },
-    { label: "Avg authenticity", value: fits.length ? Math.round(fits.reduce((s, m) => s + m.creator.auth, 0) / fits.length) : 0 },
-    { label: "Proven", value: fits.filter((m) => m.creator.proven).length, note: "on-platform record" },
+    { label: "Matches", value: result?.fitCount ?? 0, note: `of ${(result?.total ?? 0).toLocaleString("en-IN")}` },
+    { label: "Median match", value: result?.medianScore ?? 0 },
+    { label: "Avg authenticity", value: result?.avgAuth ?? 0 },
+    { label: "Proven", value: result?.proven ?? 0, note: "on-platform record" },
     { label: "Shortlist", value: shortlist.length, note: `of ${MAX_SHORTLIST}` },
   ];
+  const pool = creatorPool ?? creators ?? [];
 
   return (
     <div className={`d-app ${embedded ? "is-embedded" : ""}`}>
@@ -113,7 +138,7 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
         <button type="button" role="radio" aria-checked={role === "creator"} onClick={() => setRole("creator")}>Creator</button>
       </div>
 
-      {role === "creator" ? (creators.length ? <CreatorView creators={creators} /> : <p className="d-empty">No creators yet — they appear after the first data ingest.</p>) : <>
+      {role === "creator" ? (pool.length ? <CreatorView creators={pool} /> : <p className="d-empty">No creators yet — they appear after the first data ingest.</p>) : <>
       <div className="d-tabs d-tabs-top" role="tablist" aria-label="Brand sections">
         <button role="tab" aria-selected={brandTab === "discover"} onClick={() => setBrandTab("discover")}>Discover</button>
         <button role="tab" aria-selected={brandTab === "campaigns"} onClick={() => setBrandTab("campaigns")}>Campaigns</button>
@@ -125,14 +150,16 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
       <form className="d-search" role="search" onSubmit={(e) => { e.preventDefault(); run(draft); }}>
         <label htmlFor="brief" className="sr-only">Describe the creators you need</label>
         <input id="brief" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Describe the creators you need…" autoComplete="off" />
-        <button type="submit" className="d-btn">Search</button>
+        <button type="submit" className="d-btn" disabled={loading}>{loading ? "Searching…" : "Search"}</button>
       </form>
 
       <div className="d-under">
-        {understood.length ? (
+        {result?.unread ? (
+          <span className="d-lbl">Couldn’t read this brief yet — try a niche, language or topic, e.g. “Tamil cooking channels” or “budget phone reviews”.</span>
+        ) : result?.understood.length ? (
           <>
             <span className="d-lbl">Understood</span>
-            {understood.map((t) => <span key={t} className="d-token">{t}</span>)}
+            {result.understood.map((t) => <span key={t} className="d-token">{t}</span>)}
           </>
         ) : (
           <span className="d-lbl">No niche, platform or size recognised — ranking every creator on quality.</span>
@@ -145,24 +172,16 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
       </div>
 
       <div className="d-controls">
-        {/* a platform filter only makes sense once there's more than one platform with creators */}
-        {platforms.length > 2 && (
-          <div className="d-seg" role="radiogroup" aria-label="Platform">
-            {platforms.map((p) => (
-              <button key={p} type="button" role="radio" aria-checked={platform === p} onClick={() => setPlatform(p)}>{p}</button>
-            ))}
-          </div>
-        )}
         <label className="d-check">
           <input type="checkbox" checked={showMisses} onChange={(e) => setShowMisses(e.target.checked)} />
-          Show near misses ({misses})
+          Show near misses ({missCount.toLocaleString("en-IN")})
         </label>
       </div>
 
-      {sampleOf !== undefined && sampleOf > creators.length && (
-        <p className="d-hint">Live sample of {creators.length} creators. <Link href="/demo">Search all {sampleOf.toLocaleString("en-IN")} in the full app →</Link></p>
+      {sampleOf !== undefined && sampleOf > (creators?.length ?? 0) && (
+        <p className="d-hint">Live sample of {creators?.length} creators. <Link href="/demo">Search all {sampleOf.toLocaleString("en-IN")} in the full app →</Link></p>
       )}
-      <dl className="d-kpis">
+      <dl className={`d-kpis ${loading ? "is-loading" : ""}`} aria-busy={loading}>
         {kpis.map((k) => (
           <div key={k.label}>
             <dt>{k.label}</dt>
@@ -172,13 +191,18 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
       </dl>
 
       <div className="d-main">
-        <section className="d-tablewrap" aria-label="Ranked creators">
+        <section className={`d-tablewrap ${loading ? "is-loading" : ""}`} aria-label="Ranked creators" aria-busy={loading}>
           {rows.length ? (
-            <ResultsTable rows={rows} sort={sort} onSort={onSort} activeId={activeId} onSelect={(id) => { setSelected(id); setTab("detail"); }} shortlist={shortlist} onToggle={toggleShortlist} />
+            <>
+              <ResultsTable rows={rows} sort={sort} onSort={onSort} activeId={activeId} onSelect={(id) => { setSelected(id); setTab("detail"); }} shortlist={shortlist} onToggle={toggleShortlist} />
+              {result && result.fitCount > result.fits.length && (
+                <p className="d-hint">Showing the best {result.fits.length} of {result.fitCount.toLocaleString("en-IN")} matches. Add detail to the brief to narrow it down.</p>
+              )}
+            </>
           ) : (
             <div className="d-empty">
-              No creator fits every part of this brief.
-              {misses > 0 && <button type="button" className="d-link" onClick={() => setShowMisses(true)}>Show {misses} near misses</button>}
+              {result ? "No creator fits every part of this brief." : "Searching…"}
+              {missCount > 0 && <button type="button" className="d-link" onClick={() => setShowMisses(true)}>Show near misses</button>}
             </div>
           )}
         </section>
@@ -193,15 +217,18 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
           {shortlist.length >= 2 && tab === "detail" && (
             <button type="button" className="d-btn d-cmpgo" onClick={() => setTab("compare")}>Compare {shortlist.length} shortlisted <span className="arw">→</span></button>
           )}
-          {tab === "compare" && shortlist.length >= 2 ? (
-            <ComparePanel key={shortlist.join()} matches={shortlist.map((id) => scored[id])} onRemove={toggleShortlist} />
-          ) : active ? (
-            <DetailPanel key={active.creator.id} m={active} inShortlist={shortlist.includes(active.creator.id)} onToggle={() => toggleShortlist(active.creator.id)} />
+          {tab === "compare" && shortlist.length >= 2 && (
+            <CompareDialog count={shortlist.length} onClose={() => setTab("detail")}>
+              {compare.length >= 2 ? <ComparePanel key={shortlist.join()} matches={compare} onRemove={toggleShortlist} /> : <p className="d-muted">Scoring your shortlist against this brief…</p>}
+            </CompareDialog>
+          )}
+          {active ? (
+            <DetailPanel key={active.creator.channelId} m={active} inShortlist={shortlist.includes(active.creator.channelId)} onToggle={() => toggleShortlist(active.creator.channelId)} />
           ) : (
             <p className="d-muted">Select a creator to see why they ranked.</p>
           )}
           {tab === "detail" && shortlist.length === 1 && <p className="d-hint">Shortlist one more creator to compare and check audience overlap.</p>}
-          {tab === "detail" && shortlist.length >= MAX_SHORTLIST && active && !shortlist.includes(active.creator.id) && <p className="d-hint">Shortlist is full ({MAX_SHORTLIST}). Remove someone in Compare to add {active.creator.name}.</p>}
+          {tab === "detail" && shortlist.length >= MAX_SHORTLIST && active && !shortlist.includes(active.creator.channelId) && <p className="d-hint">Shortlist is full ({MAX_SHORTLIST}). Remove someone in Compare to add {active.creator.name}.</p>}
         </aside>
       </div>
       </>}

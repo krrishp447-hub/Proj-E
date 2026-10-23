@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { contentWords, idfOf, stem, topicMatch, topicsFrom } from "../src/lib/scout/topics.ts";
 
 test("content words drop boilerplate and Hinglish fillers, keep model names, stem plurals", () => {
-  assert.deepEqual(contentWords("MSI Thin 15 Review - Best Gaming Laptops in 2024 | Kya ye sabse sasta hai?"), ["msi", "thin", "review", "gaming", "laptop", "sabse", "sasta"]);
+  assert.deepEqual(contentWords("MSI Thin 15 Review - Best Gaming Laptops in 2024 | Kya ye sabse sasta hai?"), ["msi", "thin", "review", "gaming", "laptop", "sabse", "budget"]); // sasta → budget (alias)
   assert.deepEqual(contentWords("Galaxy S24 vs iPhone 16"), ["galaxy", "s24", "iphone"]);
   assert.equal(stem("earbuds"), "earbud");
   assert.equal(stem("batteries"), "battery");

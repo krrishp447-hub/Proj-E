@@ -1,3 +1,4 @@
+import { useEffect, useRef, type ReactNode } from "react";
 import { fairRate } from "@/lib/scout/campaigns";
 import { AGE_BANDS } from "@/lib/scout/data";
 import { audienceVerified, fmt, overlap, type Match } from "@/lib/scout/engine";
@@ -20,6 +21,9 @@ const ROWS: Row[] = [
   { label: "Growth 90d", show: (m) => `+${m.creator.growth}%`, value: (m) => m.creator.growth, has: (m) => m.creator.growth !== 0 },
   { label: "Authenticity", show: (m) => `${m.creator.auth}`, value: (m) => m.creator.auth },
   { label: "Suspicious", show: (m) => `${m.creator.suspicious}%`, value: (m) => -m.creator.suspicious },
+  { label: "Last upload", show: (m) => (m.creator.lastUploadDays == null ? "—" : m.creator.lastUploadDays === 0 ? "today" : `${m.creator.lastUploadDays}d ago`), value: (m) => -(m.creator.lastUploadDays ?? Infinity), has: (m) => m.creator.lastUploadDays != null },
+  { label: "Sponsored uploads", show: (m) => (m.creator.sponsoredPct == null ? "—" : `${m.creator.sponsoredPct}%`), has: (m) => m.creator.sponsoredPct != null },
+  { label: "Brand safety", show: (m) => (m.creator.safety.length ? `⚠ ${m.creator.safety.join(", ")}` : "✓ Clean"), value: (m) => -m.creator.safety.length, has: (m) => m.creator.lastUploadDays != null },
   { label: "Language", show: (m) => m.creator.language },
   { label: "Niche", show: (m) => m.creator.niche },
   // cost is compared per 1,000 views (a cheaper flat rate usually just means a smaller channel)
@@ -50,7 +54,7 @@ function verdict(matches: Match[]) {
   return parts.join(" · ");
 }
 
-export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove: (id: number) => void }) {
+export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove: (channelId: string) => void }) {
   const pairs = matches
     .flatMap((a, i) => matches.slice(i + 1).map((b) => ({ a, b, o: overlap(a.creator, b.creator), verified: audienceVerified(a.creator) && audienceVerified(b.creator) })))
     .sort((x, y) => y.o - x.o);
@@ -67,9 +71,9 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
             <tr>
               <th scope="col"><span className="sr-only">Metric</span></th>
               {matches.map((m) => (
-                <th key={m.creator.id} scope="col" title={m.creator.name}>
+                <th key={m.creator.channelId} scope="col" title={m.creator.name}>
                   {first(m.creator.name)}
-                  <button type="button" className="d-x" onClick={() => onRemove(m.creator.id)} aria-label={`Remove ${m.creator.name}`}>×</button>
+                  <button type="button" className="d-x" onClick={() => onRemove(m.creator.channelId)} aria-label={`Remove ${m.creator.name}`}>×</button>
                 </th>
               ))}
             </tr>
@@ -83,7 +87,7 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
                 <tr key={r.label}>
                   <th scope="row">{r.label}</th>
                   {matches.map((m, i) => (
-                    <td key={m.creator.id} className={`d-mono ${unique && vals[i] === best ? "is-best" : ""}`}>{r.show(m)}</td>
+                    <td key={m.creator.channelId} className={`d-mono ${unique && vals[i] === best ? "is-best" : ""}`}>{r.show(m)}</td>
                   ))}
                 </tr>
               );
@@ -91,7 +95,7 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
             <tr>
               <th scope="row"><span className="sr-only">Actions</span></th>
               {matches.map((m) => (
-                <td key={m.creator.id}><a className="d-link" href={`/dashboard/offers/new?to=${encodeURIComponent(m.creator.channelId)}`}>Offer →</a></td>
+                <td key={m.creator.channelId}><a className="d-link" href={`/dashboard/offers/new?to=${encodeURIComponent(m.creator.channelId)}`}>Offer →</a></td>
               ))}
             </tr>
           </tbody>
@@ -108,7 +112,7 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
       <h3>Audience overlap</h3>
       {pairs.map(({ a, b, o, verified }) => (
         <Bar
-          key={`${a.creator.id}-${b.creator.id}`}
+          key={`${a.creator.channelId}-${b.creator.channelId}`}
           label={`${first(a.creator.name)} × ${first(b.creator.name)}${verified ? "" : " (est.)"}`}
           value={o}
           text={`${o}%`}
@@ -128,5 +132,24 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
         <p className="d-callout is-good">Low overlap on verified audiences: this shortlist reaches largely different viewers.</p>
       )}
     </div>
+  );
+}
+
+/** Compare opens full screen (a modal dialog): Esc or "Back to results" closes it; focus returns to the page. */
+export function CompareDialog({ count, onClose, children }: { count: number; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+    return () => d?.close();
+  }, []);
+  return (
+    <dialog ref={ref} className="d-cmpdlg" aria-label={`Compare ${count} creators`} onClose={onClose} data-lenis-prevent>
+      <div className="d-cmpdlg-head">
+        <h2>Compare {count} creators</h2>
+        <button type="button" className="d-btn ghost" onClick={onClose}>← Back to results</button>
+      </div>
+      {children}
+    </dialog>
   );
 }

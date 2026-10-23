@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { validTerms } from "@/lib/scout/deals";
 import { currentUser } from "@/server/auth";
+import { inviteIfUnclaimed } from "@/server/contact";
 import { openDeal } from "@/server/deals";
 import { MAX_TARGETS, creatorCards, searchCreatorCards, type CreatorCard } from "@/server/offers";
 
@@ -38,6 +40,8 @@ export async function sendOffers(fd: FormData) {
 
   const ids: string[] = [];
   for (const o of offers) ids.push(await openDeal(u, o.target, title, o.terms!, checklist, due));
+  // channels not on Scout yet: a one-line "you have an offer" email to their public address, after the response
+  if (u.role === "brand") after(async () => { for (const o of offers) await inviteIfUnclaimed(o.target, u.id); });
   revalidatePath("/dashboard", "layout");
   redirect(`/dashboard/deals?sent=${ids.length}&open=${ids.at(-1)}`);
 }

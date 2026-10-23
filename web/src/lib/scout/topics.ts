@@ -28,12 +28,34 @@ export function stem(w: string): string {
   return w;
 }
 
+// Everyday words → the word creators put in titles ("affordable phone" finds "budget phone" videos). Keys are stemmed
+// forms; applied after stem() to briefs, titles and stored topics alike, so both sides always meet on the same word.
+const ALIAS = new Map(Object.entries({
+  affordable: "budget", cheap: "budget", cheapest: "budget", inexpensive: "budget", sasta: "budget", sasti: "budget", saste: "budget",
+  mobile: "phone", smartphone: "phone", cellphone: "phone", earphone: "earbud", bud: "earbud", earpod: "earbud",
+  workout: "gym", exercise: "gym", film: "movie", cinema: "movie", automobile: "car",
+}));
+export const canon = (w: string) => ALIAS.get(w) ?? w;
+
 /** Content words: letters in any script (Devanagari, Tamil…), 3+ chars, digits only inside words ("s24", "rtx4090"). */
 export function contentWords(text: string): string[] {
   return (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
     .filter((w) => w.length >= 3 && /\p{L}/u.test(w) && !STOP.has(w))
-    .map(stem)
+    .map((w) => canon(stem(w)))
     .filter((w) => !STOP.has(w));
+}
+
+/** Levenshtein distance, giving up (returning max + 1) once it can't be ≤ max. */
+export function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    if (Math.min(...cur) > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
 }
 
 /** Words that recur across a creator's titles (in ≥2 of them), most frequent first. */
@@ -51,10 +73,13 @@ export function idfOf(topicLists: string[][]): Map<string, number> {
   return new Map([...df].map(([t, d]) => [t, Math.log(1 + n / d)]));
 }
 
+const maxIdf = new WeakMap<Map<string, number>, number>(); // once per idf map, not per creator (it spans every topic word)
+
 /** Share (0–1) of the brief's topic weight this creator covers, and which terms matched. */
 export function topicMatch(terms: string[], topics: string[], idf: Map<string, number>) {
   if (!terms.length) return { score: 0, matched: [] as string[] };
-  const max = Math.max(1, ...idf.values());
+  if (!maxIdf.has(idf)) maxIdf.set(idf, Math.max(1, ...idf.values()));
+  const max = maxIdf.get(idf)!;
   const w = (t: string) => idf.get(t) ?? max; // a word no creator uses is maximally specific
   const have = new Set(topics);
   const matched = terms.filter((t) => have.has(t));

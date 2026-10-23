@@ -1,4 +1,6 @@
-import { AGE_BANDS, authTone, suspiciousTone } from "@/lib/scout/data";
+import { useState } from "react";
+import { aboutUrl, youtubeUrl } from "@/lib/scout/contact";
+import { AGE_BANDS, authTone, suspiciousTone, type Creator } from "@/lib/scout/data";
 import { fmt, type Match } from "@/lib/scout/engine";
 
 /** Labelled horizontal bar; value is 0–100 unless max is given. */
@@ -22,6 +24,39 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
+type Reveal = { email?: string; source?: string; error?: string; limit?: number };
+
+/**
+ * How to reach the creator, in three states: on Scout (offers go straight to them), not on Scout but with a public
+ * business email (an offer invites them; signed-in brands can reveal the address), or neither (their About page).
+ */
+function Contact({ c }: { c: Creator }) {
+  const [r, setR] = useState<Reveal | null>(null);
+  if (c.claimed) return <p className="d-contact">✓ On Scout: offers and messages go straight to them.</p>;
+  if (!c.hasEmail) {
+    return (
+      <p className="d-contact">
+        Not on Scout yet, and no public business email.{" "}
+        <a href={aboutUrl(c.channelId)} target="_blank" rel="noopener noreferrer">Open their About page for contact ↗</a>
+      </p>
+    );
+  }
+  const reveal = async () => {
+    const res = await fetch(`/api/contact?channel=${encodeURIComponent(c.channelId)}`);
+    setR(await res.json().catch(() => ({ error: "none" })));
+  };
+  return (
+    <p className="d-contact">
+      Not on Scout yet. We&apos;ll invite them when you send an offer.{" "}
+      {!r && <button type="button" className="d-linkbtn" onClick={reveal}>Show public email</button>}
+      {r?.email && <><a href={`mailto:${r.email}`}>{r.email}</a> <span className="d-sub">· From the channel&apos;s public description</span></>}
+      {r?.error === "signin" && <><a href="/login">Sign in as a brand</a> to see their public email.</>}
+      {r?.error === "limit" && <>You&apos;ve viewed {r.limit} contacts today. More tomorrow.</>}
+      {(r?.error === "none" || r?.error === "forbidden") && <>No public email available.</>}
+    </p>
+  );
+}
+
 export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlist: boolean; onToggle: () => void }) {
   const c = m.creator;
   const top = Math.max(...m.signals.map((s) => Math.abs(s.points)), 1);
@@ -39,8 +74,10 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
           {inShortlist ? "✓ Shortlisted" : "+ Shortlist"}
         </button>
         {/* brand accounts: opens the offer composer (signed-out visitors are sent to log in first) */}
-        <a className="d-btn ghost" href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer <span className="arw">→</span></a>
+        {(c.claimed || c.hasEmail) && <a className="d-btn ghost" href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer <span className="arw">→</span></a>}
+        <a className="d-btn ghost" href={youtubeUrl(c.channelId)} target="_blank" rel="noopener noreferrer">View on YouTube ↗</a>
       </div>
+      <Contact key={c.channelId} c={c} />
 
       <dl className="d-grid">
         <div><dt>Subscribers</dt><dd>{fmt(c.subs)}</dd></div>

@@ -34,6 +34,11 @@ export type Creator = {
   delivery: number; // delivered ÷ promised reach
   proven: boolean;
   verifiedDays: number; // data freshness
+  lastUploadDays: number | null; // days since the newest upload (signals.ts)
+  sponsoredPct: number | null; // % of recent uploads with an ad disclosure; null = unknown
+  safety: string[]; // brand-safety flags in recent titles: profanity, adult, gambling
+  claimed: boolean; // the creator connected this channel on Scout
+  hasEmail: boolean; // a public business email is on file (the address itself is only revealed to signed-in brands)
   source: "youtube";
 };
 

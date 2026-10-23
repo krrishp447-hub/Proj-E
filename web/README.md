@@ -51,6 +51,7 @@ Without the variables below the site runs on the illustrative demo dataset (labe
    npm run db:migrate                     # create tables (db/schema.sql)
    npm run discover                       # seed channels via YouTube search (100 quota units/query)
    npm run quality                        # data-quality audits (auto every 100 new creators); add "-- --now" to audit the latest 100
+   npm run benchmark                      # search-quality benchmark: precision@10 over 39 real briefs (live data)
    curl -H "Authorization: Bearer $CRON_SECRET" https://<your-domain>/api/cron/ingest   # first ingest now
    ```
    The app switches to "Live · YouTube public data" as soon as rows exist; growth fills in after ~30 days of daily
@@ -74,6 +75,12 @@ deletion are on `/account`.
 from titles and tags, estimated authenticity). Audience demographics need creators to connect their channel (YouTube
 Analytics / Instagram insights OAuth — not built yet); outcome metrics (campaigns, repeat, delivered) accrue from
 campaigns run on Scout.
+
+### 4 · Invite emails (optional)
+When a brand sends an offer to a channel that isn't on Scout, Scout emails the address the creator published in their
+channel description once ("a brand sent you an offer — claim your channel"). Set `RESEND_API_KEY` and `EMAIL_FROM`
+(a sender on a domain you've verified in Resend) locally and in Vercel. Without them, offers are still saved; no email
+goes out. Contact data rules: see `src/server/contact.ts` and `/privacy`.
 
 ### Before announcing
 - Replace `site.email` (`hello@scout.io` placeholder) in `src/config/site.ts`; add social URLs.

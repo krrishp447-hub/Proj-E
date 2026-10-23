@@ -1,4 +1,5 @@
 import { authTone } from "@/lib/scout/data";
+import { youtubeUrl } from "@/lib/scout/contact";
 import { fmt, type Match } from "@/lib/scout/engine";
 
 export type SortKey = "score" | "subs" | "eng" | "growth" | "auth";
@@ -15,10 +16,10 @@ type Props = {
   rows: Match[];
   sort: { key: SortKey; dir: 1 | -1 };
   onSort: (k: SortKey) => void;
-  activeId?: number;
-  onSelect: (id: number) => void;
-  shortlist: number[];
-  onToggle: (id: number) => void;
+  activeId?: string; // channel id
+  onSelect: (id: string) => void;
+  shortlist: string[];
+  onToggle: (id: string) => void;
 };
 
 export function ResultsTable({ rows, sort, onSort, activeId, onSelect, shortlist, onToggle }: Props) {
@@ -43,21 +44,23 @@ export function ResultsTable({ rows, sort, onSort, activeId, onSelect, shortlist
       <tbody>
         {rows.map((m, i) => {
           const c = m.creator;
-          const on = shortlist.includes(c.id);
+          const on = shortlist.includes(c.channelId);
           return (
-            <tr key={c.id} className={`${c.id === activeId ? "is-active" : ""} ${m.fits ? "" : "is-miss"}`} onClick={() => onSelect(c.id)}>
+            <tr key={c.channelId} className={`${c.channelId === activeId ? "is-active" : ""} ${m.fits ? "" : "is-miss"}`} onClick={() => onSelect(c.channelId)}>
               <td className="d-c-check" onClick={(e) => e.stopPropagation()}>
-                <input type="checkbox" checked={on} onChange={() => onToggle(c.id)} aria-label={`Shortlist ${c.name}`} />
+                <input type="checkbox" checked={on} onChange={() => onToggle(c.channelId)} aria-label={`Shortlist ${c.name}`} />
               </td>
               <td className="d-c-rank d-mono">{String(i + 1).padStart(2, "0")}</td>
               <td>
-                <button type="button" className="d-name" onClick={(e) => { e.stopPropagation(); onSelect(c.id); }}>
+                <button type="button" className="d-name" onClick={(e) => { e.stopPropagation(); onSelect(c.channelId); }}>
                   {c.name}
                   {c.proven && <span className="d-proven" title="Proven on-platform record">◆</span>}
                 </button>
                 <div className="d-sub">{c.niche} · {c.country}</div>
               </td>
-              <td className="d-c-plat">{c.platform === "YouTube" ? "YT" : "IG"}</td>
+              <td className="d-c-plat" onClick={(e) => e.stopPropagation()}>
+                <a className="d-yt" href={youtubeUrl(c.channelId)} target="_blank" rel="noopener noreferrer" aria-label={`View ${c.name} on YouTube (new tab)`}>YT ↗</a>
+              </td>
               <td className="d-num d-mono">{fmt(c.subs)}</td>
               <td className="d-num d-mono d-c-opt">{c.eng}%</td>
               <td className="d-num d-mono d-c-opt">+{c.growth}%</td>

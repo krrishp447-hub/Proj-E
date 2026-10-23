@@ -1,5 +1,7 @@
 import "server-only";
 import { deriveMetrics, type Snapshot } from "@/lib/scout/metrics";
+import { publicEmail } from "@/lib/scout/contact";
+import { safetyFlags, sponsoredShare } from "@/lib/scout/signals";
 import { fileCampaignPosts, saveVideos, type FilingResult } from "./campaigns";
 import { sql } from "./db";
 import { fetchChannels, fetchRecentVideos, isQuotaError } from "./youtube";
@@ -41,15 +43,19 @@ export async function runIngest(limit = 1000, only?: string[]): Promise<IngestRe
       const snaps: Snapshot[] = history.filter((h) => h.channel_id === ch.id).map((h) => ({ takenOn: h.taken_on, subs: h.subs }));
       const m = deriveMetrics(ch, recent, snaps);
       // kept so categorisation can be re-run later from stored data, without spending API quota
+      const uploads = recent.map((v) => ({ title: v.snippet.title, description: v.snippet.description, publishedAt: v.snippet.publishedAt }));
+      const lastUpload = uploads.length ? uploads.map((u) => u.publishedAt).sort().at(-1)! : null;
       const about = [ch.snippet.description ?? "", ch.brandingSettings?.channel?.keywords ?? ""].join("\n").slice(0, 1500);
       await db`
-        insert into creators (channel_id, name, handle, country, niche, niche2, niche_conf, tags, subs, avg_views, eng, growth, consistency, auth, suspicious, language, is_brand, topics, about, fetched_at)
-        values (${m.channelId}, ${m.name}, ${m.handle}, ${m.country}, ${m.niche}, ${m.secondaryNiche}, ${m.nicheConfidence}, ${m.tags}, ${m.subs}, ${m.avgViews}, ${m.eng}, ${m.growth}, ${m.consistency}, ${m.auth}, ${m.suspicious}, ${m.language}, ${m.isBrand}, ${m.topics}, ${about}, now())
+        insert into creators (channel_id, name, handle, country, niche, niche2, niche_conf, tags, subs, avg_views, eng, growth, consistency, auth, suspicious, language, is_brand, topics, about, last_upload, sponsored_pct, safety, public_email, fetched_at)
+        values (${m.channelId}, ${m.name}, ${m.handle}, ${m.country}, ${m.niche}, ${m.secondaryNiche}, ${m.nicheConfidence}, ${m.tags}, ${m.subs}, ${m.avgViews}, ${m.eng}, ${m.growth}, ${m.consistency}, ${m.auth}, ${m.suspicious}, ${m.language}, ${m.isBrand}, ${m.topics}, ${about}, ${lastUpload}, ${sponsoredShare(uploads)}, ${safetyFlags(uploads.map((u) => u.title))},
+          (select case when exists (select 1 from contact_optouts o where o.channel_id = ${m.channelId}) then null else ${publicEmail([about, ...uploads.map((u) => u.description ?? "")])}::text end), now())
         on conflict (channel_id) do update set
           name = excluded.name, handle = excluded.handle, country = excluded.country, niche = excluded.niche, niche2 = excluded.niche2, niche_conf = excluded.niche_conf, tags = excluded.tags,
           subs = excluded.subs, avg_views = excluded.avg_views, eng = excluded.eng, growth = excluded.growth,
           consistency = excluded.consistency, auth = excluded.auth, suspicious = excluded.suspicious,
-          language = excluded.language, is_brand = excluded.is_brand, topics = excluded.topics, about = excluded.about, fetched_at = now()`;
+          language = excluded.language, is_brand = excluded.is_brand, topics = excluded.topics, about = excluded.about,
+          last_upload = excluded.last_upload, sponsored_pct = excluded.sponsored_pct, safety = excluded.safety, public_email = excluded.public_email, fetched_at = now()`;
       await db`
         insert into snapshots (channel_id, taken_on, subs) values (${m.channelId}, current_date, ${m.subs})
         on conflict (channel_id, taken_on) do update set subs = excluded.subs`;
