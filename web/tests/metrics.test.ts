@@ -101,3 +101,30 @@ test("classify covers the extended niches without short-stem false hits", () => 
   assert.equal(classify("newborn baby care tips for toddler parenting").niche, "Parenting");
   assert.equal(classify("career moment card").niche, "Other"); // "car", "mom" stems don't fire
 });
+
+test("music releases classify as Music, not Tech (Official Audio is not an audio-gear review)", () => {
+  assert.equal(classify("MC STAN - 911 Porsche (Official Music Video) | Official audio out tonight on Spotify | NUMB (Official Visualiser)").niche, "Music");
+  assert.equal(classify("Sidhu Moose Wala - Lyrical Video | Full Audio Song").niche, "Music");
+  assert.equal(classify("boAt Airdopes 141 review: audio quality, ANC and battery vs Noise Buds").niche, "Tech");
+  assert.equal(classify("Best TWS earbuds under 2000 - audio test and unboxing").niche, "Tech");
+});
+
+test("every genre has a home: kids, sports, news, spiritual, lifestyle no longer fall into the nearest wrong niche", () => {
+  assert.equal(classify("Wheels on the Bus | Nursery Rhymes and Kids Songs | cartoon for kids").niche, "Kids");
+  assert.equal(classify("Pregnancy diet tips for new moms | newborn care | parenting").niche, "Parenting");
+  assert.equal(classify("India vs Australia cricket highlights | IPL 2026 analysis").niche, "Sports");
+  assert.equal(classify("Breaking news headlines | election debate tonight").niche, "News");
+  assert.equal(classify("Hanuman Chalisa | Morning bhajan | Krishna aarti").niche, "Spiritual");
+  assert.equal(classify("Family vlog | day in my life | home tour").niche, "Lifestyle");
+  assert.equal(classify("Toyota Fortuner test drive review | cars").niche, "Automotive"); // "toys" must not match "Toyota"
+});
+
+test("one stray word isn't a niche; ties go to the niche with more different words, not to Tech by list order", () => {
+  assert.equal(classify("my camera roll").niche, "Other"); // a single Tech word
+  assert.equal(classify("phone phone | cricket ipl").niche, "Sports"); // 2 hits each: Sports matched 2 different words, Tech 1
+});
+
+test("niche names match whole words: Technoblade (Minecraft) is Gaming, not Tech", () => {
+  assert.equal(classify("Technoblade | Minecraft bedwars gameplay | Minecraft hypixel skyblock").niche, "Gaming");
+  assert.equal(classify("Technical Guruji | new smartphone unboxing | technology news").niche, "Tech");
+});

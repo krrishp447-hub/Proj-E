@@ -74,13 +74,13 @@ export function CreatorOnboarding({ action, channel, defaults, fair }: { action:
   );
 }
 
-export type BrandDefaults = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[] };
+export type BrandDefaults = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[]; pitchable: boolean };
 
 export function BrandOnboarding({ action, defaults }: { action: Action; defaults: BrandDefaults }) {
   return (
     <Stepper
       action={action}
-      submitLabel="Finish setup →"
+      submitLabel="Finish setup"
       steps={[
         {
           title: "Company",
@@ -117,7 +117,12 @@ export function BrandOnboarding({ action, defaults }: { action: Action; defaults
                 <fieldset className="acct-chips" aria-label="Budget">
                   {BUDGETS.map((b) => <label key={b}><input type="radio" name="budget" value={b} defaultChecked={defaults.budget === b} /> {b}</label>)}
                 </fieldset>
+                <span className="acct-help">Private: only you see your budget.</span>
               </div>
+              <label className="acct-inline">
+                <input type="checkbox" name="pitchable" defaultChecked={defaults.pitchable} /> Let matching creators see this brief and pitch us
+              </label>
+              <span className="acct-help">Off by default. When on, creators whose channel fits see your company name, category and brief text (never your budget). Keep it off for unannounced launches.</span>
             </>
           ),
         },

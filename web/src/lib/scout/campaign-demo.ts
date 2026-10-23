@@ -24,7 +24,7 @@ const seeds: Seed[] = [
   { id: "v2", creatorId: 1, platform: "YouTube", title: "I tested Buds X for 7 days", description: "Thanks @kestrelaudio for partnering on this one. #KestrelBudsX #sponsored", publishedAt: "2026-10-05T11:00:00Z", views: 98_000, likes: 6_200, comments: 900 },
   { id: "v3", creatorId: 2, platform: "YouTube", title: "Buds X: drivers, codecs & latency deep-dive", description: "Review unit from @kestrelaudio. Measurements in the pinned comment.", publishedAt: "2026-10-08T14:00:00Z", views: 39_000, likes: 2_900, comments: 610 },
   { id: "v4", creatorId: 6, platform: "YouTube", title: "Kestrel Buds X vs Ripple Air 3 — ANC shootout", description: "Buds X: kestrel.audio/budsx?ref=ee #KestrelBudsX #ad", publishedAt: "2026-10-09T10:00:00Z", views: 84_000, likes: 6_800, comments: 1_500 },
-  { id: "v5", creatorId: 4, platform: "Instagram", title: "Unboxing the new Buds X ✨", description: "#KestrelBudsX #ad", publishedAt: "2026-10-11T08:00:00Z", views: 132_000, likes: 11_800, comments: 420 },
+  { id: "v5", creatorId: 4, platform: "YouTube", title: "Unboxing the new Buds X ✨ #shorts", description: "#KestrelBudsX #ad", publishedAt: "2026-10-11T08:00:00Z", views: 132_000, likes: 11_800, comments: 420 },
   // Organic: uncontracted creator names the product
   { id: "v6", creatorId: 3, platform: "YouTube", title: "Top 5 earbuds under ₹3000 (Kestrel Buds X, Ripple Air 3…)", description: "Not sponsored. Prices as of today.", publishedAt: "2026-10-10T09:00:00Z", views: 210_000, likes: 8_400, comments: 1_900 },
   // Unrelated upload by a contracted creator — must not be filed
@@ -33,7 +33,7 @@ const seeds: Seed[] = [
   { id: "v8", creatorId: 13, platform: "YouTube", title: "Ripple Air 3 long-term review", description: "Three months with the Ripple Air 3.", publishedAt: "2026-10-03T16:00:00Z", views: 120_000, likes: 5_200, comments: 800 },
   { id: "v9", creatorId: 1, platform: "YouTube", title: "Tusker Pods Pro unboxing", description: "First look at Tusker's new pods", publishedAt: "2026-09-29T11:00:00Z", views: 64_000, likes: 3_900, comments: 500 },
   { id: "v10", creatorId: 0, platform: "YouTube", title: "Orbitron Bass 2 — skip it?", description: "Honest take on the Orbitron Bass 2", publishedAt: "2026-10-06T12:00:00Z", views: 51_000, likes: 2_400, comments: 610 },
-  { id: "v11", creatorId: 4, platform: "Instagram", title: "Ripple Air 3 in 30 seconds", description: "@rippleacoustics #ad", publishedAt: "2026-10-04T08:00:00Z", views: 90_000, likes: 7_100, comments: 300 },
+  { id: "v11", creatorId: 4, platform: "YouTube", title: "Ripple Air 3 in 30 seconds #shorts", description: "@rippleacoustics #ad", publishedAt: "2026-10-04T08:00:00Z", views: 90_000, likes: 7_100, comments: 300 },
   { id: "v12", creatorId: 6, platform: "YouTube", title: "Best ANC under 5K: Kestrel vs Tusker vs Ripple", description: "Ranked after 40 hours of testing", publishedAt: "2026-09-28T10:00:00Z", views: 77_000, likes: 5_600, comments: 1_100 },
 ];
 export const DEMO_VIDEOS: VideoPost[] = seeds.map((s) => ({
@@ -70,7 +70,7 @@ export const DEMO_DELIVERABLES: Deliverable[] = [
   D({ id: "d3", dealId: "deal-priya", creatorId: 1, due: "2026-10-05", status: "Live", videoId: "v2", projectedViews: 90_000, fee: 60_000 }),
   D({ id: "d4", dealId: "deal-akash", creatorId: 2, due: "2026-10-06", status: "Live", videoId: "v3", projectedViews: 40_000, fee: 30_000 }),
   D({ id: "d5", dealId: "deal-ee", creatorId: 6, due: "2026-10-09", status: "Live", videoId: "v4", projectedViews: 70_000, fee: 55_000 }),
-  D({ id: "d6", dealId: "deal-neha", creatorId: 4, kind: "Instagram Reel", due: "2026-10-10", status: "Live", videoId: "v5", projectedViews: 110_000, fee: 65_000 }),
+  D({ id: "d6", dealId: "deal-neha", creatorId: 4, kind: "YouTube Short", due: "2026-10-10", status: "Live", videoId: "v5", projectedViews: 110_000, fee: 65_000 }),
   D({ id: "d7", dealId: "deal-kiran", creatorId: 11, due: "2026-10-18", status: "In production", projectedViews: 55_000, fee: 40_000 }),
 ];
 

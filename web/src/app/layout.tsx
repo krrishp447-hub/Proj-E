@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Archivo, Space_Mono } from "next/font/google";
 import { site } from "@/config/site";
 import "./globals.css";
+import "@/styles/motion.css";
 
 // display "optional": the condensed display face reflows the 11vw hero badly on a late swap (CLS ~0.19);
 // fonts are preloaded, so they are used whenever they arrive in time, otherwise that view keeps the fallback.

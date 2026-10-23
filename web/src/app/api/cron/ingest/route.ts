@@ -1,5 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { syncAudiences } from "@/server/accounts";
+import { runAudits } from "@/server/audit";
+import { sql } from "@/server/db";
 import { rejectUnlessCron } from "@/server/cron";
 import { runIngest } from "@/server/ingest";
 
@@ -13,8 +15,10 @@ export async function GET(request: Request) {
   try {
     const result = await runIngest();
     const audiences = await syncAudiences(); // connected creators' private audience (YouTube Analytics quota, not Data API)
+    // every 100 new creators: segregation + calculation checks, recorded in quality_audits (npm run quality)
+    const audits = sql ? await runAudits(sql) : [];
     revalidateTag("creators", "max"); // views pick up the fresh numbers
-    return Response.json({ ...result, audiences });
+    return Response.json({ ...result, audiences, audits: audits.map((a) => ({ creators: `${a.from + 1}–${a.to}`, passed: a.passed, failed: a.checks.filter((c) => !c.passed).map((c) => c.name) })) });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Ingest failed" }, { status: 500 });
   }

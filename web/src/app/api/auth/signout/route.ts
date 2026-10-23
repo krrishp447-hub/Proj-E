@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/server/auth";
+import { SESSION_COOKIE, currentUser, endSessions, sameOrigin } from "@/server/auth";
 
-// POST only (a form button): a GET sign-out link could be triggered by any page. 303 → the browser follows with GET.
+// POST only, from Scout's own pages. Ends every session of the account (the cookie version stops matching).
 export async function POST(request: Request) {
+  if (!sameOrigin(request)) return new NextResponse("Forbidden", { status: 403 });
+  const user = await currentUser();
+  if (user) await endSessions(user.id);
   const res = NextResponse.redirect(new URL("/", request.url), 303);
   res.cookies.delete(SESSION_COOKIE);
   return res;

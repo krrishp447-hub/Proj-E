@@ -106,11 +106,14 @@ async function BrandDashboard({ user }: { user: User }) {
                   <li key={c.handle}>
                     <span><b>{c.name}</b></span>
                     <span className="dash-num">{s}</span>
-                    <span className="dash-meta">{c.niche} · {c.language} · {fmt(c.subs)} subs · {c.eng}% eng{c.geo.length ? " · ✓ verified audience" : ""} · <Link href={`/dashboard/deals?new=${encodeURIComponent(c.channelId)}`}>Send offer →</Link></span>
+                    <span className="dash-meta">{c.niche} · {c.language} · {fmt(c.subs)} subs · {c.eng}% eng{c.geo.length ? " · ✓ verified audience" : ""} · <Link href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</Link></span>
                   </li>
                 ))}
               </ul>
-              <Link className="acct-btn" href={`/demo?q=${encodeURIComponent(p.brief)}`}>Open full shortlist</Link>
+              <div className="acct-actions">
+                <Link className="acct-btn" href={`/demo?q=${encodeURIComponent(p.brief)}`}>Open full shortlist</Link>
+                <Link className="acct-btn ghost" href={`/dashboard/offers/new?to=${top.slice(0, 6).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>Offer to top {Math.min(6, top.length)}</Link>
+              </div>
             </>
           ) : (
             <p className="acct-help">Save a brief in <Link href="/onboarding">your profile</Link> and your best matches show here.</p>
@@ -173,13 +176,12 @@ async function CreatorDashboard({ user }: { user: User }) {
 
         <section className="acct-card" aria-labelledby="brands-h">
           <h2 id="brands-h">Brands looking for creators like you</h2>
-          {fitBrands.length ? (
+          {fitBrands.some((b) => b.pitchable) ? (
             <ul className="dash-list">
-              {fitBrands.slice(0, 6).map((b) => (
+              {fitBrands.filter((b) => b.pitchable).slice(0, 6).map((b) => (
                 <li key={b.id}>
                   <span><b>{b.company}</b></span>
-                  <span className="dash-num">{b.budget ?? ""}</span>
-                  <span className="dash-meta">{b.category ? `${b.category} · ` : ""}“{b.brief}” · <Link href={`/dashboard/deals?pitch=${b.id}`}>Pitch →</Link></span>
+                  <span className="dash-meta">{b.category ? `${b.category} · ` : ""}“{b.brief}” · <Link href={`/dashboard/offers/new?to=${b.id}`}>Pitch →</Link></span>
                 </li>
               ))}
             </ul>

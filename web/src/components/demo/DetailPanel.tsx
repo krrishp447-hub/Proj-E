@@ -39,7 +39,7 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
           {inShortlist ? "✓ Shortlisted" : "+ Shortlist"}
         </button>
         {/* brand accounts: opens the offer composer (signed-out visitors are sent to log in first) */}
-        <a className="d-btn ghost" href={`/dashboard/deals?new=${encodeURIComponent(c.channelId)}`}>Send offer →</a>
+        <a className="d-btn ghost" href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer <span className="arw">→</span></a>
       </div>
 
       <dl className="d-grid">

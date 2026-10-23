@@ -2,21 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { fmt } from "@/lib/scout/engine";
-import { shareOfVoice, type Platform } from "@/lib/scout/campaigns";
+import { shareOfVoice } from "@/lib/scout/campaigns";
 import { DEMO_CREATOR_NAMES, DEMO_VIDEOS, SOV_BRANDS } from "@/lib/scout/campaign-demo";
 
 const YOU = "Kestrel Audio";
-const PLATFORMS: ("All" | Platform)[] = ["All", "YouTube", "Instagram"];
 
-/** Brand view: who owns the conversation in a category, by views and by mentions, per platform. */
+/** Brand view: who owns the conversation in a category on YouTube, by views and by mentions. */
 export function ShareOfVoice() {
-  const [platform, setPlatform] = useState<"All" | Platform>("All");
   const [metric, setMetric] = useState<"views" | "mentions">("views");
-  const rows = useMemo(() => shareOfVoice(DEMO_VIDEOS, SOV_BRANDS, platform === "All" ? undefined : platform), [platform]);
+  // YouTube is Scout's only source for now: one platform, conquered properly, before adding others.
+  const rows = useMemo(() => shareOfVoice(DEMO_VIDEOS, SOV_BRANDS, "YouTube"), []);
   const total = rows.reduce((s, r) => s + r[metric], 0) || 1;
   const sorted = [...rows].sort((a, b) => b[metric] - a[metric]);
   const posts = DEMO_VIDEOS
-    .filter((p) => platform === "All" || p.platform === platform)
+    .filter((p) => p.platform === "YouTube")
     .map((p) => ({ p, brands: Object.entries(SOV_BRANDS).filter(([, t]) => t.some((x) => `${p.title} ${p.description}`.toLowerCase().includes(x))).map(([b]) => b) }))
     .filter((x) => x.brands.length)
     .sort((a, b) => b.p.views - a.p.views);
@@ -24,9 +23,6 @@ export function ShareOfVoice() {
   return (
     <div>
       <div className="d-controls">
-        <div className="d-seg" role="radiogroup" aria-label="Platform">
-          {PLATFORMS.map((p) => <button key={p} type="button" role="radio" aria-checked={platform === p} onClick={() => setPlatform(p)}>{p}</button>)}
-        </div>
         <div className="d-seg" role="radiogroup" aria-label="Measure">
           <button type="button" role="radio" aria-checked={metric === "views"} onClick={() => setMetric("views")}>By views</button>
           <button type="button" role="radio" aria-checked={metric === "mentions"} onClick={() => setMetric("mentions")}>By mentions</button>

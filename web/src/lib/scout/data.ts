@@ -10,7 +10,10 @@ export type Creator = {
   platform: Platform;
   country: string;
   niche: string;
+  secondaryNiche: string | null; // a second genre they also make (segment.ts)
+  nicheConfidence: number; // 0–1, how clearly the primary niche wins
   tags: string[];
+  topics: string[]; // recurring words from the creator's own video titles (lib/scout/topics.ts)
   subs: number;
   eng: number; // engagement rate %
   views: number; // avg views
@@ -34,7 +37,7 @@ export type Creator = {
   source: "youtube";
 };
 
-export const NICHES = ["Tech", "Fitness", "Food", "Travel", "Fashion", "Beauty", "Finance", "Gaming", "Education", "Automotive", "Entertainment", "Parenting"];
+export const NICHES = ["Tech", "Gaming", "Music", "Entertainment", "Food", "Education", "Finance", "Fitness", "Beauty", "Fashion", "Travel", "Automotive", "Kids", "Parenting", "Sports", "News", "Spiritual", "Lifestyle"];
 export const BUDGETS = ["Under ₹50K", "₹50K–₹2L", "₹2L–₹10L", "₹10L+"]; // brand campaign budget bands (onboarding)
 export const AGE_BANDS = ["13–17", "18–24", "25–34", "35+"];
 

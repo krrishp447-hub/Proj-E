@@ -60,7 +60,7 @@ export function DealsBoard({ deals, side, openId, actions }: { deals: DealView[]
                   onDrop={(e) => { e.preventDefault(); if (dragId) run(dragId, { type: "move", to: s }); setDragId(null); }}
                 >
                   <h3>{s} <span>{col.length}</span></h3>
-                  {col.map((d) => <Card key={d.id} d={d} side={side} active={d.id === open} onOpen={() => setOpen(d.id)} onDrag={WORK_STAGES.includes(d.stage) ? setDragId : undefined} />)}
+                  {col.map((d) => <Card key={d.id} d={d} side={side} active={d.id === open} dragging={d.id === dragId} onOpen={() => setOpen(d.id)} onDrag={WORK_STAGES.includes(d.stage) ? setDragId : undefined} />)}
                 </section>
               );
             })}
@@ -93,13 +93,13 @@ export function DealsBoard({ deals, side, openId, actions }: { deals: DealView[]
   );
 }
 
-function Card({ d, side, active, onOpen, onDrag }: { d: DealView; side: Side; active: boolean; onOpen: () => void; onDrag?: (id: string | null) => void }) {
+function Card({ d, side, active, dragging, onOpen, onDrag }: { d: DealView; side: Side; active: boolean; dragging: boolean; onOpen: () => void; onDrag?: (id: string | null) => void }) {
   const last = d.offers.at(-1);
   const done = d.checklist.filter((c) => c.done).length;
   return (
     <button
       type="button"
-      className={`deals-card ${active ? "is-active" : ""} ${d.myTurn ? "is-turn" : ""}`}
+      className={`deals-card ${active ? "is-active" : ""} ${d.myTurn ? "is-turn" : ""} ${dragging ? "is-dragging" : ""}`}
       onClick={onOpen}
       draggable={!!onDrag}
       onDragStart={() => onDrag?.(d.id)}

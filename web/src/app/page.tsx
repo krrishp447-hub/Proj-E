@@ -4,7 +4,7 @@ import { SiteNav } from "@/components/layout/SiteNav";
 import { FeatureCarousel } from "@/components/sections/FeatureCarousel";
 import { Hero } from "@/components/sections/Hero";
 import { Product } from "@/components/sections/Product";
-import { Closing, CtaBand, Listing, Proof } from "@/components/sections/Results";
+import { Closing, CtaBand, Listing } from "@/components/sections/Results";
 import { Collage, Manifesto, Pillars } from "@/components/sections/Story";
 
 export default function Home() {
@@ -20,7 +20,7 @@ export default function Home() {
           <FeatureCarousel />
           <Listing />
           <Product />
-          <Proof />
+          {/* <Proof /> brand marquee hidden for now (src/components/sections/Results.tsx) */}
           <Closing />
           <CtaBand />
         </main>

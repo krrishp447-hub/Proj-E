@@ -17,16 +17,29 @@ async function get<T>(path: string, params: Record<string, string>): Promise<T> 
 export const chunk = <T,>(xs: T[], size: number) =>
   Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, i * size + size));
 
-/** Up to 50 channels per call. Channels with hidden subscriber counts are skipped (no basis to rank). */
-export async function fetchChannels(ids: string[]): Promise<YtChannel[]> {
-  const out: YtChannel[] = [];
+/** True for YouTube's daily-quota errors (403 quotaExceeded / dailyLimitExceeded). */
+export const isQuotaError = (e: unknown) => e instanceof Error && / 403: /.test(e.message) && /quota|dailyLimit/i.test(e.message);
+
+/**
+ * Up to 50 channels per call. Channels with hidden subscriber counts are skipped (no basis to rank).
+ * If the daily quota runs out part-way, returns what was fetched so far with `quotaExhausted`, instead of throwing
+ * away the whole run.
+ */
+export async function fetchChannels(ids: string[]): Promise<YtChannel[] & { quotaExhausted?: boolean }> {
+  const out: YtChannel[] & { quotaExhausted?: boolean } = [];
   for (const batch of chunk(ids, 50)) {
-    const r = await get<{ items?: YtChannel[] }>("channels", {
-      part: "snippet,statistics,contentDetails,brandingSettings",
-      id: batch.join(","),
-      maxResults: "50",
-    });
-    out.push(...(r.items ?? []).filter((c) => !c.statistics.hiddenSubscriberCount));
+    try {
+      const r = await get<{ items?: YtChannel[] }>("channels", {
+        part: "snippet,statistics,contentDetails,brandingSettings",
+        id: batch.join(","),
+        maxResults: "50",
+      });
+      out.push(...(r.items ?? []).filter((c) => !c.statistics.hiddenSubscriberCount));
+    } catch (e) {
+      if (!isQuotaError(e)) throw e;
+      out.quotaExhausted = true;
+      break;
+    }
   }
   return out;
 }

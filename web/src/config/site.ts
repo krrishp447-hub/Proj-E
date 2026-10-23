@@ -12,10 +12,6 @@ export const site = {
   demoHref: "/demo",
   filmHref: "/film",
   // No real profile URLs yet; entries without an href render as plain text instead of dead links.
-  social: [
-    { label: "Instagram" },
-    { label: "LinkedIn" },
-    { label: "X", footerLabel: "X / Twitter" },
-    { label: "YouTube" },
-  ] as SocialLink[],
+  // YouTube-first: other profiles come back when they exist.
+  social: [{ label: "YouTube" }] as SocialLink[],
 };

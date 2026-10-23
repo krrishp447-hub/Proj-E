@@ -1,7 +1,7 @@
 import { ChefHat, Dumbbell, Gamepad2, Headphones, IndianRupee, Plane, Smartphone } from "lucide-react";
 import { NichePanel, nicheStats } from "@/components/ui/NichePanel";
 import { PillarExplorer } from "./PillarExplorer";
-import { getCreators } from "@/server/creators";
+import { getCreators, getHomeCreators } from "@/server/creators";
 import { Showreel } from "./Showreel";
 
 export function Manifesto() {
@@ -23,7 +23,7 @@ export function Manifesto() {
 }
 
 export async function Pillars() {
-  const { creators } = await getCreators();
+  const { creators } = await getHomeCreators();
   return (
     <section className="sec pillars" data-io>
       <div className="edge">
@@ -37,7 +37,7 @@ export async function Pillars() {
 // Solid pop colours only; each card is a niche with its live average engagement from the demo dataset.
 const collage = [
   { par: 1.15, left: "2%", top: "30%", bg: "var(--signal)", tag: "YT · TECH", niche: "Tech", icon: Smartphone },
-  { par: 0.85, left: "16%", top: "6%", bg: "var(--pop)", tag: "IG · FIT", niche: "Fitness", icon: Dumbbell },
+  { par: 0.85, left: "16%", top: "6%", bg: "var(--pop)", tag: "YT · FIT", niche: "Fitness", icon: Dumbbell },
   { par: 1.1, left: "31%", top: "40%", bg: "var(--data)", tag: "AUDIO", niche: "Tech", icon: Headphones },
   { par: 0.9, left: "46%", top: "12%", bg: "var(--sun)", tag: "FINANCE", niche: "Finance", icon: IndianRupee },
   { par: 1.2, left: "61%", top: "36%", bg: "var(--ink)", fg: "var(--paper)", tag: "GAMING", niche: "Gaming", icon: Gamepad2 },

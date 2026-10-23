@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { DEFAULT_QUERY, ScoutApp } from "@/components/demo/ScoutApp";
-import { getCreators } from "@/server/creators";
+import { getHomeCreators } from "@/server/creators";
 
 /** The live product, embedded on the homepage: same component as /demo, minus its top bar. */
 export async function Product() {
-  const { creators, source } = await getCreators();
+  const { creators, source, total } = await getHomeCreators();
   return (
     <section id="product" className="sec product" data-io>
       <div className="edge">
@@ -16,7 +16,7 @@ export async function Product() {
           <Link className="pbtn ghost" href="/demo">Open full screen ↗</Link>
         </div>
         <div className="appframe rev" style={{ "--d": ".1s" } as React.CSSProperties}>
-          <ScoutApp initialQuery={DEFAULT_QUERY} creators={creators} source={source} embedded />
+          <ScoutApp initialQuery={DEFAULT_QUERY} creators={creators} source={source} sampleOf={total} embedded />
         </div>
       </div>
     </section>

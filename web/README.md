@@ -50,6 +50,7 @@ Without the variables below the site runs on the illustrative demo dataset (labe
    ```bash
    npm run db:migrate                     # create tables (db/schema.sql)
    npm run discover                       # seed channels via YouTube search (100 quota units/query)
+   npm run quality                        # data-quality audits (auto every 100 new creators); add "-- --now" to audit the latest 100
    curl -H "Authorization: Bearer $CRON_SECRET" https://<your-domain>/api/cron/ingest   # first ingest now
    ```
    The app switches to "Live · YouTube public data" as soon as rows exist; growth fills in after ~30 days of daily

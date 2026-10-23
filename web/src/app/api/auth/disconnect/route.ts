@@ -1,11 +1,12 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { disconnectChannel } from "@/server/accounts";
-import { currentUser } from "@/server/auth";
+import { currentUser, sameOrigin } from "@/server/auth";
 
 // Revokes Scout's YouTube access and deletes the private audience data. The session cookie is SameSite=Lax, so a
 // cross-site form POST arrives without it and is rejected here.
 export async function POST(request: Request) {
+  if (!sameOrigin(request)) return new NextResponse("Forbidden", { status: 403 });
   const user = await currentUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url), 303);
   await disconnectChannel(user.id);

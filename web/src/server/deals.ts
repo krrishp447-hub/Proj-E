@@ -83,7 +83,7 @@ export async function openDeal(u: User, target: string, title: string, terms: Te
     brandId = u.id; channelId = c.channel_id;
   } else {
     if (!u.channelId) throw new Error("Connect your channel first");
-    const [b] = (await q`select user_id::text as id, company from brand_profiles where user_id::text = ${target}`) as { id: string; company: string }[];
+    const [b] = (await q`select user_id::text as id, company from brand_profiles where user_id::text = ${target} and pitchable`) as { id: string; company: string }[];
     if (!b) throw new Error("Brand not found");
     await q`insert into brands (id, name) values (${b.id}, ${b.company}) on conflict (id) do update set name = excluded.name`;
     brandId = b.id; channelId = u.channelId;
@@ -102,8 +102,14 @@ export async function dealAction(u: User, id: string, a: DealAction): Promise<st
   const state = { stage: d.stage, offers: offers.map((o) => ({ by: o.by, fee: 0, deliverables: "", usage: "", timeline: "", at: "" })) };
   const next = act(state, sideOf(u), a, new Date().toISOString());
   if ("error" in next) return next.error;
+  // Only apply if nobody changed the deal since we read it (same stage, same number of offers). Otherwise the other
+  // side acted at the same moment: ask to refresh instead of writing a stage that contradicts the offer thread.
+  const [moved] = (await db()`
+    update deals set stage = ${next.stage}, updated_at = now()
+    where id = ${id} and stage = ${d.stage} and (select count(*) from offers where deal_id = ${id}) = ${offers.length}
+    returning id`) as { id: string }[];
+  if (!moved) return "This deal just changed. Refresh to see the latest offer.";
   if (a.type === "counter") await addOffer(id, sideOf(u), a.terms);
-  await db()`update deals set stage = ${next.stage}, updated_at = now() where id = ${id}`;
   return null;
 }
 

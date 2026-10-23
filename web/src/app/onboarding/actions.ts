@@ -47,6 +47,7 @@ export async function saveBrandOnboarding(fd: FormData) {
     category: pick(fd, "category", [...NICHES, "Other"])[0] ?? null,
     brief: brief || null,
     budget: pick(fd, "budget", BUDGETS)[0] ?? null,
+    pitchable: fd.get("pitchable") === "on",
     tracked: text(fd, "tracked", 400).split(",").map((t) => t.trim()).filter(Boolean).slice(0, 12),
   });
   redirect("/dashboard");

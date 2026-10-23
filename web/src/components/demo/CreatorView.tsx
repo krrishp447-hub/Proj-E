@@ -18,14 +18,14 @@ const REQUESTS: Record<string, Request[]> = {
     { from: "Headphone startup", ask: "ANC comparison video", brief: "YouTube audio reviewers ANC headphones India", budget: 45000 },
   ],
   Fitness: [
-    { from: "Nutrition brand", ask: "30-day series · 4 reels", brief: "Instagram fitness creators in India, nutrition", budget: 70000 },
+    { from: "Nutrition brand", ask: "30-day series · 4 Shorts", brief: "YouTube fitness creators in India, nutrition", budget: 70000 },
     { from: "Smartwatch brand", ask: "Workout integration", brief: "fitness creators India workout, high engagement", budget: 50000 },
   ],
   Finance: [{ from: "Investing app", ask: "Explainer · 1 video", brief: "YouTube finance creators in India investing", budget: 90000 }],
   Gaming: [{ from: "Peripherals brand", ask: "Setup tour feature", brief: "YouTube gaming creators India setup", budget: 65000 }],
-  Fashion: [{ from: "Apparel label", ask: "Haul · 3 reels", brief: "Instagram fashion creators India", budget: 55000 }],
+  Fashion: [{ from: "Apparel label", ask: "Haul · 3 Shorts", brief: "YouTube fashion creators India", budget: 55000 }],
   Food: [{ from: "Cookware brand", ask: "Recipe integration", brief: "YouTube cooking creators India recipes", budget: 75000 }],
-  Travel: [{ from: "Luggage brand", ask: "Trip vlog feature", brief: "Instagram travel creators India", budget: 60000 }],
+  Travel: [{ from: "Luggage brand", ask: "Trip vlog feature", brief: "YouTube travel creators India", budget: 60000 }],
 };
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 

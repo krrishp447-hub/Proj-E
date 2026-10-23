@@ -9,7 +9,7 @@ export const ANNUAL_DISCOUNT = 0.2;
 export const CREATOR_PLANS: Plan[] = [
   {
     id: "creator-free", name: "Creator", monthly: 0, blurb: "Be found by brands. Free forever: we never charge to be listed.",
-    cta: { label: "Claim your channel", href: "/login" },
+    cta: { label: "Claim your channel", href: "/api/auth/google/start?role=creator" }, // straight to creator sign-in (YouTube access)
     features: [
       { text: "Listed and ranked in brand searches" },
       { text: "Verified audience from YouTube Analytics" },
@@ -21,7 +21,7 @@ export const CREATOR_PLANS: Plan[] = [
   },
   {
     id: "creator-pro", name: "Creator Pro", monthly: 499, blurb: "For creators running brand deals as a business.",
-    cta: { label: "Join the waitlist", href: "mailto:hello@scout.io?subject=Creator%20Pro%20waitlist" },
+    cta: { label: "Start free, upgrade later", href: "/api/auth/google/start?role=creator" }, // Pro isn't live: everyone starts on Free
     features: [
       { text: "Everything in Creator" },
       { text: "Who viewed and shortlisted you", soon: true },
@@ -35,7 +35,7 @@ export const CREATOR_PLANS: Plan[] = [
 export const BRAND_PLANS: Plan[] = [
   {
     id: "starter", name: "Starter", monthly: 25_000, blurb: "For a brand running its first creator campaigns.",
-    cta: { label: "Start free trial", href: "/login" },
+    cta: { label: "Start free trial", href: "/api/auth/google/start?role=brand" },
     features: [
       { text: "2 seats" },
       { text: "Unlimited search, shortlists and compare" },
@@ -46,7 +46,7 @@ export const BRAND_PLANS: Plan[] = [
   },
   {
     id: "growth", name: "Growth", monthly: 60_000, blurb: "For teams running campaigns every month.", featured: true,
-    cta: { label: "Start free trial", href: "/login" },
+    cta: { label: "Start free trial", href: "/api/auth/google/start?role=brand" },
     features: [
       { text: "5 seats" },
       { text: "Everything in Starter, unlimited offers" },
@@ -56,8 +56,8 @@ export const BRAND_PLANS: Plan[] = [
     ],
   },
   {
-    id: "agency", name: "Agency", monthly: null, blurb: "For agencies and large brands managing many clients. From ₹1.5L a month.",
-    cta: { label: "Talk to us", href: "mailto:hello@scout.io?subject=Scout%20Agency%20plan" },
+    id: "agency", name: "Agency", monthly: null, blurb: "For agencies and large brands managing many clients. From ₹1.5L a month; we set up your team after sign-up.",
+    cta: { label: "Start free trial", href: "/api/auth/google/start?role=brand" },
     features: [
       { text: "15+ seats, multiple brands and clients" },
       { text: "Everything in Growth" },

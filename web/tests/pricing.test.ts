@@ -19,3 +19,8 @@ test("pricing stance: creators are never charged to be listed", () => {
   assert.ok(CREATOR_PLANS[0].features.some((f) => /listed/i.test(f.text)));
   assert.ok(BRAND_PLANS.every((p) => p.features.every((f) => !/searches? a month/i.test(f.text)))); // search is never metered
 });
+
+test("plan buttons start sign-in for their side directly (no role-choice page)", () => {
+  assert.ok(BRAND_PLANS.every((p) => p.cta.href === "/api/auth/google/start?role=brand"));
+  assert.ok(CREATOR_PLANS.every((p) => p.cta.href === "/api/auth/google/start?role=creator"));
+});

@@ -209,3 +209,35 @@ alter table deals add column if not exists updated_at timestamptz not null defau
 create index if not exists deals_brand_idx on deals (brand_id, updated_at desc);
 create index if not exists deals_channel_idx on deals (channel_id, updated_at desc);
 create index if not exists offers_deal_idx on offers (deal_id, created_at);
+
+-- Search: recurring words from each creator's own video titles (filled by the ingest; see lib/scout/topics.ts).
+alter table creators add column if not exists topics text[] not null default '{}';
+
+-- Channel description + keywords (first 1,500 chars), so niches can be re-derived offline when the classifier improves.
+alter table creators add column if not exists about text not null default '';
+
+-- Segregation detail (lib/scout/segment.ts): secondary niche + confidence; created_at drives the per-100 quality audit.
+alter table creators add column if not exists niche2 text;
+alter table creators add column if not exists niche_conf real not null default 0;
+alter table creators add column if not exists created_at timestamptz not null default now();
+create index if not exists creators_created_idx on creators (created_at, channel_id);
+
+-- One row per audit of 100 newly added creators: segregation + calculation checks (lib/scout/audit.ts).
+create table if not exists quality_audits (
+  id        bigint generated always as identity primary key,
+  run_at    timestamptz not null default now(),
+  from_n    int not null, -- creators #from_n+1 … #to_n in order of creation
+  to_n      int not null,
+  passed    boolean not null,
+  checks    jsonb not null
+);
+
+-- Hidden like counts are stored as NULL (unknown), not 0, so engagement can be recomputed exactly (quality audit).
+alter table videos alter column likes drop not null;
+alter table video_snapshots alter column likes drop not null;
+
+-- Audit fixes (2026-10-23): sign-out ends every session; brands opt in before creators can see/pitch their brief.
+alter table users add column if not exists session_version int not null default 0;
+alter table brand_profiles add column if not exists pitchable boolean not null default false;
+alter table discovery_queries add column if not exists pages int not null default 0;
+create index if not exists videos_published_idx on videos (published_at);

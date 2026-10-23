@@ -1,6 +1,8 @@
 // Pure transforms: YouTube Data API v3 payloads → Scout signals. No I/O, so it is unit-tested directly.
 import { NICHES } from "./data.ts";
-import { KEYWORDS, SYNONYMS } from "./engine.ts";
+import { KEYWORDS } from "./engine.ts";
+import { nicheHits, segment } from "./segment.ts";
+import { topicsFrom } from "./topics.ts";
 
 /** The subset of a `channels.list` item we request (part=snippet,statistics,contentDetails,brandingSettings). */
 export type YtChannel = {
@@ -26,6 +28,8 @@ export type ChannelMetrics = {
   handle: string;
   country: string;
   niche: string;
+  secondaryNiche: string | null;
+  nicheConfidence: number; // 0–1
   tags: string[];
   subs: number;
   avgViews: number;
@@ -36,6 +40,7 @@ export type ChannelMetrics = {
   suspicious: number; // estimated %
   language: string;
   isBrand: boolean;
+  topics: string[];
 };
 
 export const COUNTRY: Record<string, string> = { IN: "India", US: "US", GB: "UK", AE: "UAE" };
@@ -49,15 +54,26 @@ const median = (xs: number[]) => {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /** Niche + sub-niche tags from what the channel actually publishes (titles, descriptions, tags, channel keywords). */
-export function classify(text: string): { niche: string; tags: string[] } {
-  const t = text.toLowerCase();
-  const hits = (words: string[]) => words.reduce((k, w) => k + (t.match(new RegExp(`\\b${w}`, "g"))?.length ?? 0), 0);
-  let best = { niche: "Other", score: 0 };
-  for (const nn of NICHES) {
-    const score = hits([nn.toLowerCase(), ...(SYNONYMS[nn] ?? [])]);
-    if (score > best.score) best = { niche: nn, score };
+export type Classification = { niche: string; tags: string[]; score: number; scores: Record<string, number> };
+
+/**
+ * Pooled keyword classification of one text (used for per-video sub-niche tags and quick checks). Channels are
+ * segregated with segment(), which weighs self-description and uploads separately and adds secondary + confidence.
+ */
+export function classify(text: string): Classification {
+  const h = nicheHits(text);
+  let best = { niche: "Other", score: 0, distinct: 0 };
+  for (const n of NICHES) {
+    const { count, distinct } = h[n];
+    if (count > best.score || (count === best.score && distinct > best.distinct)) best = { niche: n, score: count, distinct };
   }
-  return { niche: best.niche, tags: KEYWORDS.filter((k) => new RegExp(`\\b${k}`).test(t)) };
+  const t = text.toLowerCase();
+  return {
+    niche: best.score >= 2 ? best.niche : "Other",
+    tags: KEYWORDS.filter((k) => new RegExp(String.raw`\b${k}`).test(t)),
+    score: best.score,
+    scores: Object.fromEntries(NICHES.map((n) => [n, h[n].count])),
+  };
 }
 
 // Indian scripts by Unicode block. Devanagari is reported as Hindi (Marathi uses the same script).
@@ -174,7 +190,7 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
 
   // Niche from everything the channel says about itself; sub-niche tags only from what recurs in uploads.
   // Video descriptions are excluded from tags: creators paste the same affiliate/link list into every one.
-  const { niche } = classify([ch.snippet.title, ch.snippet.description, ch.brandingSettings?.channel?.keywords, ...recent.map((v) => v.snippet.title)].join(" "));
+  const seg = segment({ name: ch.snippet.title, about: [ch.snippet.description, ch.brandingSettings?.channel?.keywords].filter(Boolean).join("\n"), titles: recent.map((v) => v.snippet.title) });
   const tags = recurringTags(recent);
   const auth = estimateAuthenticity(engKnown ? eng : null, avgViews, subs);
   const language = contentLanguage(recent, ch.snippet.description);
@@ -184,7 +200,9 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
     name: ch.snippet.title,
     handle: ch.snippet.customUrl ?? ch.id,
     country: COUNTRY[ch.snippet.country ?? ""] ?? ch.snippet.country ?? "Unknown",
-    niche,
+    niche: seg.niche,
+    secondaryNiche: seg.secondary,
+    nicheConfidence: seg.confidence,
     tags,
     subs,
     avgViews,
@@ -195,5 +213,6 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
     suspicious: Math.max(1, Math.round((100 - auth) * 0.4)),
     language,
     isBrand: isBrandChannel(ch),
+    topics: topicsFrom(recent.map((v) => [v.snippet.title, ...(v.snippet.tags ?? [])].join(" "))),
   };
 }

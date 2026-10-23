@@ -12,7 +12,8 @@ export async function saveVideos(db: Db, channelId: string, videos: YtVideo[]) {
   if (!videos.length) return;
   const col = <T,>(f: (v: YtVideo) => T) => videos.map(f);
   const ids = col((v) => v.id);
-  const views = col((v) => n(v.statistics.viewCount)), likes = col((v) => n(v.statistics.likeCount)), comments = col((v) => n(v.statistics.commentCount));
+  const views = col((v) => n(v.statistics.viewCount)), comments = col((v) => n(v.statistics.commentCount));
+  const likes = col((v) => (v.statistics.likeCount === undefined ? null : n(v.statistics.likeCount))); // null = hidden by the creator, not 0
   await db`
     insert into videos (video_id, channel_id, title, description, published_at, url, views, likes, comments, fetched_at)
     select id, ${channelId}, title, descr, published::timestamptz, 'https://www.youtube.com/watch?v=' || id, vw, lk, cm, now()
@@ -31,7 +32,7 @@ export async function saveVideos(db: Db, channelId: string, videos: YtVideo[]) {
 }
 
 type CampaignRow = { id: string; start_date: string; end_date: string; rules: TrackingRules; creators: string[] | null };
-type VideoRow = { video_id: string; channel_id: string; title: string; description: string; published_at: string; url: string; paid_flag: boolean | null; views: number; likes: number; comments: number };
+type VideoRow = { video_id: string; channel_id: string; title: string; description: string; published_at: string; url: string; paid_flag: boolean | null; views: number; likes: number | null; comments: number };
 
 export type FilingResult = { campaigns: number; checked: number; filed: number; review: number; organic: number; deliverablesLinked: number };
 
@@ -64,7 +65,7 @@ export async function fileCampaignPosts(): Promise<FilingResult> {
       out.checked++;
       const post: VideoPost<string> = {
         id: v.video_id, creatorId: v.channel_id, platform: "YouTube", title: v.title, description: v.description,
-        publishedAt: v.published_at, url: v.url, paidFlag: v.paid_flag ?? undefined, views: v.views, likes: v.likes, comments: v.comments, daily: [],
+        publishedAt: v.published_at, url: v.url, paidFlag: v.paid_flag ?? undefined, views: v.views, likes: v.likes ?? 0, comments: v.comments, daily: [],
       };
       const m = matchVideo(post, campaign);
       if (m.status === "none") continue;

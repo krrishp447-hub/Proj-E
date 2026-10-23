@@ -16,9 +16,25 @@ const TERMS: Record<string, string[]> = {
   Automotive: ["car review", "bike review"],
   Entertainment: ["comedy sketch", "movie review"],
   Parenting: ["parenting", "baby care"],
+  Music: ["music cover", "indie music"],
+  Kids: ["kids rhymes"],
+  Sports: ["cricket analysis"],
+  News: ["news analysis"],
+  Spiritual: ["devotional"],
+  Lifestyle: ["daily vlog"],
 };
 const LANGS = ["india", "hindi", "tamil", "telugu", "bengali", "marathi", "kannada", "malayalam", "gujarati", "punjabi"];
 export const QUERIES = Object.values(TERMS).flatMap((ts) => ts.flatMap((t) => LANGS.map((l) => `${t} ${l}`)));
+const NICHE_OF = new Map<string, string>(Object.entries(TERMS).flatMap(([niche, ts]) => ts.flatMap((t) => LANGS.map((l) => [`${t} ${l}`, niche] as const))));
+
+/** Interleave items by group, keeping each group's order: a1 b1 c1 a2 b2 c2 … */
+function roundRobin<T>(items: T[], group: (x: T) => string): T[] {
+  const groups = new Map<string, T[]>();
+  for (const x of items) groups.set(group(x), [...(groups.get(group(x)) ?? []), x]);
+  const out: T[] = [];
+  for (let i = 0; out.length < items.length; i++) for (const g of groups.values()) if (g[i]) out.push(g[i]);
+  return out;
+}
 
 const DAILY_QUOTA = 10_000;
 const HEADROOM = 1_000; // never plan to the last unit
@@ -42,9 +58,11 @@ export async function runDiscovery(): Promise<DiscoveryResult> {
   const take = Math.max(0, Math.min(MAX_QUERIES, Math.floor(budget / PER_QUERY)));
   if (!take) return result;
 
-  const queries = (await sql`
-    select q, page_token from discovery_queries where not done
-    order by last_run nulls first, q limit ${take}`) as { q: string; page_token: string | null }[];
+  // Least-recently-run first, then round-robin across niches. Alphabetical order alone spent a whole day on
+  // "bike review …" / "bike travel …" (Automotive, Travel) while Beauty and Fashion got nothing.
+  const open = (await sql`
+    select q, page_token from discovery_queries where not done order by last_run nulls first, q`) as { q: string; page_token: string | null }[];
+  const queries = roundRobin(open, (r) => NICHE_OF.get(r.q) ?? "Other").slice(0, take);
   for (const { q, page_token } of queries) {
     const { ids, next } = await searchChannels(q, page_token ?? undefined);
     result.queries++;
@@ -53,10 +71,12 @@ export async function runDiscovery(): Promise<DiscoveryResult> {
       insert into channel_seeds (channel_id, note) select unnest(${ids}::text[]), ${q}
       on conflict do nothing returning channel_id`;
     result.added += rows.length;
-    // retire a query once results run out or a page brings nothing new (deeper pages only get less relevant)
+    // Retire a query when YouTube has no more pages, or after 3 pages in a row that added nothing (overlapping searches
+    // often return known channels on page 1 while deeper pages still hold new ones). `pages` counts that empty streak.
     await sql`
       update discovery_queries set page_token = ${next}, last_run = current_date, added = added + ${rows.length},
-        done = ${!next || rows.length === 0} where q = ${q}`;
+        pages = case when ${rows.length} > 0 then 0 else pages + 1 end,
+        done = ${!next} or (${rows.length} = 0 and pages + 1 >= 3) where q = ${q}`;
   }
   return result;
 }

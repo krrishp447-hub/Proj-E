@@ -32,7 +32,7 @@
 .acct-form legend { float: left; width: 100%; font: 400 30px/1 var(--disp); text-transform: uppercase; margin-bottom: 4px; }
 .acct-form label, .acct-q { display: grid; gap: 6px; font-weight: 700; font-size: 14px; }
 .acct-form .acct-help { font-weight: 400; font-size: 13px; opacity: .7; }
-.acct-form input[type="text"], .acct-form input[type="url"], .acct-form input[type="number"], .acct-form select, .acct-form textarea {
+.acct-form input[type="text"], .acct-form input[type="url"], .acct-form input[type="number"], .acct-form input[type="date"], .acct-form input[type="search"], .acct-form select, .acct-form textarea {
   font: 500 16px var(--body); color: var(--ink); background: #fff; border: 1.5px solid var(--ink); border-radius: 12px; padding: 12px 14px; width: 100%; }
 .acct-form textarea { min-height: 96px; resize: vertical; }
 .acct-form :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
@@ -134,3 +134,23 @@
 .deals-thread q { font-style: italic; }
 .deals-checklist li::before { content: none; }
 .deals-compose { margin-bottom: 24px; }
+
+/* send offers page */
+.offer { display: grid; gap: 16px; max-width: 980px; }
+.offer-results li { align-items: center; }
+.offer-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.offer-table th { text-align: left; font: 700 11px var(--mono); text-transform: uppercase; opacity: .6; padding: 8px 6px; }
+.offer-table td { padding: 10px 6px; border-top: 1px solid rgb(12 13 11 / .12); vertical-align: middle; }
+.offer-table td .acct-help { display: block; }
+.offer-table input[type="number"] { max-width: 150px; padding: 8px 10px; }
+.offer-warn { display: block; margin-top: 4px; font: 700 10.5px var(--mono); text-transform: uppercase; color: #b3261e; }
+.offer-tpl { background: none; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 999px; padding: 8px 14px; font: 600 14px var(--body); cursor: pointer; }
+.offer-tpl.is-on { background: var(--ink); color: var(--paper); }
+.offer-brands { display: grid; gap: 8px; }
+.offer-brands label { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 12px 14px; border: 1.5px solid rgb(12 13 11 / .2); border-radius: 12px; cursor: pointer; font-weight: 500; }
+.offer-brands label.is-on { border-color: var(--ink); background: rgb(12 13 11 / .05); }
+.offer-brands input { grid-row: span 2; align-self: center; accent-color: var(--ink); }
+.offer-bar { position: sticky; bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 20px; border-radius: 999px; background: var(--signal); color: var(--ink); font-weight: 700; box-shadow: 0 10px 30px -12px rgb(0 0 0 / .7); }
+.offer-bar .acct-btn.on-ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.deals-top { margin: -8px 0 16px; }
+.d-cmpgo { text-decoration: none; justify-content: center; }

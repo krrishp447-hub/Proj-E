@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     if (result.error) return back(`/login?error=${result.error}`);
     if (role === "creator") revalidateTag("creators", "max"); // brands see the verified audience
     const res = back("/dashboard"); // the dashboard sends new accounts on to /onboarding
-    res.cookies.set(sessionCookie(sessionValue(result.userId)));
+    res.cookies.set(sessionCookie(sessionValue(result.userId, result.sessionVersion)));
     return res;
   } catch (e) {
     console.error("sign-in failed", e instanceof Error ? e.message : e);

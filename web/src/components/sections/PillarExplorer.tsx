@@ -13,7 +13,7 @@ const PILLARS = [
 
 const BRIEFS = [
   "Indian YouTube tech creators who review earbuds, 50K–500K subs",
-  "Fast-growing Instagram fitness creators in India",
+  "Fast-growing YouTube fitness creators in India",
   "YouTube finance creators in India, high engagement",
 ];
 

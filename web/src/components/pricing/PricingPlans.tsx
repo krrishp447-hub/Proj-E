@@ -11,7 +11,7 @@ function PlanCard({ p, annual }: { p: Plan; annual: boolean }) {
       {p.featured && <span className="pr-flag">Most teams</span>}
       <h3 id={`${p.id}-h`}>{p.name}</h3>
       <p className="pr-price">
-        {p.monthly === null ? <>Custom</> : p.monthly === 0 ? <>Free</> : <>{inr(priceFor(p.monthly, annual))}<small>/month</small></>}
+        {p.monthly === null ? <>Custom</> : p.monthly === 0 ? <>Free</> : <><span key={priceFor(p.monthly, annual)} className="roll">{inr(priceFor(p.monthly, annual))}</span><small>/month</small></>}
       </p>
       <p className="pr-billing">{p.monthly ? (annual ? "billed yearly, GST extra" : "billed monthly, GST extra") : p.monthly === 0 ? "forever" : "billed yearly"}</p>
       <p className="pr-blurb">{p.blurb}</p>

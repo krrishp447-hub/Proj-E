@@ -1,9 +1,9 @@
 import { site } from "@/config/site";
 import { ResultsFunnel } from "./ResultsFunnel";
-import { getCreators } from "@/server/creators";
+import { getHomeCreators } from "@/server/creators";
 
 export async function Listing() {
-  const { creators } = await getCreators();
+  const { creators } = await getHomeCreators();
   return (
     <section id="listing" className="sec listing wipe" data-io>
       <div className="edge">

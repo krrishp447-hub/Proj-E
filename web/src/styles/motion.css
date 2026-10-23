@@ -1,0 +1,103 @@
+/*
+ * Shared motion for the app, account, dashboard, deals and pricing pages, in the homepage's language:
+ * ease-out cubic-bezier(.2,.8,.2,1) for things arriving / responding, in-out (.76,0,.24,1) for wipes.
+ * Motion confirms an action or shows where something came from; nothing loops or moves on its own.
+ * prefers-reduced-motion: globals.css turns off animations and all transitions but opacity; the hover lifts
+ * below are also switched off there.
+ */
+:root {
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-io: cubic-bezier(.76, 0, .24, 1);
+  --t-fast: .14s;
+  --t: .26s;
+}
+
+/* ---------- buttons: colour eases, a 1px lift on hover, a press on click ---------- */
+.acct-btn, .d-btn, .pbtn, .menu, .fctrl button, .funnel-step, .deals-seg button, .d-tabs button, .d-role button,
+.d-seg button, .d-x, .acct-chips label, .d-tagchip, .deals-card, .dash-search button, .offer-tpl, .offer-brands label {
+  transition: background-color var(--t) var(--ease-out), color var(--t) var(--ease-out), border-color var(--t) var(--ease-out),
+    box-shadow var(--t) var(--ease-out), transform var(--t) var(--ease-out), opacity var(--t) var(--ease-out);
+}
+.acct-btn:hover:not(:disabled), .d-btn:hover:not(:disabled), .pbtn:hover, .menu:hover, .fctrl button:hover { transform: translateY(-1px); }
+.acct-btn:active:not(:disabled), .d-btn:active:not(:disabled), .pbtn:active, .menu:active, .fctrl button:active, .funnel-step:active,
+.deals-seg button:active, .d-tabs button:active:not(:disabled), .d-role button:active, .acct-chips label:active, .d-tagchip:active, .d-x:active {
+  transform: translateY(0) scale(.97);
+  transition-duration: var(--t-fast);
+}
+.acct-btn:disabled, .d-btn:disabled { opacity: .55; cursor: not-allowed; }
+/* "Saving…" / pending: a slow breathe so a waiting button reads as busy, not broken */
+.acct-btn:disabled, .deals-saving { animation: busy 1.2s var(--ease-io) infinite alternate; }
+@keyframes busy { from { opacity: .55; } to { opacity: .85; } }
+
+/* arrows in labels nudge toward where the button goes */
+.acct-btn .arw, .d-btn .arw { display: inline-block; transition: transform var(--t) var(--ease-out); }
+.acct-btn:hover .arw, .d-btn:hover .arw { transform: translateX(3px); }
+
+/* nav and title links: an underline draws in from the left (inline links in sentences keep a permanent underline) */
+.dash-head nav a, .acct-back, .d-back, .dash-list a {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--t) var(--ease-out), color var(--t) var(--ease-out);
+  text-decoration: none;
+}
+.dash-head nav a:hover, .acct-back:hover, .d-back:hover, .dash-list a:hover { background-size: 100% 1px; }
+
+/* checkbox chips: the tick pops when chosen */
+.acct-chips input { transition: transform var(--t-fast) var(--ease-out); }
+.acct-chips label:has(input:checked) input { animation: pop .28s var(--ease-out); }
+@keyframes pop { 50% { transform: scale(1.25); } }
+
+/* ---------- entrances: content rises in, staggered ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes slide-in { from { opacity: 0; transform: translateX(18px); } }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-8px); } }
+
+.acct > h1, .acct > .acct-lede, .dash-head, .acct-roles > *, .dash-grid > *, .pr-grid > *, .pr-calc > *, .pr-faq > *,
+.acct > .acct-card, .acct > .deals-compose, .deals-col, .d-kpis > div {
+  animation: rise .6s var(--ease-out) both;
+}
+.acct > .acct-lede { animation-delay: .06s; }
+:is(.acct-roles, .dash-grid, .pr-grid, .pr-calc, .pr-faq) > :nth-child(2), .deals-col:nth-child(2), .d-kpis > div:nth-child(2) { animation-delay: .06s; }
+:is(.acct-roles, .dash-grid, .pr-grid, .pr-calc, .pr-faq) > :nth-child(3), .deals-col:nth-child(3), .d-kpis > div:nth-child(3) { animation-delay: .12s; }
+:is(.dash-grid, .pr-grid, .pr-faq) > :nth-child(4), .deals-col:nth-child(4), .d-kpis > div:nth-child(4) { animation-delay: .18s; }
+:is(.dash-grid, .pr-grid, .pr-faq) > :nth-child(5), .deals-col:nth-child(5), .d-kpis > div:nth-child(5) { animation-delay: .24s; }
+:is(.dash-grid, .pr-faq) > :nth-child(n + 6), .deals-col:nth-child(n + 6) { animation-delay: .3s; }
+
+/* onboarding: each step slides in from the right as you continue */
+.acct-form > fieldset:not([hidden]) { animation: slide-in .38s var(--ease-out) both; }
+/* alerts and status messages drop in */
+.acct-alert, .d-callout, .deals-callout { animation: drop-in .35s var(--ease-out) both; }
+/* the deal panel and the Discover detail/compare panel ease in (they re-mount per deal / creator) */
+.deals-drawer { animation: slide-in .32s var(--ease-out) both; }
+.d-detail, .d-compare { animation: fade .25s var(--ease-out) both; }
+/* FAQ answers */
+.pr-faq details[open] p { animation: drop-in .3s var(--ease-out) both; }
+
+/* ---------- data: bars grow, values roll ---------- */
+@keyframes grow { from { transform: scaleX(0); } }
+.acct-bar i, .d-track i, .d-meter i { transform-origin: left; animation: grow .8s var(--ease-out) both; }
+/* bars and meters glide to new values when a search or filter changes */
+.d-track i, .d-meter i, .lmeter i { transition: width .45s var(--ease-out); }
+.acct-bar:nth-child(2) i { animation-delay: .05s; } .acct-bar:nth-child(3) i { animation-delay: .1s; }
+.acct-bar:nth-child(4) i { animation-delay: .15s; } .acct-bar:nth-child(n + 5) i { animation-delay: .2s; }
+/* a number that changes (keyed spans) rolls up into place */
+@keyframes roll { from { opacity: 0; transform: translateY(40%); } }
+.roll { display: inline-block; animation: roll .35s var(--ease-out) both; }
+
+/* ---------- cards ---------- */
+.pr-card { transition: transform var(--t) var(--ease-out), box-shadow var(--t) var(--ease-out); }
+.pr-card:hover { transform: translateY(-4px); box-shadow: 0 14px 0 -6px rgb(77 116 255 / .35); }
+.pr-card.is-featured:hover { box-shadow: 0 14px 0 -6px rgb(239 237 230 / .25); }
+.deals-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px -10px rgb(0 0 0 / .6); }
+.deals-card[draggable="true"]:active { cursor: grabbing; }
+.deals-card.is-dragging { opacity: .5; transform: rotate(-2deg) scale(.98); }
+.deals-col { transition: border-color var(--t) var(--ease-out), background-color var(--t) var(--ease-out), transform var(--t) var(--ease-out); }
+.deals-col.is-target { transform: translateY(-2px); }
+.d-table tbody tr { transition: background-color var(--t-fast) var(--ease-out), box-shadow var(--t) var(--ease-out); }
+.dash-list li { transition: background-color var(--t-fast) var(--ease-out); }
+
+/* !important: the hover/press rules above use :not(:disabled) and would otherwise out-rank this */
+@media (prefers-reduced-motion: reduce) {
+  .acct-btn, .d-btn, .pbtn, .menu, .fctrl button, .funnel-step, .deals-seg button, .d-tabs button, .d-role button, .acct-chips label,
+  .d-tagchip, .d-x, .pr-card, .deals-card, .deals-col { transform: none !important; }
+}

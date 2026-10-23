@@ -42,7 +42,7 @@ export function Stepper({ action, steps, submitLabel }: { action: (fd: FormData)
       ))}
       <div className="acct-nav">
         {i > 0 ? <button type="button" className="acct-btn ghost" onClick={() => setI(i - 1)}>← Back</button> : <span />}
-        {last ? <Submit label={submitLabel} /> : <button type="button" className="acct-btn on-ink" onClick={next}>Continue →</button>}
+        {last ? <Submit label={submitLabel} /> : <button type="button" className="acct-btn on-ink" onClick={next}>Continue <span className="arw">→</span></button>}
       </div>
     </form>
   );

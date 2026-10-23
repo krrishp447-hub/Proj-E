@@ -91,12 +91,15 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
             <tr>
               <th scope="row"><span className="sr-only">Actions</span></th>
               {matches.map((m) => (
-                <td key={m.creator.id}><a className="d-link" href={`/dashboard/deals?new=${encodeURIComponent(m.creator.channelId)}`}>Offer →</a></td>
+                <td key={m.creator.id}><a className="d-link" href={`/dashboard/offers/new?to=${encodeURIComponent(m.creator.channelId)}`}>Offer →</a></td>
               ))}
             </tr>
           </tbody>
         </table>
       </div>
+      <a className="d-btn d-cmpgo" href={`/dashboard/offers/new?to=${matches.map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>
+        Send offer to all {matches.length} <span className="arw">→</span>
+      </a>
       <p className="d-legend">
         Best value per row highlighted. Market rate is ₹400–₹900 per 1,000 views, adjusted for engagement.
         {hidden > 0 && ` ${hidden} rows hidden: no creator here has that data yet (campaign history, connected audience).`}

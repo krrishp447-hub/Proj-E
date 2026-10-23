@@ -15,11 +15,11 @@ import "./demo.css";
 export const DEFAULT_QUERY = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
 const EXAMPLES = [
   DEFAULT_QUERY,
-  "Fast-growing Instagram fitness creators in India",
+  "Fast-growing YouTube fitness creators in India",
   "YouTube finance creators in India with high engagement",
   "US audio reviewers, ANC earbuds, under 500K",
 ];
-const PLATFORMS: ("All" | Platform)[] = ["All", "YouTube", "Instagram"];
+const PLATFORMS: ("All" | Platform)[] = ["All", "YouTube", "Instagram"]; // only those with creators are shown
 
 const median = (xs: number[]) => {
   if (!xs.length) return 0;
@@ -31,9 +31,9 @@ const MAX_SHORTLIST = 4;
 const SHORTLIST_KEY = "scout:shortlist";
 
 /** `embedded`: running inside the homepage, so no top bar and no URL rewriting. */
-type Props = { initialQuery: string; creators: Creator[]; source?: "youtube" | "none"; embedded?: boolean };
+type Props = { initialQuery: string; creators: Creator[]; source?: "youtube" | "none"; embedded?: boolean; sampleOf?: number };
 
-export function ScoutApp({ initialQuery, creators, source = "none", embedded = false }: Props) {
+export function ScoutApp({ initialQuery, creators, source = "none", embedded = false, sampleOf }: Props) {
   const [draft, setDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [platform, setPlatform] = useState<"All" | Platform>("All");
@@ -46,6 +46,7 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
   const [brandTab, setBrandTab] = useState<"discover" | "campaigns" | "sov">("discover");
 
   const brief = useMemo(() => contextualize(parseBrief(query), creators), [query, creators]);
+  const platforms = useMemo(() => PLATFORMS.filter((p) => p === "All" || creators.some((c) => c.platform === p)), [creators]);
   const understood = describe(brief);
   const scored = useMemo(() => creators.map((c) => score(c, brief)), [creators, brief]);
 
@@ -73,16 +74,19 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
   // Up to 4 (the compare table's width). Persisted by channel id, which is stable across data refreshes; list positions aren't.
   const toggleShortlist = (id: number) =>
     setShortlist((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= MAX_SHORTLIST ? s : [...s, id]));
+  // The embedded homepage copy runs on a sample: it must not read or overwrite the full app's saved shortlist.
   useEffect(() => {
+    if (embedded) return;
     try {
       const saved: string[] = JSON.parse(localStorage.getItem(SHORTLIST_KEY) ?? "[]");
       const ids = saved.map((ch) => creators.findIndex((c) => c.channelId === ch)).filter((i) => i >= 0).slice(0, MAX_SHORTLIST);
       if (ids.length) setShortlist(ids); // eslint-disable-line react-hooks/set-state-in-effect -- one-time restore after hydration
     } catch {} // storage blocked or corrupt: start empty
-  }, [creators]);
+  }, [creators, embedded]);
   useEffect(() => {
+    if (embedded) return;
     try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist.map((i) => creators[i]?.channelId).filter(Boolean))); } catch {}
-  }, [shortlist, creators]);
+  }, [shortlist, creators, embedded]);
   const onSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
 
@@ -141,17 +145,23 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
       </div>
 
       <div className="d-controls">
-        <div className="d-seg" role="radiogroup" aria-label="Platform">
-          {PLATFORMS.map((p) => (
-            <button key={p} type="button" role="radio" aria-checked={platform === p} onClick={() => setPlatform(p)}>{p}</button>
-          ))}
-        </div>
+        {/* a platform filter only makes sense once there's more than one platform with creators */}
+        {platforms.length > 2 && (
+          <div className="d-seg" role="radiogroup" aria-label="Platform">
+            {platforms.map((p) => (
+              <button key={p} type="button" role="radio" aria-checked={platform === p} onClick={() => setPlatform(p)}>{p}</button>
+            ))}
+          </div>
+        )}
         <label className="d-check">
           <input type="checkbox" checked={showMisses} onChange={(e) => setShowMisses(e.target.checked)} />
           Show near misses ({misses})
         </label>
       </div>
 
+      {sampleOf !== undefined && sampleOf > creators.length && (
+        <p className="d-hint">Live sample of {creators.length} creators. <Link href="/demo">Search all {sampleOf.toLocaleString("en-IN")} in the full app →</Link></p>
+      )}
       <dl className="d-kpis">
         {kpis.map((k) => (
           <div key={k.label}>
@@ -181,12 +191,12 @@ export function ScoutApp({ initialQuery, creators, source = "none", embedded = f
             </button>
           </div>
           {shortlist.length >= 2 && tab === "detail" && (
-            <button type="button" className="d-btn d-cmpgo" onClick={() => setTab("compare")}>Compare {shortlist.length} shortlisted →</button>
+            <button type="button" className="d-btn d-cmpgo" onClick={() => setTab("compare")}>Compare {shortlist.length} shortlisted <span className="arw">→</span></button>
           )}
           {tab === "compare" && shortlist.length >= 2 ? (
-            <ComparePanel matches={shortlist.map((id) => scored[id])} onRemove={toggleShortlist} />
+            <ComparePanel key={shortlist.join()} matches={shortlist.map((id) => scored[id])} onRemove={toggleShortlist} />
           ) : active ? (
-            <DetailPanel m={active} inShortlist={shortlist.includes(active.creator.id)} onToggle={() => toggleShortlist(active.creator.id)} />
+            <DetailPanel key={active.creator.id} m={active} inShortlist={shortlist.includes(active.creator.id)} onToggle={() => toggleShortlist(active.creator.id)} />
           ) : (
             <p className="d-muted">Select a creator to see why they ranked.</p>
           )}
