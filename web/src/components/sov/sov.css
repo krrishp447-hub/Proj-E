@@ -1,0 +1,30 @@
+/* Share of voice: colours follow the surrounding card (light dashboard card or dark demo), accent = --signal. */
+.sov { display: grid; gap: 18px; }
+.sov-pick { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; opacity: .85; }
+.sov-pick select { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); background: transparent; color: inherit; }
+.sov-pick option { color: #111; }
+.sov-rows { display: grid; }
+.sov-row { display: grid; grid-template-columns: minmax(150px, 1.4fr) minmax(140px, 2fr) 52px 96px; gap: 14px; align-items: center; padding: 10px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+.sov-headrow { padding: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .6; }
+.sov-row em, .sov-list em { display: block; font-style: normal; font-size: 12px; opacity: .65; margin-top: 2px; }
+.sov-row small { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--signal); margin-left: 6px; }
+.sov-share { display: flex; gap: 10px; align-items: center; }
+.sov-share b { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+.sov-bar { flex: 1; height: 10px; border-radius: 5px; background: color-mix(in srgb, currentColor 10%, transparent); overflow: hidden; }
+.sov-bar i { display: block; height: 100%; border-radius: 5px; background: color-mix(in srgb, currentColor 45%, transparent); }
+.sov-row.is-you .sov-bar i, .sov-row.is-you .sov-trend i { background: var(--signal); }
+.sov-num { text-align: right; font-variant-numeric: tabular-nums; }
+.sov-trend { display: flex; gap: 3px; align-items: flex-end; height: 26px; }
+.sov-trend i { flex: 1; border-radius: 2px; background: color-mix(in srgb, currentColor 35%, transparent); }
+.sov-note { margin: 0; font-size: 12px; line-height: 1.5; opacity: .65; }
+.sov-sec h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.sov-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.sov-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); font-size: 14px; }
+.sov-list a { color: inherit; }
+.sov-links { display: flex; gap: 12px; white-space: nowrap; font-size: 13px; }
+.sov-links a { color: var(--signal); font-weight: 600; text-decoration: none; }
+@media (max-width: 640px) {
+  .sov-row { grid-template-columns: 1fr; gap: 6px; }
+  .sov-headrow, .sov-row > :nth-child(3), .sov-row > :nth-child(4) { display: none; }
+}

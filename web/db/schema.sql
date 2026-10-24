@@ -251,6 +251,13 @@ create table if not exists email_unsubscribes (
   at    timestamptz not null default now()
 );
 
+-- YouTube's own genre signals for segregation (segment.ts): each upload's categoryId and the channel's topic URLs.
+alter table videos add column if not exists category_id text;
+alter table creators add column if not exists yt_topics text[] not null default '{}';
+
+-- Share of voice: competitors a brand tracks against, [{name, terms[]}] (lib/scout/sov.ts).
+alter table brand_profiles add column if not exists competitors jsonb not null default '[]';
+
 -- Briefs the rules couldn't read (no niche, language, size or known topic): what to teach the parser next.
 create table if not exists unread_searches (
   query   text primary key, -- lowercased, ≤200 chars

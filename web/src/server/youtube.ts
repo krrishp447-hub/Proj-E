@@ -30,7 +30,7 @@ export async function fetchChannels(ids: string[]): Promise<YtChannel[] & { quot
   for (const batch of chunk(ids, 50)) {
     try {
       const r = await get<{ items?: YtChannel[] }>("channels", {
-        part: "snippet,statistics,contentDetails,brandingSettings",
+        part: "snippet,statistics,contentDetails,brandingSettings,topicDetails", // topicDetails: same 1-unit call
         id: batch.join(","),
         maxResults: "50",
       });

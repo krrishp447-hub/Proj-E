@@ -5,6 +5,7 @@ import { BUDGETS, NICHES } from "@/lib/scout/data";
 import { LANGUAGES } from "@/lib/scout/engine";
 import { saveBrandProfile, saveCreatorProfile } from "@/server/accounts";
 import { currentUser } from "@/server/auth";
+import { parseCompetitors } from "@/lib/scout/sov";
 
 // Server-side validation: never trust the form. Unknown options are dropped, text is trimmed and capped.
 const text = (fd: FormData, k: string, max = 200) => String(fd.get(k) ?? "").trim().slice(0, max);
@@ -49,6 +50,7 @@ export async function saveBrandOnboarding(fd: FormData) {
     budget: pick(fd, "budget", BUDGETS)[0] ?? null,
     pitchable: fd.get("pitchable") === "on",
     tracked: text(fd, "tracked", 400).split(",").map((t) => t.trim()).filter(Boolean).slice(0, 12),
+    competitors: parseCompetitors(text(fd, "competitors", 1200)),
   });
   redirect("/dashboard");
 }

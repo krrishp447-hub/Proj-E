@@ -51,3 +51,6 @@ next-env.d.ts
 public/demo-video.html
 demo-video.html
 
+
+# local server log
+next.log

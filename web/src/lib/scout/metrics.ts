@@ -11,12 +11,13 @@ export type YtChannel = {
   statistics: { subscriberCount?: string; videoCount?: string; viewCount?: string; hiddenSubscriberCount?: boolean };
   contentDetails: { relatedPlaylists: { uploads: string } };
   brandingSettings?: { channel?: { keywords?: string } };
+  topicDetails?: { topicCategories?: string[] }; // Wikipedia topic URLs YouTube assigns to the channel
 };
 
 /** The subset of a `videos.list` item we request (part=snippet,statistics). */
 export type YtVideo = {
   id: string;
-  snippet: { title: string; description?: string; tags?: string[]; publishedAt: string; defaultAudioLanguage?: string };
+  snippet: { title: string; description?: string; tags?: string[]; publishedAt: string; defaultAudioLanguage?: string; categoryId?: string };
   statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
 };
 
@@ -190,7 +191,8 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
 
   // Niche from everything the channel says about itself; sub-niche tags only from what recurs in uploads.
   // Video descriptions are excluded from tags: creators paste the same affiliate/link list into every one.
-  const seg = segment({ name: ch.snippet.title, about: [ch.snippet.description, ch.brandingSettings?.channel?.keywords].filter(Boolean).join("\n"), titles: recent.map((v) => v.snippet.title) });
+  const seg = segment({ name: ch.snippet.title, about: [ch.snippet.description, ch.brandingSettings?.channel?.keywords].filter(Boolean).join("\n"), titles: recent.map((v) => v.snippet.title),
+    categories: recent.map((v) => v.snippet.categoryId), topics: ch.topicDetails?.topicCategories });
   const tags = recurringTags(recent);
   const auth = estimateAuthenticity(engKnown ? eng : null, avgViews, subs);
   const language = contentLanguage(recent, ch.snippet.description);

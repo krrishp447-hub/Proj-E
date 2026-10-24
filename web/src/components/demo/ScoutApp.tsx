@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Creator } from "@/lib/scout/data";
 import type { Match } from "@/lib/scout/engine";
-import { searchAll, type SearchResult } from "@/lib/scout/search";
+import { searchAll, type SearchResult, DEFAULT_QUERY } from "@/lib/scout/search";
 import { CampaignsView } from "./CampaignsView";
 import { CompareDialog, ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
@@ -13,7 +13,6 @@ import { ResultsTable, type SortKey } from "./ResultsTable";
 import { ShareOfVoice } from "./ShareOfVoice";
 import "./demo.css";
 
-export const DEFAULT_QUERY = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
 const EXAMPLES = [
   DEFAULT_QUERY,
   "Fast-growing YouTube fitness creators in India",

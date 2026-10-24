@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { DEFAULT_QUERY, ScoutApp } from "@/components/demo/ScoutApp";
+import { ScoutApp } from "@/components/demo/ScoutApp";
+import { DEFAULT_QUERY } from "@/lib/scout/search";
 import { getHomeCreators } from "@/server/creators";
 
 /** The live product, embedded on the homepage: same component as /demo, minus its top bar. */

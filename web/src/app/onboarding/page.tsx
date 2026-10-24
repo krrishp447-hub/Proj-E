@@ -24,7 +24,7 @@ async function Flow() {
         <p className="acct-lede">Three quick steps, then Scout runs your first brief.</p>
         <BrandOnboarding
           action={saveBrandOnboarding}
-          defaults={p ?? { company: "", kind: "brand", website: null, category: null, brief: null, budget: null, tracked: [], pitchable: false }}
+          defaults={p ?? { company: "", kind: "brand", website: null, category: null, brief: null, budget: null, tracked: [], pitchable: false, competitors: [] }}
         />
       </>
     );

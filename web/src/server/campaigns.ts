@@ -15,13 +15,15 @@ export async function saveVideos(db: Db, channelId: string, videos: YtVideo[]) {
   const views = col((v) => n(v.statistics.viewCount)), comments = col((v) => n(v.statistics.commentCount));
   const likes = col((v) => (v.statistics.likeCount === undefined ? null : n(v.statistics.likeCount))); // null = hidden by the creator, not 0
   await db`
-    insert into videos (video_id, channel_id, title, description, published_at, url, views, likes, comments, fetched_at)
-    select id, ${channelId}, title, descr, published::timestamptz, 'https://www.youtube.com/watch?v=' || id, vw, lk, cm, now()
+    insert into videos (video_id, channel_id, title, description, published_at, url, views, likes, comments, category_id, fetched_at)
+    select id, ${channelId}, title, descr, published::timestamptz, 'https://www.youtube.com/watch?v=' || id, vw, lk, cm, cat, now()
     from unnest(${ids}::text[], ${col((v) => v.snippet.title)}::text[], ${col((v) => v.snippet.description ?? "")}::text[],
-                ${col((v) => v.snippet.publishedAt)}::text[], ${views}::int[], ${likes}::int[], ${comments}::int[])
-         as t(id, title, descr, published, vw, lk, cm)
+                ${col((v) => v.snippet.publishedAt)}::text[], ${views}::int[], ${likes}::int[], ${comments}::int[],
+                ${col((v) => v.snippet.categoryId ?? null)}::text[])
+         as t(id, title, descr, published, vw, lk, cm, cat)
     on conflict (video_id) do update set title = excluded.title, description = excluded.description,
-      views = excluded.views, likes = excluded.likes, comments = excluded.comments, fetched_at = now()`;
+      views = excluded.views, likes = excluded.likes, comments = excluded.comments,
+      category_id = coalesce(excluded.category_id, videos.category_id), fetched_at = now()`;
   // Daily per-video history only for uploads from the last 45 days (the campaign window); older videos keep
   // their latest totals on the videos row. Keeps storage linear in channels, not channels × days × 15 videos.
   await db`

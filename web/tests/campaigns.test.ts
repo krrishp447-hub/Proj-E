@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fairRate, isLate, matchVideo, nextStage, rollup, shareOfVoice, type Campaign, type Deliverable, type VideoPost } from "../src/lib/scout/campaigns.ts";
+import { fairRate, isLate, matchVideo, nextStage, rollup, type Campaign, type Deliverable, type VideoPost } from "../src/lib/scout/campaigns.ts";
 
 const campaign: Campaign = {
   id: "c1", brand: "Kestrel Audio", name: "Buds X launch", status: "Live", start: "2026-09-20", end: "2026-10-31",
@@ -59,14 +59,4 @@ test("fair rate scales with views and engagement; stages advance and stop at Pai
   assert.equal(isLate({ status: "In production", due: "2026-10-01" } as Deliverable, "2026-10-14"), true);
 });
 
-test("share of voice by views, platform filter, multi-brand posts count for each", () => {
-  const posts = [
-    post({ id: "1", title: "Kestrel review", views: 600 }),
-    post({ id: "2", title: "Ripple vs Kestrel", views: 300 }),
-    post({ id: "3", title: "Ripple unboxing", views: 100, platform: "Instagram" }),
-  ];
-  const sov = shareOfVoice(posts, { Kestrel: ["kestrel"], Ripple: ["ripple"] });
-  assert.equal(sov[0].brand, "Kestrel");
-  assert.equal(Math.round(sov[0].share), 69); // 900 of 1300
-  assert.equal(shareOfVoice(posts, { Kestrel: ["kestrel"], Ripple: ["ripple"] }, "Instagram")[0].brand, "Ripple");
-});
+

@@ -55,14 +55,6 @@ export const DEMO_CAMPAIGNS: Campaign[] = [
   },
 ];
 
-/** Competitor set for share of voice (terms matched in titles/descriptions). */
-export const SOV_BRANDS: Record<string, string[]> = {
-  "Kestrel Audio": ["kestrel", "buds x"],
-  "Ripple Acoustics": ["ripple"],
-  "Tusker Sound": ["tusker"],
-  Orbitron: ["orbitron"],
-};
-
 const D = (p: Partial<Deliverable> & Pick<Deliverable, "id" | "dealId" | "creatorId" | "due" | "status" | "projectedViews" | "fee">): Deliverable => ({ kind: "YouTube video", campaignId: "budsx", ...p });
 export const DEMO_DELIVERABLES: Deliverable[] = [
   D({ id: "d1", dealId: "deal-arjun", creatorId: 0, due: "2026-10-02", status: "Live", videoId: "v1", projectedViews: 150_000, fee: 85_000 }),

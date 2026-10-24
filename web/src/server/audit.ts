@@ -9,23 +9,23 @@ const BATCH = 100;
 
 async function loadBatch(db: Db, offset: number, limit: number): Promise<AuditRow[]> {
   const creators = (await db`
-    select channel_id, name, about, niche, niche2, niche_conf, language, subs, avg_views, eng, auth, suspicious, consistency, fetched_at
+    select channel_id, name, about, niche, niche2, niche_conf, language, subs, avg_views, eng, auth, suspicious, consistency, fetched_at, yt_topics
     from creators order by created_at, channel_id offset ${offset} limit ${limit}`) as {
     channel_id: string; name: string; about: string; niche: string; niche2: string | null; niche_conf: number; language: string;
-    subs: number; avg_views: number; eng: number; auth: number; suspicious: number; consistency: number; fetched_at: string;
+    subs: number; avg_views: number; eng: number; auth: number; suspicious: number; consistency: number; fetched_at: string; yt_topics: string[];
   }[];
   const ids = creators.map((c) => c.channel_id);
   // exactly the uploads the creator's last ingest used: saved in the same run, right after the creator row
   const vids = (await db`
-    select v.channel_id, v.title, v.views, v.likes, v.comments from videos v join creators c using (channel_id)
+    select v.channel_id, v.title, v.views, v.likes, v.comments, v.category_id from videos v join creators c using (channel_id)
     where v.channel_id = any(${ids}) and v.fetched_at between c.fetched_at - interval '5 minutes' and c.fetched_at + interval '30 minutes'
-    order by v.channel_id, v.published_at desc`) as { channel_id: string; title: string; views: number; likes: number | null; comments: number }[];
+    order by v.channel_id, v.published_at desc`) as { channel_id: string; title: string; views: number; likes: number | null; comments: number; category_id: string | null }[];
   return creators.map((c) => {
     const mine = vids.filter((v) => v.channel_id === c.channel_id);
     return {
       channelId: c.channel_id, name: c.name, about: c.about, niche: c.niche, niche2: c.niche2, nicheConf: c.niche_conf, language: c.language,
       subs: c.subs, avgViews: c.avg_views, eng: c.eng, auth: c.auth, suspicious: c.suspicious, consistency: c.consistency,
-      titles: mine.map((v) => v.title), videos: mine.map((v) => ({ views: v.views, likes: v.likes, comments: v.comments })),
+      titles: mine.map((v) => v.title), categories: mine.map((v) => v.category_id), topics: c.yt_topics, videos: mine.map((v) => ({ views: v.views, likes: v.likes, comments: v.comments })),
     };
   });
 }

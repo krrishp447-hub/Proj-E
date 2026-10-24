@@ -11,6 +11,9 @@ import { currentUser, type User } from "@/server/auth";
 import { getCreators } from "@/server/creators";
 import { brandBriefs, brandMentions, channelActivity } from "@/server/dashboard";
 import { dealSummary, listDeals } from "@/server/deals";
+import { getShareOfVoice } from "@/server/sov";
+import { SovView } from "@/components/sov/SovView";
+import type { BrandProfile } from "@/server/accounts";
 import "@/components/account/account.css";
 
 export const metadata: Metadata = { title: "Dashboard — Scout", robots: { index: false } };
@@ -43,6 +46,23 @@ function matches(creators: Creator[], brief: string) {
   return creators.map((c) => score(c, b)).filter((m) => m.fits).sort((a, z) => z.score - a.score);
 }
 
+/** Your brand against the competitors in your profile, over tracked creators' uploads (streams in: the first scan is slow). */
+async function ShareOfVoiceCard({ p }: { p: BrandProfile }) {
+  const you = { name: p.company, terms: p.tracked };
+  const result = p.tracked.length && p.competitors.length
+    ? await getShareOfVoice([you, ...p.competitors], p.category && p.category !== "Other" ? p.category : null, 90)
+    : null;
+  if (!result) {
+    return (
+      <p className="acct-help">
+        Add {p.tracked.length ? "" : "your brand names and "}competitors in <Link href="/onboarding">your profile</Link> to see your share of
+        YouTube conversation, paid vs earned, and the creators talking about competitors but not you.
+      </p>
+    );
+  }
+  return <SovView result={result} you={p.company} offers />;
+}
+
 async function BrandDashboard({ user }: { user: User }) {
   const p = await getBrandProfile(user.id);
   if (!p) redirect("/onboarding");
@@ -65,6 +85,13 @@ async function BrandDashboard({ user }: { user: User }) {
         </section>
 
         <DealsCard s={dealSummary(deals)} side="brand" />
+
+        <section className="acct-card dash-wide" aria-labelledby="sov-h">
+          <h2 id="sov-h">Share of voice</h2>
+          <Suspense fallback={<p className="acct-help">Scanning tracked creators&apos; uploads for you and your competitors…</p>}>
+            <ShareOfVoiceCard p={p} />
+          </Suspense>
+        </section>
 
         <section className="acct-card" aria-labelledby="mentions-h">
           <h2 id="mentions-h">Your brand on YouTube</h2>

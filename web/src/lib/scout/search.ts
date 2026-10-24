@@ -18,6 +18,10 @@ export type SearchResult = {
   pinned: Match[]; // requested creators (e.g. the shortlist), scored against this brief wherever they rank
 };
 
+// Shared by the demo page (server) and ScoutApp (client): a constant exported from a "use client" module is only a
+// client reference on the server, not the string (it crashed /demo without ?q=).
+export const DEFAULT_QUERY = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
+
 export const RESULT_LIMIT = 100;
 export const MISS_LIMIT = 50;
 

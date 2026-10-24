@@ -35,13 +35,17 @@ export const SYNONYMS: Record<string, string[]> = {
   // Matched at word starts ("earbud" finds "earbuds"), so avoid short stems: "car" would hit "career", "mom" "moment",
   // "rap" "rapid", "art" "article". Words shared by two genres go to neither, or to the one they nearly always mean.
   Tech: ["gadget", "earbud", "tws", "smartphone", "phone", "mobile", "audio", "headphone", "earphone", "anc", "speaker", "laptop", "camera", "smartwatch", "unboxing", "android", "iphone", "processor", "technology", "technical"],
-  Gaming: ["gamer", "esports", "bgmi", "pubg", "free fire", "freefire", "valorant", "minecraft", "gta", "gameplay", "walkthrough"],
+  Gaming: ["gamer", "esports", "bgmi", "pubg", "free fire", "freefire", "valorant", "minecraft", "gta", "gameplay", "walkthrough",
+    "roblox", "fortnite", "call of duty", "codm", "clash of clans", "clash royale", "brawl stars", "among us", "garena", "mobile legends",
+    "genshin", "apex legends", "stumble guys", "subway surfers", "noob", "headshot", "speedrun", "playstation", "ps5", "xbox", "nintendo", "lets play", "let's play"],
   // music-release phrases ("Official Audio", "Lyrical Video") are folded into "music" by classify()
   Music: ["song", "lyric", "rapper", "rap song", "hip hop", "hiphop", "album", "singer", "singing", "remix", "music video", "cover song", "beatbox", "ghazal", "qawwali"],
-  Entertainment: ["comedy", "funny", "prank", "roast", "sketch", "movie review", "bollywood", "web series", "standup", "stand-up", "reaction"],
+  Entertainment: ["comedy", "funny", "prank", "roast", "sketch", "movie review", "bollywood", "web series", "standup", "stand-up", "reaction",
+    "vines", "trailer", "short film", "skit", "web show", "sitcom"],
   Food: ["cook", "recipe", "chef", "kitchen", "street food", "baking", "food vlog", "khana", "foodie"],
   Education: ["upsc", "neet", "jee", "exam", "study", "lecture", "tutorial", "coaching", "ssc", "class 10", "class 12", "syllabus", "motivational", "educational"],
-  Finance: ["money", "invest", "stock", "personal finance", "trading", "mutual fund", "crypto", "sensex", "nifty", "income tax", "financial"],
+  Finance: ["money", "invest", "stock", "personal finance", "trading", "mutual fund", "crypto", "sensex", "nifty", "income tax", "financial",
+    "trader", "loan", "insurance", "share market", "credit card"],
   Fitness: ["gym", "workout", "nutrition", "yoga", "bodybuilding", "weight loss", "fat loss", "diet plan"],
   Beauty: ["makeup", "skincare", "skin care", "hair care", "lipstick", "grwm", "nail art"],
   Fashion: ["style", "outfit", "haul", "ethnic wear", "lookbook", "saree", "kurti"],
@@ -53,7 +57,7 @@ export const SYNONYMS: Record<string, string[]> = {
   Sports: ["cricket", "ipl", "football", "fifa", "kabaddi", "badminton", "tennis", "wwe", "match highlights", "sport"],
   News: ["breaking", "headlines", "politic", "election", "debate", "current affairs", "news analysis"],
   // no deity names (also people's names: "Shivam", "Krishna Kakran" are comedians), no "temple" (travel vlogs visit them)
-  Spiritual: ["bhajan", "aarti", "mantra", "devotional", "katha", "bhakti", "chalisa", "mahadev", "gurbani", "kirtan", "prayer", "satsang", "pravachan", "spirituality"],
+  Spiritual: ["bhajan", "aarti", "mantra", "devotional", "katha", "bhakti", "chalisa", "mahadev", "gurbani", "kirtan", "prayer", "satsang", "pravachan", "spirituality", "stotram", "stotra"],
   Lifestyle: ["daily vlog", "family vlog", "day in my life", "home tour", "minimalism", "routine vlog"],
 };
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DEFAULT_QUERY, ScoutApp } from "@/components/demo/ScoutApp";
-import { searchAll } from "@/lib/scout/search";
+import { ScoutApp } from "@/components/demo/ScoutApp";
+import { DEFAULT_QUERY, searchAll } from "@/lib/scout/search";
 import { after } from "next/server";
 import { getCreators, getHomeCreators } from "@/server/creators";
 import { logUnread } from "@/server/unread";

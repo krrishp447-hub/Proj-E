@@ -4,6 +4,7 @@ import { BUDGETS, NICHES } from "@/lib/scout/data";
 import { LANGUAGES } from "@/lib/scout/engine";
 import { ChannelCard, type ChannelSummary } from "./Audience";
 import { Stepper } from "./Stepper";
+import { formatCompetitors, type BrandTerms } from "@/lib/scout/sov";
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 type Action = (fd: FormData) => Promise<void>;
@@ -74,7 +75,7 @@ export function CreatorOnboarding({ action, channel, defaults, fair }: { action:
   );
 }
 
-export type BrandDefaults = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[]; pitchable: boolean };
+export type BrandDefaults = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[]; pitchable: boolean; competitors: BrandTerms[] };
 
 export function BrandOnboarding({ action, defaults }: { action: Action; defaults: BrandDefaults }) {
   return (
@@ -129,10 +130,16 @@ export function BrandOnboarding({ action, defaults }: { action: Action; defaults
         {
           title: "Track your brand",
           body: (
+            <>
             <label>Brand names and hashtags to track
               <span className="acct-help">Comma-separated. Scout uses them for share of voice and to file creator posts into your campaigns. Common-word name? Add product names, and exclude phrases with a minus: “Noise, Noise Buds, -noise cancelling”.</span>
               <input type="text" name="tracked" maxLength={400} defaultValue={defaults.tracked.join(", ")} placeholder="Acme, Acme Buds, #AcmeSound" />
             </label>
+            <label>Competitors for share of voice
+              <span className="acct-help">One per line, up to 6: the name, a colon, then the names and products creators use for them. The same rules apply, including minus for exclusions.</span>
+              <textarea name="competitors" rows={4} maxLength={1200} defaultValue={formatCompetitors(defaults.competitors)} placeholder={"boAt: boAt, Airdopes, Rockerz\nNoise: Noise Buds, NoiseFit, -noise cancelling\nJBL"} />
+            </label>
+            </>
           ),
         },
       ]}

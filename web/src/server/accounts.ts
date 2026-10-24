@@ -3,6 +3,7 @@ import { seal, unseal } from "./auth";
 import { sql } from "./db";
 import { exchangeCode, fetchAudience, grantedCreatorScopes, myChannel, refreshAccess, revoke, userInfo, type Role } from "./google";
 import { runIngest } from "./ingest";
+import type { BrandTerms } from "@/lib/scout/sov";
 
 function db() {
   if (!sql) throw new Error("DATABASE_URL is not set");
@@ -106,7 +107,7 @@ export async function deleteAccount(userId: string) {
 }
 
 export type CreatorProfile = { focus: string[]; languages: string[]; rateVideo: number | null; rateShort: number | null; openToCollabs: boolean };
-export type BrandProfile = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[]; pitchable: boolean };
+export type BrandProfile = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[]; pitchable: boolean; competitors: BrandTerms[] };
 
 export async function saveCreatorProfile(userId: string, p: CreatorProfile) {
   await db()`
@@ -119,10 +120,11 @@ export async function saveCreatorProfile(userId: string, p: CreatorProfile) {
 
 export async function saveBrandProfile(userId: string, p: BrandProfile) {
   await db()`
-    insert into brand_profiles (user_id, company, kind, website, category, brief, budget, tracked, pitchable)
-    values (${userId}, ${p.company}, ${p.kind}, ${p.website}, ${p.category}, ${p.brief}, ${p.budget}, ${p.tracked}, ${p.pitchable})
+    insert into brand_profiles (user_id, company, kind, website, category, brief, budget, tracked, pitchable, competitors)
+    values (${userId}, ${p.company}, ${p.kind}, ${p.website}, ${p.category}, ${p.brief}, ${p.budget}, ${p.tracked}, ${p.pitchable}, ${JSON.stringify(p.competitors)}::jsonb)
     on conflict (user_id) do update set company = excluded.company, kind = excluded.kind, website = excluded.website,
-      category = excluded.category, brief = excluded.brief, budget = excluded.budget, tracked = excluded.tracked, pitchable = excluded.pitchable, updated_at = now()`;
+      category = excluded.category, brief = excluded.brief, budget = excluded.budget, tracked = excluded.tracked, pitchable = excluded.pitchable,
+      competitors = excluded.competitors, updated_at = now()`;
   await db()`update users set onboarded_at = coalesce(onboarded_at, now()) where id = ${userId}`;
 }
 
@@ -133,7 +135,7 @@ export async function getCreatorProfile(userId: string) {
 }
 
 export async function getBrandProfile(userId: string): Promise<BrandProfile | null> {
-  const [p] = (await db()`select company, kind, website, category, brief, budget, tracked, pitchable from brand_profiles where user_id = ${userId}`) as BrandProfile[];
+  const [p] = (await db()`select company, kind, website, category, brief, budget, tracked, pitchable, competitors from brand_profiles where user_id = ${userId}`) as BrandProfile[];
   return p ?? null;
 }
 

@@ -13,6 +13,7 @@ export type AuditRow = {
   channelId: string; name: string; about: string; niche: string; niche2: string | null; nicheConf: number; language: string;
   subs: number; avgViews: number; eng: number; auth: number; suspicious: number; consistency: number;
   titles: string[]; videos: AuditVideo[]; // the channel's most recent uploads, newest first (≤ 20)
+  categories?: (string | null)[]; topics?: string[]; // YouTube's genre signals (segment.ts)
 };
 export type Check = { name: string; passed: boolean; summary: string; failures: string[] };
 
@@ -36,12 +37,12 @@ export const THRESHOLDS = { segregation: 90, calculations: 95, maxNicheShare: 50
 
 export function checkSegregation(rows: AuditRow[]): Check {
   const judged = rows.filter((r) => r.titles.length >= 3);
-  const wrong = judged.filter((r) => segment({ name: r.name, about: r.about, titles: r.titles }).niche !== r.niche);
+  const wrong = judged.filter((r) => segment({ name: r.name, about: r.about, titles: r.titles, categories: r.categories, topics: r.topics }).niche !== r.niche);
   const ok = pct(judged.length - wrong.length, judged.length);
   return {
     name: "Segregation is consistent", passed: ok >= THRESHOLDS.segregation,
     summary: `${ok}% of ${judged.length} channels re-segment to their stored niche (need ≥ ${THRESHOLDS.segregation}%)`,
-    failures: wrong.slice(0, 5).map((r) => `${r.name}: stored ${r.niche}, re-derived ${segment({ name: r.name, about: r.about, titles: r.titles }).niche}`),
+    failures: wrong.slice(0, 5).map((r) => `${r.name}: stored ${r.niche}, re-derived ${segment({ name: r.name, about: r.about, titles: r.titles, categories: r.categories, topics: r.topics }).niche}`),
   };
 }
 

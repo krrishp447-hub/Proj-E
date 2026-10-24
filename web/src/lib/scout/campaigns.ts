@@ -185,19 +185,3 @@ export function fairRate(avgViews: number, engRate: number, band = CPM_BAND) {
 
 /** Next stage in the pipeline (Paid is terminal). */
 export const nextStage = (s: Stage): Stage => STAGES[Math.min(STAGES.indexOf(s) + 1, STAGES.length - 1)];
-
-export type SovRow = { brand: string; mentions: number; views: number; share: number };
-
-/**
- * Share of voice in a category: of all views on posts that mention any tracked brand, how much mentions each one.
- * A post mentioning two brands counts toward both.
- */
-export function shareOfVoice(posts: VideoPost[], brands: Record<string, string[]>, platform?: Platform): SovRow[] {
-  const pool = posts.filter((p) => !platform || p.platform === platform);
-  const rows = Object.entries(brands).map(([brand, terms]) => {
-    const hits = pool.filter((p) => terms.some((t) => lc(`${p.title} ${p.description}`).includes(lc(t))));
-    return { brand, mentions: hits.length, views: hits.reduce((s, p) => s + p.views, 0), share: 0 };
-  });
-  const total = rows.reduce((s, r) => s + r.views, 0);
-  return rows.map((r) => ({ ...r, share: total ? (r.views / total) * 100 : 0 })).sort((a, b) => b.views - a.views);
-}
