@@ -1,6 +1,6 @@
 // Switch a brand's plan on or off until payments exist (the pricing FAQ: we talk to the brand before any billing).
 //   npm run plan -- <email> starter|growth|agency [months]   activate, paid through N months (default 1)
-//   npm run plan -- <email> trial [days]                      extend or restart the free trial (default 14)
+//   npm run plan -- <email> trial [days]                      extend or restart the free trial (default 4)
 //   npm run plan -- <email> cancel                            end access
 //   npm run plan -- <email>                                   show the current plan
 import { neon } from "@neondatabase/serverless";
@@ -17,7 +17,7 @@ if (["starter", "growth", "agency"].includes(action)) {
   await sql`insert into subscriptions (user_id, plan, status, current_period_end) values (${u.id}, ${action}, 'active', now() + make_interval(months => ${months}))
     on conflict (user_id) do update set plan = excluded.plan, status = 'active', current_period_end = excluded.current_period_end, updated_at = now()`;
 } else if (action === "trial") {
-  const days = Math.max(1, Number(n) || 14);
+  const days = Math.max(1, Number(n) || 4);
   await sql`insert into subscriptions (user_id, trial_ends_at) values (${u.id}, now() + make_interval(days => ${days}))
     on conflict (user_id) do update set plan = 'trial', status = 'trial', trial_ends_at = excluded.trial_ends_at, updated_at = now()`;
 } else if (action === "cancel") {

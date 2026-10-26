@@ -74,7 +74,7 @@ export function HomeTry({ initial }: { initial: HomeResult }) {
         </p>
         <div className="ht-ctas">
           <Link className="pbtn" href="/pricing">See pricing <span aria-hidden="true">→</span></Link>
-          <Link className="pbtn ghost" href="/api/auth/google/start?role=brand">Start 14-day free trial</Link>
+          <Link className="pbtn ghost" href="/api/auth/google/start?role=brand">Start 4-day free trial</Link>
         </div>
       </div>
     </div>

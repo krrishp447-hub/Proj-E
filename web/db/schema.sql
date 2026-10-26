@@ -268,7 +268,7 @@ create table if not exists subscriptions (
   current_period_end timestamptz,
   updated_at         timestamptz not null default now()
 );
-insert into subscriptions (user_id, trial_ends_at) select user_id, now() + interval '14 days' from brand_profiles on conflict do nothing;
+insert into subscriptions (user_id, trial_ends_at) select user_id, now() + interval '4 days' from brand_profiles on conflict do nothing;
 
 -- Briefs the rules couldn't read (no niche, language, size or known topic): what to teach the parser next.
 create table if not exists unread_searches (
