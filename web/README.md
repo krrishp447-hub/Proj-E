@@ -76,11 +76,28 @@ from titles and tags, estimated authenticity). Audience demographics need creato
 Analytics / Instagram insights OAuth — not built yet); outcome metrics (campaigns, repeat, delivered) accrue from
 campaigns run on Scout.
 
+### Plans (who can open the app)
+The full app (`/demo`: every result, compare, share of voice, contact) needs a brand plan: a 14-day free trial starts
+when a brand finishes its profile; after that, access needs an active plan. Payments aren't built yet, so plans are
+switched on by hand (the pricing FAQ promises we talk to the brand before any billing):
+```bash
+npm run plan -- someone@brand.com                 # show their plan
+npm run plan -- someone@brand.com growth 12       # activate Growth, paid through 12 months
+npm run plan -- someone@brand.com trial 7         # extend the trial by 7 days
+npm run plan -- someone@brand.com cancel          # end access
+```
+The homepage shows a public taste (the top 6 matches for a brief) and links to pricing.
+
 ### 4 · Invite emails (optional)
 When a brand sends an offer to a channel that isn't on Scout, Scout emails the address the creator published in their
 channel description once ("a brand sent you an offer — claim your channel"). Set `RESEND_API_KEY` and `EMAIL_FROM`
 (a sender on a domain you've verified in Resend) locally and in Vercel. Without them, offers are still saved; no email
 goes out. Contact data rules: see `src/server/contact.ts` and `/privacy`.
+
+### 5 · Monitoring (optional, recommended)
+Each nightly ingest pass pings `HEALTHCHECK_URL` (healthchecks.io: New check → Period 1 day, Grace 6 hours): OK with a
+summary, or `/fail` with the reason (crash, failed quality audit, data past 30 days, database over 400 MB, 50+ channels
+failing). healthchecks.io emails you on a failure, or when no ping arrives at all (the job didn't run).
 
 ### Before announcing
 - Replace `site.email` (`hello@scout.io` placeholder) in `src/config/site.ts`; add social URLs.

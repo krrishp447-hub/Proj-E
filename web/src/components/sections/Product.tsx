@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { ScoutApp } from "@/components/demo/ScoutApp";
-import { DEFAULT_QUERY } from "@/lib/scout/search";
-import { getHomeCreators } from "@/server/creators";
+import { HomeTry } from "@/components/sections/HomeTry";
+import { DEFAULT_QUERY, HOME_RESULTS, searchAll } from "@/lib/scout/search";
+import { getCreators } from "@/server/creators";
 
-/** The live product, embedded on the homepage: same component as /demo, minus its top bar. */
+/**
+ * A taste of the product on the homepage: one brief over every creator, the best few matches, then pricing or the full
+ * app. The app itself (shortlist, compare, campaigns, share of voice) lives at /demo.
+ */
 export async function Product() {
-  const { creators, source, total } = await getHomeCreators();
+  const { creators } = await getCreators();
+  const r = searchAll(creators, DEFAULT_QUERY, { limit: HOME_RESULTS, missLimit: 0 });
   return (
     <section id="product" className="sec product" data-io>
       <div className="edge">
@@ -14,10 +18,10 @@ export async function Product() {
             <div className="mono mb-[18px]">04 — THE PRODUCT · LIVE</div>
             <h2 className="disp big rev">Try it.<br />Right here.</h2>
           </div>
-          <Link className="pbtn ghost" href="/demo">Open full screen ↗</Link>
+          <Link className="pbtn ghost" href="/pricing">Plans &amp; free trial ↗</Link>
         </div>
         <div className="appframe rev" style={{ "--d": ".1s" } as React.CSSProperties}>
-          <ScoutApp initialQuery={DEFAULT_QUERY} creators={creators} source={source} sampleOf={total} embedded />
+          <HomeTry initial={{ query: r.query, understood: r.understood, fitCount: r.fitCount, total: r.total, fits: r.fits }} />
         </div>
       </div>
     </section>

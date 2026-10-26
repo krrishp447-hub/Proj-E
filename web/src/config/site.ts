@@ -9,7 +9,7 @@ export const site = {
   email: "hello@scout.io",
   address: "Koramangala, Bengaluru",
   coords: `12°56'04.9"N 77°37'17.8"E`,
-  demoHref: "/demo",
+  demoHref: "/#product", // the homepage taste; the full app (/demo) needs a plan
   filmHref: "/film",
   // No real profile URLs yet; entries without an href render as plain text instead of dead links.
   // YouTube-first: other profiles come back when they exist.

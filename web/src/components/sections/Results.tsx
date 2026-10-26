@@ -45,7 +45,7 @@ export function Closing() {
           <span className="ln">IN MINUTES.</span>
         </h2>
         <div className="btnrow mt-11">
-          <a className="pbtn" href={site.demoHref}>Launch the demo →</a>
+          <a className="pbtn" href={site.demoHref}>Try it free →</a>
           <a className="pbtn ghost" href={`mailto:${site.email}`}>Book a walkthrough</a>
         </div>
       </div>
@@ -65,7 +65,7 @@ export function CtaBand() {
           THE RIGHT CREATORS FOR YOUR NEXT CAMPAIGN — RANKED, VERIFIED, SHORTLISTED IN MINUTES.
         </p>
         <div className="btnrow rev" style={{ "--d": ".2s" } as React.CSSProperties}>
-          <a className="pbtn dark" href={site.demoHref}>Try Scout free →</a>
+          <a className="pbtn dark" href="/pricing">Start free trial →</a>
           <a className="pbtn outline-ink" href={`mailto:${site.email}`}>Talk to us</a>
         </div>
       </div>

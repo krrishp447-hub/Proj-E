@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Creator } from "@/lib/scout/data";
 import type { Match } from "@/lib/scout/engine";
-import { searchAll, type SearchResult, DEFAULT_QUERY } from "@/lib/scout/search";
+import { DEFAULT_QUERY, type SearchResult } from "@/lib/scout/search";
 import { CampaignsView } from "./CampaignsView";
 import { CompareDialog, ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
@@ -24,23 +24,18 @@ const MAX_SHORTLIST = 4;
 const SHORTLIST_KEY = "scout:shortlist";
 
 /**
- * Two ways to search, same results:
- *   creators       — the homepage sample: ranked right here in the browser (`embedded`: no top bar, no URL changes)
- *   initialResult  — /demo: every creator is ranked on the server (/api/search); only the best ~150 come down
- * `creatorPool` feeds the Creator view (any creators; a sample is fine).
+ * The full app at /demo. Every creator is ranked on the server (/api/search); only the best ~150 come down.
+ * `creatorPool` feeds the Creator view (any creators; a sample is fine). The homepage has its own light HomeTry.
  */
 type Props = {
   initialQuery: string;
-  creators?: Creator[];
   initialResult?: SearchResult;
   creatorPool?: Creator[];
   source?: "youtube" | "none";
-  embedded?: boolean;
-  sampleOf?: number;
+  trialDaysLeft?: number | null; // on a free trial: shown in the top bar with a link to plans
 };
 
-export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, source = "none", embedded = false, sampleOf }: Props) {
-  const local = creators !== undefined;
+export function ScoutApp({ initialQuery, initialResult, creatorPool = [], source = "none", trialDaysLeft = null }: Props) {
   const [draft, setDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [showMisses, setShowMisses] = useState(false);
@@ -53,8 +48,7 @@ export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, s
   const [remote, setRemote] = useState<SearchResult | null>(initialResult ?? null);
   const [loading, setLoading] = useState(false);
 
-  const localResult = useMemo(() => (local ? searchAll(creators, query, { pinned: shortlist }) : null), [local, creators, query, shortlist]);
-  const result = local ? localResult : remote;
+  const result = remote;
 
   // Every creator we've seen scored for the current brief, so the shortlist / compare work across result pages.
   const known = useMemo(() => {
@@ -66,7 +60,7 @@ export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, s
   const missing = remote && remote.query === query ? shortlist.filter((id) => !known.has(id)).join(",") : "";
 
   useEffect(() => {
-    if (local || (remote?.query === query && !missing)) return;
+    if (remote?.query === query && !missing) return;
     const ctl = new AbortController();
     setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- marks a fetch in flight
     fetch(`/api/search?${new URLSearchParams({ q: query, ids: shortlist.join(",") })}`, { signal: ctl.signal })
@@ -75,7 +69,7 @@ export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, s
       .catch((e: Error) => { if (e.name !== "AbortError") setLoading(false); });
     return () => ctl.abort();
     // shortlist is read for the request but only `missing` should trigger a refetch
-  }, [local, query, missing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [query, missing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { rows, missCount } = useMemo(() => {
     if (!result) return { rows: [] as Match[], missCount: 0 };
@@ -91,24 +85,21 @@ export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, s
     setDraft(q);
     setQuery(q);
     setSelected(null);
-    if (!embedded) window.history.replaceState(null, "", `?q=${encodeURIComponent(q)}`); // shareable briefs
+    window.history.replaceState(null, "", `?q=${encodeURIComponent(q)}`); // shareable briefs
   };
   // Up to 4 (the compare table's width), by channel id.
   const toggleShortlist = (id: string) =>
     setShortlist((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= MAX_SHORTLIST ? s : [...s, id]));
-  // The embedded homepage copy runs on a sample: it must not read or overwrite the full app's saved shortlist.
   useEffect(() => {
-    if (embedded) return;
     try {
       const saved: unknown = JSON.parse(localStorage.getItem(SHORTLIST_KEY) ?? "[]");
       const ids = Array.isArray(saved) ? saved.filter((x): x is string => typeof x === "string").slice(0, MAX_SHORTLIST) : [];
       if (ids.length) setShortlist(ids); // eslint-disable-line react-hooks/set-state-in-effect -- one-time restore after hydration
     } catch {} // storage blocked or corrupt: start empty
-  }, [embedded]);
+  }, []);
   useEffect(() => {
-    if (embedded) return;
     try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist)); } catch {}
-  }, [shortlist, embedded]);
+  }, [shortlist]);
   const onSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }));
 
@@ -120,17 +111,16 @@ export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, s
     { label: "Proven", value: result?.proven ?? 0, note: "on-platform record" },
     { label: "Shortlist", value: shortlist.length, note: `of ${MAX_SHORTLIST}` },
   ];
-  const pool = creatorPool ?? creators ?? [];
+  const pool = creatorPool;
 
   return (
-    <div className={`d-app ${embedded ? "is-embedded" : ""}`}>
-      {!embedded && (
+    <div className="d-app">
       <header className="d-top">
         <Link href="/" className="d-wm">Scout</Link>
         <span className="d-tag">{source === "youtube" ? "Live · YouTube public data" : "No creator data yet"}</span>
+        {trialDaysLeft !== null && <Link href="/pricing" className="d-trial">Free trial · {trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} left · Plans</Link>}
         <Link href="/" className="d-back">← Site</Link>
       </header>
-      )}
 
       <div className="d-seg d-role" role="radiogroup" aria-label="View as">
         <button type="button" role="radio" aria-checked={role === "brand"} onClick={() => setRole("brand")}>Brand &amp; agency</button>
@@ -177,9 +167,6 @@ export function ScoutApp({ initialQuery, creators, initialResult, creatorPool, s
         </label>
       </div>
 
-      {sampleOf !== undefined && sampleOf > (creators?.length ?? 0) && (
-        <p className="d-hint">Live sample of {creators?.length} creators. <Link href="/demo">Search all {sampleOf.toLocaleString("en-IN")} in the full app →</Link></p>
-      )}
       <dl className={`d-kpis ${loading ? "is-loading" : ""}`} aria-busy={loading}>
         {kpis.map((k) => (
           <div key={k.label}>

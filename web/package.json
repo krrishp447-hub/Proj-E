@@ -13,7 +13,8 @@
     "discover": "node --no-warnings --env-file-if-exists=.env.local scripts/discover.ts",
     "doctor": "node --no-warnings --env-file-if-exists=.env.local scripts/doctor.ts",
     "quality": "node --no-warnings --env-file-if-exists=.env.local scripts/quality.ts",
-    "benchmark": "node --no-warnings --env-file-if-exists=.env.local scripts/benchmark.ts"
+    "benchmark": "node --no-warnings --env-file-if-exists=.env.local scripts/benchmark.ts",
+    "plan": "node --no-warnings --env-file-if-exists=.env.local scripts/plan.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -6,7 +6,8 @@ import { fileCampaignPosts, saveVideos, type FilingResult } from "./campaigns";
 import { sql } from "./db";
 import { fetchChannels, fetchRecentVideos, isQuotaError } from "./youtube";
 
-export type IngestResult = { seeds: number; updated: number; failed: { channelId: string; error: string }[]; quotaUnits: number; quotaExhausted?: boolean; filing?: FilingResult };
+export type IngestResult = { seeds: number; updated: number; failed: { channelId: string; error: string }[]; quotaUnits: number; quotaExhausted?: boolean; filing?: FilingResult;
+  frozen?: { refreshed: number; removed: number } }; // the 30-day rotation for channels outside the nightly refresh
 
 /**
  * Refresh every seeded channel: pull public stats + recent uploads, derive Scout signals,
@@ -76,28 +77,72 @@ export async function runIngest(limit = 1000, only?: string[]): Promise<IngestRe
       and not exists (select 1 from channel_connections x where x.channel_id = c.channel_id)
       and not exists (select 1 from campaign_creators cc where cc.channel_id = c.channel_id)
       and not exists (select 1 from deals d where d.channel_id = c.channel_id)`;
+  if (!only && !result.quotaExhausted) {
+    const frozen = await refreshFrozen(db);
+    result.frozen = { refreshed: frozen.refreshed, removed: frozen.removed };
+    result.quotaUnits += frozen.quotaUnits;
+  }
   await trimStorage(db);
   result.filing = await fileCampaignPosts();
   return result;
 }
 
+// YouTube API policy: data fetched through the API is refreshed or deleted within 30 days. Active channels are refreshed
+// nightly; frozen ones (pruned from the nightly refresh) get a channel-only refresh once they're 21 days old: 1 quota
+// unit per 50 channels, ~330 a night (~7 units) keeps all ~7K under 30 days.
+export const FRESH_DAYS = 30;
+const FROZEN_REFRESH_AFTER_DAYS = 21;
+const FROZEN_PER_RUN = 500; // ≤ 10 units a pass
+
+/** Refresh the oldest frozen channels' public stats; delete the ones YouTube no longer returns (deleted, private, hidden subs). */
+async function refreshFrozen(db: NonNullable<typeof sql>): Promise<{ refreshed: number; removed: number; quotaUnits: number }> {
+  const ids = ((await db`
+    select c.channel_id from creators c left join channel_seeds s using (channel_id)
+    where not coalesce(s.active, false) and c.fetched_at < now() - make_interval(days => ${FROZEN_REFRESH_AFTER_DAYS})
+    order by c.fetched_at limit ${FROZEN_PER_RUN}`) as { channel_id: string }[]).map((r) => r.channel_id);
+  if (!ids.length) return { refreshed: 0, removed: 0, quotaUnits: 0 };
+  const chs = await fetchChannels(ids);
+  if (chs.length) {
+    const col = <T,>(f: (c: (typeof chs)[number]) => T) => chs.map(f);
+    await db`
+      update creators c set name = z.name, subs = z.subs, about = z.about, yt_topics = string_to_array(z.topics, '|'), fetched_at = now()
+      from unnest(${col((c) => c.id)}::text[], ${col((c) => c.snippet.title)}::text[], ${col((c) => Number(c.statistics.subscriberCount ?? 0))}::int[],
+        ${col((c) => [c.snippet.description ?? "", c.brandingSettings?.channel?.keywords ?? ""].join("\n").slice(0, 1500))}::text[],
+        ${col((c) => (c.topicDetails?.topicCategories ?? []).join("|"))}::text[]) as z(id, name, subs, about, topics)
+      where c.channel_id = z.id`;
+    // channels pruned for size that have since grown rejoin the nightly refresh (which re-prunes them if needed)
+    await db`
+      update channel_seeds s set active = true from creators c
+      where c.channel_id = s.channel_id and s.channel_id = any(${chs.map((c) => c.id)}) and c.subs >= ${PRUNE_BELOW_SUBS} and c.consistency > 0`;
+  }
+  // Only when the whole lookup ran: a quota cut-off isn't "YouTube says it's gone". Claimed, campaign and deal channels stay.
+  const gone = chs.quotaExhausted ? [] : ids.filter((id) => !chs.some((c) => c.id === id));
+  const removed = gone.length ? ((await db`
+    delete from creators c where c.channel_id = any(${gone})
+      and not exists (select 1 from channel_connections x where x.channel_id = c.channel_id)
+      and not exists (select 1 from campaign_creators cc where cc.channel_id = c.channel_id)
+      and not exists (select 1 from deals d where d.channel_id = c.channel_id)
+    returning c.channel_id`) as unknown[]).length : 0;
+  return { refreshed: chs.length, removed, quotaUnits: Math.ceil(ids.length / 50) };
+}
+
 /**
- * Keep the database inside Neon's free 0.5 GB. Video descriptions are most of the videos table and are only used for
- * brand mentions and campaign filing, neither of which involves pruned channels (tiny or inactive), so theirs are
- * cleared. Videos older than 180 days beyond a channel's latest 20 are deleted, unless a campaign or deliverable
- * points at them. Titles, view and like counts stay: segregation and the quality audit use those.
+ * Keep stored YouTube data under 30 days old (the API policy) and the database inside Neon's free 0.5 GB, in one rule:
+ * a video row not re-fetched for 30 days is deleted. Active channels' latest uploads are re-fetched nightly, so only
+ * older uploads and frozen channels' videos expire; campaign and deliverable videos (the brand's record) are kept.
+ * Search doesn't need them: each creator's topics, niche and averages are stored on the creator row. Per-video daily
+ * stats go after 30 days too, and frozen channels' descriptions are cleared (only mentions and filing use them).
  */
 async function trimStorage(db: NonNullable<typeof sql>) {
+  await db`
+    delete from video_snapshots s where s.taken_on < current_date - ${FRESH_DAYS}::int
+      and not exists (select 1 from campaign_posts p where p.video_id = s.video_id)
+      and not exists (select 1 from deliverables d where d.video_id = s.video_id)`;
   await db`
     update videos v set description = '' from channel_seeds s
     where s.channel_id = v.channel_id and not s.active and v.description <> ''`;
   await db`
-    delete from videos v using (
-      select video_id from (
-        select video_id, published_at, row_number() over (partition by channel_id order by published_at desc) as rn from videos
-      ) x where x.rn > 20 and x.published_at < now() - interval '180 days'
-    ) old
-    where v.video_id = old.video_id
+    delete from videos v where v.fetched_at < now() - make_interval(days => ${FRESH_DAYS})
       and not exists (select 1 from campaign_posts p where p.video_id = v.video_id)
       and not exists (select 1 from deliverables d where d.video_id = v.video_id)`;
 }

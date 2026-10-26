@@ -6,9 +6,6 @@
   max-width: 1440px; margin: 0 auto; padding: 20px clamp(16px, 3vw, 40px) 64px;
   color: var(--text); font-family: var(--body); font-size: 14px; line-height: 1.45;
 }
-.d-app.is-embedded { max-width: none; padding: clamp(16px, 2vw, 28px); }
-.d-app.is-embedded .d-search { margin-top: 0; }
-.d-app.is-embedded .d-panel { top: 96px; max-height: calc(100vh - 112px); } /* clear the fixed site nav */
 .d-app :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 .d-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .d-muted, .d-sub { color: var(--muted); }
@@ -136,7 +133,6 @@
 
 /* role switch + creator view */
 .d-role { margin-top: 20px; }
-.d-app.is-embedded .d-role { margin-top: 0; margin-bottom: 18px; }
 .d-role + .d-search { margin-top: 16px; }
 .d-viewas { display: inline-flex; align-items: center; gap: 10px; }
 .d-viewas select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font: 600 14px var(--body); }
@@ -239,6 +235,8 @@
   .d-c-match { min-width: 96px; }
 }
 .d-actions a.d-btn { display: inline-flex; align-items: center; text-decoration: none; }
+.d-trial { margin-left: auto; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--signal); color: var(--signal); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.d-trial + .d-back { margin-left: 12px; }
 .d-contact { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
 .d-contact a, .d-linkbtn { color: var(--signal); font-weight: 600; }
 .d-linkbtn { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }

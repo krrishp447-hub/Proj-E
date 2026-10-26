@@ -17,7 +17,7 @@ export async function saveVideos(db: Db, channelId: string, videos: YtVideo[]) {
   await db`
     insert into videos (video_id, channel_id, title, description, published_at, url, views, likes, comments, category_id, fetched_at)
     select id, ${channelId}, title, descr, published::timestamptz, 'https://www.youtube.com/watch?v=' || id, vw, lk, cm, cat, now()
-    from unnest(${ids}::text[], ${col((v) => v.snippet.title)}::text[], ${col((v) => v.snippet.description ?? "")}::text[],
+    from unnest(${ids}::text[], ${col((v) => v.snippet.title)}::text[], ${col((v) => (v.snippet.description ?? "").slice(0, 1500))}::text[], -- descriptions capped at 1,500 chars: disclosures and brand mentions sit near the top
                 ${col((v) => v.snippet.publishedAt)}::text[], ${views}::int[], ${likes}::int[], ${comments}::int[],
                 ${col((v) => v.snippet.categoryId ?? null)}::text[])
          as t(id, title, descr, published, vw, lk, cm, cat)

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { PricingPlans, SavingsCalculator } from "@/components/pricing/PricingPlans";
 import { site } from "@/config/site";
 import "@/components/account/account.css";
@@ -17,14 +18,23 @@ const FAQ = [
   { q: "Do brands pay per search?", a: "No. Search, shortlists and compare are unlimited on every plan, so your team can explore freely. Plans differ by seats, outreach volume and how deep the tracking goes." },
   { q: "Does Scout take a cut of deals?", a: "Not today: 0% commission. Later, when contracts and payments run through Scout, we may charge a small fee on deals paid through the platform, and only on those. We'll announce it well before it applies." },
   { q: "Where does the data come from?", a: "Public YouTube data through the official YouTube API, refreshed daily, plus audience data that creators choose to share by connecting their channel. No scraping behind logins." },
-  { q: "Is there a free trial for brands?", a: "Yes. Sign in with Google and use Scout on live data. We'll contact you before any billing starts; nothing is charged automatically." },
+  { q: "Is there a free trial for brands?", a: "Yes, 14 days on any brand plan, from the day you set up your brand profile. Sign in with Google and use the full app on live data. We'll contact you before any billing starts; nothing is charged automatically." },
 ];
 
-export default function PricingPage() {
+/** Arriving from the app without a plan: say why, and what to do. */
+async function AppNotice({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
+  const { app } = await searchParams;
+  if (app === "expired") return <p className="acct-alert" role="status">Your free trial has ended. Pick a plan below and we&apos;ll switch your team back on; nothing is charged automatically.</p>;
+  if (app === "signin") return <p className="acct-alert" role="status">The full app is part of every brand plan. Start a 14-day free trial: sign in with Google as a brand.</p>;
+  return null;
+}
+
+export default function PricingPage({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
   return (
     <main className="acct pr">
       <Link href="/" className="acct-back">← Scout</Link>
       <h1 className="disp big">Pricing</h1>
+      <Suspense fallback={null}><AppNotice searchParams={searchParams} /></Suspense>
       <p className="acct-lede">
         Creators never pay to be found. Brands and agencies pay for seats and depth, never per search. Prices in INR.
       </p>

@@ -258,6 +258,18 @@ alter table creators add column if not exists yt_topics text[] not null default 
 -- Share of voice: competitors a brand tracks against, [{name, terms[]}] (lib/scout/sov.ts).
 alter table brand_profiles add column if not exists competitors jsonb not null default '[]';
 
+-- Brand plans (server/billing.ts): a free trial from the brand profile, then an active subscription. Until payments exist,
+-- plans are switched on with `npm run plan`. Brands from before plans existed get a trial starting now.
+create table if not exists subscriptions (
+  user_id            uuid primary key references users (id) on delete cascade,
+  plan               text not null default 'trial',
+  status             text not null default 'trial' check (status in ('trial', 'active', 'canceled')),
+  trial_ends_at      timestamptz,
+  current_period_end timestamptz,
+  updated_at         timestamptz not null default now()
+);
+insert into subscriptions (user_id, trial_ends_at) select user_id, now() + interval '14 days' from brand_profiles on conflict do nothing;
+
 -- Briefs the rules couldn't read (no niche, language, size or known topic): what to teach the parser next.
 create table if not exists unread_searches (
   query   text primary key, -- lowercased, ≤200 chars

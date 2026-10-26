@@ -57,3 +57,18 @@ export async function runAudits(db: Db, opts: { latest?: boolean } = {}): Promis
   }
   return out;
 }
+
+/** YouTube API policy: nothing fetched through the API is kept more than 30 days without a refresh (campaign records aside). */
+export async function freshnessCheck(db: Db): Promise<Check> {
+  const [r] = (await db`
+    select (select count(*)::int from creators where fetched_at < now() - interval '30 days') as creators,
+      (select count(*)::int from videos v where v.fetched_at < now() - interval '30 days'
+        and not exists (select 1 from campaign_posts p where p.video_id = v.video_id)
+        and not exists (select 1 from deliverables d where d.video_id = v.video_id)) as videos,
+      (select coalesce(max(extract(day from now() - fetched_at)), 0)::int from creators) as oldest`) as { creators: number; videos: number; oldest: number }[];
+  return {
+    name: "YouTube data is under 30 days old", passed: !r.creators && !r.videos,
+    summary: `oldest creator data ${r.oldest} days · ${r.creators} creators and ${r.videos} videos past 30 days`,
+    failures: r.creators || r.videos ? ["The nightly ingest refreshes or deletes these; if this persists, check that the cron ran (quota, errors)."] : [],
+  };
+}

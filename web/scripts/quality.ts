@@ -2,7 +2,7 @@
 //   npm run quality            recent audit history (the ingest audits every 100 new creators automatically)
 //   npm run quality -- --now   audit the most recent 100 creators right now and print the result
 import { neon } from "@neondatabase/serverless";
-import { runAudits } from "../src/server/audit.ts";
+import { freshnessCheck, runAudits } from "../src/server/audit.ts";
 
 const { DATABASE_URL } = process.env;
 if (!DATABASE_URL) throw new Error("Set DATABASE_URL in .env.local");
@@ -15,6 +15,10 @@ const print = (r: { from: number; to: number; passed: boolean; checks: { name: s
     for (const f of c.failures) console.log(`      · ${f}`);
   }
 };
+
+const fresh = await freshnessCheck(sql);
+console.log(`${fresh.passed ? "✓" : "✗"} ${fresh.name}: ${fresh.summary}`);
+for (const f of fresh.failures) console.log(`    · ${f}`);
 
 if (process.argv.includes("--now")) {
   for (const r of await runAudits(sql, { latest: true })) print(r, " (on demand)");

@@ -22,6 +22,7 @@ export type SearchResult = {
 // client reference on the server, not the string (it crashed /demo without ?q=).
 export const DEFAULT_QUERY = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
 
+export const HOME_RESULTS = 6; // the homepage shows this many matches, then pricing and the full app
 export const RESULT_LIMIT = 100;
 export const MISS_LIMIT = 50;
 

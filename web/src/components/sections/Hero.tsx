@@ -16,7 +16,7 @@ export function Hero() {
           <span className="ln">CREATORS, NOT MORE</span>
         </h1>
         <div className="btnrow mt-[clamp(28px,3.5vw,48px)]">
-          <a className="pbtn" href={site.demoHref}>Launch the demo →</a>
+          <a className="pbtn" href={site.demoHref}>Try it free →</a>
           <a className="pbtn ghost" href="#manifesto">See how it works</a>
         </div>
       </div>

@@ -44,7 +44,7 @@ export function SiteNav() {
           {sectionLinks.map((l) => (
             <a key={l.href} href={l.href} onClick={closeMenu}>{l.label}</a>
           ))}
-          <a href={site.demoHref}>Live demo ↗</a>
+          <a href={site.demoHref}>Try it</a>
           <a href="/pricing">Pricing</a>
           <a href="/login">Log in</a>
           <a href="#footer" onClick={closeMenu}>Contact</a>

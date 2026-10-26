@@ -19,7 +19,7 @@ export function BriefTry({ creators }: { creators: Creator[] }) {
       <label htmlFor="brief-try" className="mono brief-label">Try it — describe a campaign</label>
       <div className="brief-row">
         <input id="brief-try" value={text} onChange={(e) => setText(e.target.value)} maxLength={200} autoComplete="off" />
-        <Link className="pbtn" href={`/demo?q=${encodeURIComponent(text)}`}>Rank them →</Link>
+        <Link className="pbtn" href="/#product">Rank them →</Link>
       </div>
       <div className="brief-out" aria-live="polite">
         <span className="mono brief-k">Understood</span>

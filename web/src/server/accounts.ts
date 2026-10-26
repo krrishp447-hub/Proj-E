@@ -1,5 +1,6 @@
 import "server-only";
 import { seal, unseal } from "./auth";
+import { startTrial } from "./billing";
 import { sql } from "./db";
 import { exchangeCode, fetchAudience, grantedCreatorScopes, myChannel, refreshAccess, revoke, userInfo, type Role } from "./google";
 import { runIngest } from "./ingest";
@@ -126,6 +127,7 @@ export async function saveBrandProfile(userId: string, p: BrandProfile) {
       category = excluded.category, brief = excluded.brief, budget = excluded.budget, tracked = excluded.tracked, pitchable = excluded.pitchable,
       competitors = excluded.competitors, updated_at = now()`;
   await db()`update users set onboarded_at = coalesce(onboarded_at, now()) where id = ${userId}`;
+  await startTrial(userId); // the free trial starts with the brand profile (once)
 }
 
 export async function getCreatorProfile(userId: string) {
