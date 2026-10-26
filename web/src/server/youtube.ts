@@ -65,3 +65,13 @@ export async function searchChannels(q: string, pageToken?: string): Promise<{ i
   });
   return { ids: (r.items ?? []).map((i) => i.id.channelId), next: r.nextPageToken ?? null };
 }
+
+/** Specific videos by id (1 unit per 50): confirms a submitted deliverable link is public and on the creator's channel. */
+export async function fetchVideos(ids: string[]): Promise<YtVideo[]> {
+  const out: YtVideo[] = [];
+  for (const batch of chunk(ids, 50)) {
+    const r = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics", id: batch.join(",") });
+    out.push(...(r.items ?? []));
+  }
+  return out;
+}

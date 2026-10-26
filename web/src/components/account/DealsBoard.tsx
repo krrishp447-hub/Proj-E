@@ -1,22 +1,32 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { DEAL_STAGES, WORK_STAGES, type DealAction, type DealStage, type Side } from "@/lib/scout/deals";
+import type { DeliverableView } from "@/server/delivery";
 import type { ChecklistItem, DealView } from "@/server/deals";
+import { DealChat } from "./DealChat";
 import "./account.css";
 
 type Actions = {
   run: (id: string, a: DealAction) => Promise<string | null>;
   checklist: (id: string, items: ChecklistItem[]) => Promise<void>;
   due: (id: string, due: string) => Promise<void>;
+  submit: (id: string, url: string) => Promise<string | null>;
+  draft: (id: string, url: string) => Promise<string | null>;
+  status: (id: string, to: string) => Promise<string | null>;
+  addItem: (dealId: string, kind: string, due: string) => Promise<string | null>;
+  removeItem: (id: string) => Promise<string | null>;
+  campaign: (dealId: string, campaignId: string) => Promise<string | null>;
 };
+type CampaignOption = { id: string; name: string };
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const short = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 const USAGE = ["Organic only · 30 days", "Organic only · 90 days", "Organic + paid ads · 30 days", "Organic + paid ads · 90 days"];
 
 /** ClickUp-style deal workspace: board (drag after contract) or list, filters, and a detail drawer with the offer thread. */
-export function DealsBoard({ deals, side, openId, actions }: { deals: DealView[]; side: Side; openId: string | null; actions: Actions }) {
+export function DealsBoard({ deals, side, openId, actions, campaigns = [] }: { deals: DealView[]; side: Side; openId: string | null; actions: Actions; campaigns?: CampaignOption[] }) {
   const [view, setView] = useState<"board" | "list">("board");
   const [q, setQ] = useState("");
   const [mine, setMine] = useState(false);
@@ -30,6 +40,7 @@ export function DealsBoard({ deals, side, openId, actions }: { deals: DealView[]
     return deals.filter((d) => (!mine || d.myTurn) && (!t || `${d.title} ${d.counterpart.name}`.toLowerCase().includes(t)));
   }, [deals, q, mine]);
   const run = (id: string, a: DealAction) => start(async () => setError(await actions.run(id, a)));
+  const call = (p: () => Promise<string | null>) => start(async () => setError(await p()));
   const current = deals.find((d) => d.id === open) ?? null;
 
   return (
@@ -87,7 +98,7 @@ export function DealsBoard({ deals, side, openId, actions }: { deals: DealView[]
           </div>
         )}
 
-        {current && <Drawer key={current.id + current.offers.length + current.stage} d={current} side={side} pending={pending} onClose={() => setOpen(null)} run={run} actions={actions} />}
+        {current && <Drawer key={current.id + current.offers.length + current.stage} d={current} side={side} pending={pending} onClose={() => setOpen(null)} run={run} call={call} actions={actions} campaigns={campaigns} />}
       </div>
     </div>
   );
@@ -105,23 +116,25 @@ function Card({ d, side, active, dragging, onOpen, onDrag }: { d: DealView; side
       onDragStart={() => onDrag?.(d.id)}
       onDragEnd={() => onDrag?.(null)}
     >
-      <b>{d.counterpart.name}</b>
+      <b>{d.counterpart.name}{d.unread > 0 && <span className="deals-unread" aria-label={`${d.unread} unread messages`}>{d.unread}</span>}</b>
       <span>{d.title}</span>
       <span className="deals-cardmeta">
         {last && <>{inr(last.fee)} · {last.by === side ? "your offer" : "their offer"}</>}
         {d.due && <> · due {short(d.due)}</>}
         {d.checklist.length > 0 && <> · ☑ {done}/{d.checklist.length}</>}
+        {d.deliverables.length > 0 && <> · ▶ {d.deliverables.filter((x) => ["Live", "Approved", "Paid"].includes(x.status)).length}/{d.deliverables.length} live</>}
       </span>
       {d.myTurn && <span className="deals-turn">{d.stage === "Inbound" ? (d.initiatedBy === side ? "Your turn" : "New — reply") : "Your turn"}</span>}
     </button>
   );
 }
 
-function Drawer({ d, side, pending, onClose, run, actions }: { d: DealView; side: Side; pending: boolean; onClose: () => void; run: (id: string, a: DealAction) => void; actions: Actions }) {
+function Drawer({ d, side, pending, onClose, run, call, actions, campaigns }: { d: DealView; side: Side; pending: boolean; onClose: () => void; run: (id: string, a: DealAction) => void; call: (p: () => Promise<string | null>) => void; actions: Actions; campaigns: CampaignOption[] }) {
   const last = d.offers.at(-1);
   const [items, setItems] = useState<ChecklistItem[]>(d.checklist);
   const [newItem, setNewItem] = useState("");
   const [counter, setCounter] = useState(false);
+  const [chatFull, setChatFull] = useState(false);
   const saveItems = (next: ChecklistItem[]) => { setItems(next); void actions.checklist(d.id, next); };
   const open = d.stage === "Inbound" || d.stage === "Negotiating";
 
@@ -146,7 +159,16 @@ function Drawer({ d, side, pending, onClose, run, actions }: { d: DealView; side
         <label className="acct-q">Due
           <input type="date" defaultValue={d.due ?? ""} onChange={(e) => void actions.due(d.id, e.target.value)} />
         </label>
+        {side === "brand" && (
+          <label className="acct-q">Campaign
+            <select value={d.campaignId ?? ""} disabled={pending} onChange={(e) => call(() => actions.campaign(d.id, e.target.value))}>
+              <option value="">None</option>
+              {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+        )}
       </div>
+      {side === "brand" && !campaigns.length && <p className="acct-help">Group deals into a campaign to track their posts together: <Link className="deals-link" href="/dashboard/campaigns">create one</Link>.</p>}
 
       {d.myTurn && last && (
         <div className="deals-callout">
@@ -177,6 +199,19 @@ function Drawer({ d, side, pending, onClose, run, actions }: { d: DealView; side
         </form>
       )}
 
+      {d.deliverables.length > 0 && <Delivery d={d} side={side} pending={pending} call={call} actions={actions} />}
+
+      <div className="deals-msghead">
+        <h3>Messages{d.unread > 0 && <span className="deals-unread">{d.unread} new</span>}</h3>
+        <button type="button" className="deals-link" onClick={() => setChatFull(true)}>Full screen ⤢</button>
+      </div>
+      {/* one live chat at a time: the full-screen view takes over while open */}
+      {chatFull ? (
+        <ChatDialog d={d} side={side} onClose={() => setChatFull(false)}>
+          <DealChat dealId={d.id} side={side} counterpart={d.counterpart.name} full />
+        </ChatDialog>
+      ) : <DealChat dealId={d.id} side={side} counterpart={d.counterpart.name} />}
+
       <h3>Checklist</h3>
       <ul className="dash-check deals-checklist">
         {items.map((c, i) => (
@@ -202,5 +237,124 @@ function Drawer({ d, side, pending, onClose, run, actions }: { d: DealView; side
         ))}
       </ol>
     </aside>
+  );
+}
+
+const LIVE = ["Live", "Approved", "Paid"];
+
+/** Agreed items, planned → paid: the creator submits video links, the brand approves and marks them paid. */
+function Delivery({ d, side, pending, call, actions }: { d: DealView; side: Side; pending: boolean; call: (p: () => Promise<string | null>) => void; actions: Actions }) {
+  const [adding, setAdding] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    <>
+      <h3>Deliverables <span className="acct-help">{d.deliverables.filter((x) => LIVE.includes(x.status)).length}/{d.deliverables.length} live</span></h3>
+      <ul className="deals-deliv">
+        {d.deliverables.map((x) => <DeliveryItem key={x.id} x={x} side={side} pending={pending} late={!LIVE.includes(x.status) && x.due < today} call={call} actions={actions} />)}
+      </ul>
+      {side === "brand" && (adding ? (
+        <form className="deals-delivadd" action={(fd) => { call(() => actions.addItem(d.id, String(fd.get("kind")), String(fd.get("due")))); setAdding(false); }}>
+          <select name="kind" aria-label="Kind"><option>YouTube video</option><option>YouTube Short</option></select>
+          <input type="date" name="due" required aria-label="Due date" defaultValue={d.due ?? ""} />
+          <button type="submit" className="acct-btn" disabled={pending}>Add</button>
+        </form>
+      ) : <button type="button" className="deals-link" onClick={() => setAdding(true)}>+ Add a deliverable</button>)}
+    </>
+  );
+}
+
+function DeliveryItem({ x, side, pending, late, call, actions }: { x: DeliverableView; side: Side; pending: boolean; late: boolean; call: (p: () => Promise<string | null>) => void; actions: Actions }) {
+  const [url, setUrl] = useState(x.videoUrl ?? "");
+  const [draft, setDraft] = useState(x.draftUrl ?? "");
+  const open = x.status === "Planned" || x.status === "Submitted";
+  return (
+    <li className={`deals-delivitem ${late ? "is-late" : ""}`}>
+      <div className="deals-delivhead">
+        <b>{x.kind}</b>
+        <span className={`deals-pill s-${x.status.toLowerCase()}`}>{x.status}</span>
+        <span className="acct-help">due {short(x.due)}{late ? " · late" : ""}{x.fee ? ` · ${inr(x.fee)}` : ""}</span>
+      </div>
+      {x.videoId && x.title && (
+        <a className="deals-delivvideo" href={x.videoUrl ?? `https://www.youtube.com/watch?v=${x.videoId}`} target="_blank" rel="noopener noreferrer">
+          {x.title} ↗ <span className="acct-help">{(x.views ?? 0).toLocaleString("en-IN")} views{x.projectedViews ? ` · projected ${x.projectedViews.toLocaleString("en-IN")}` : ""}</span>
+        </a>
+      )}
+      {x.draftUrl && (
+        <p className="deals-delivdraft">
+          <a className="deals-link" href={x.draftUrl} target="_blank" rel="noopener noreferrer">Draft for review ↗</a>
+          <span className="acct-help"> Google Drive · shared {x.draftAt ? short(x.draftAt) : ""}{side === "brand" ? " · feedback in Messages, or Request changes" : ""}</span>
+        </p>
+      )}
+      {side === "creator" && x.status !== "Paid" && (
+        <form className="deals-delivadd" onSubmit={(e) => { e.preventDefault(); call(() => actions.draft(x.id, draft)); }}>
+          <input type="url" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Draft for review: Google Drive link" aria-label={`Google Drive draft link for ${x.kind}`} />
+          <button type="submit" className="acct-btn" disabled={pending}>{x.draftUrl ? (draft.trim() ? "Update draft" : "Remove draft") : "Share draft"}</button>
+        </form>
+      )}
+      {x.status === "Submitted" && <p className="acct-help">Link received. Scout confirms it once the video is public on the channel (checked nightly).</p>}
+      {side === "creator" && open && (
+        <form className="deals-delivadd" onSubmit={(e) => { e.preventDefault(); call(() => actions.submit(x.id, url)); }}>
+          <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Published video: YouTube link" aria-label={`YouTube link for ${x.kind}`} required />
+          <button type="submit" className="acct-btn on-ink" disabled={pending}>{x.status === "Submitted" ? "Update" : "Submit"}</button>
+        </form>
+      )}
+      {side === "brand" && (
+        <div className="acct-actions">
+          {x.status === "Live" && <button type="button" className="acct-btn on-ink" disabled={pending} onClick={() => call(() => actions.status(x.id, "Approved"))}>Approve</button>}
+          {(x.status === "Live" || x.status === "Approved") && <button type="button" className="acct-btn" disabled={pending} onClick={() => call(() => actions.status(x.id, "Paid"))}>Mark paid</button>}
+          {(x.status === "Live" || x.status === "Approved" || x.status === "Submitted") && <button type="button" className="deals-link" disabled={pending} onClick={() => call(() => actions.status(x.id, "Planned"))}>Request changes</button>}
+          {open && <button type="button" className="deals-link" disabled={pending} onClick={() => call(() => actions.removeItem(x.id))}>Remove</button>}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** The conversation full screen (a modal dialog: Esc or "Back to deal" closes it), with the deal kept in view beside it. */
+function ChatDialog({ d, side, onClose, children }: { d: DealView; side: Side; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && !el.open) el.showModal();
+    return () => el?.close();
+  }, []);
+  const last = d.offers.at(-1);
+  return (
+    <dialog ref={ref} className="deals-chatdlg" aria-label={`Messages with ${d.counterpart.name}`} onClose={onClose}>
+      <div className="deals-chatdlg-head">
+        <div>
+          <p className="acct-help">{d.counterpart.name} · {d.counterpart.sub}</p>
+          <h2>{d.title}</h2>
+        </div>
+        <button type="button" className="acct-btn ghost" onClick={onClose}>← Back to deal</button>
+      </div>
+      <div className="deals-chatdlg-body">
+        {children}
+        <aside className="deals-chatdlg-side" aria-label="Deal summary">
+          <h3>Stage</h3>
+          <p><b>{d.stage}</b>{d.due ? ` · due ${short(d.due)}` : ""}</p>
+          {last && (
+            <>
+              <h3>{["Inbound", "Negotiating"].includes(d.stage) ? "Latest offer" : "Agreed terms"}</h3>
+              <p><b>{inr(last.fee)}</b> · {last.deliverables} · {last.usage} · {last.timeline}{last.by === side ? " (yours)" : ""}</p>
+            </>
+          )}
+          {d.deliverables.length > 0 && (
+            <>
+              <h3>Deliverables</h3>
+              <ul className="deals-chatdlg-items">
+                {d.deliverables.map((x) => (
+                  <li key={x.id}>
+                    <span>{x.kind} · due {short(x.due)}</span> <span className={`deals-pill s-${x.status.toLowerCase()}`}>{x.status}</span>
+                    {x.draftUrl && <a className="deals-link" href={x.draftUrl} target="_blank" rel="noopener noreferrer">Draft ↗</a>}
+                    {x.videoId && <a className="deals-link" href={x.videoUrl ?? `https://www.youtube.com/watch?v=${x.videoId}`} target="_blank" rel="noopener noreferrer">Video ↗</a>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </aside>
+      </div>
+    </dialog>
   );
 }

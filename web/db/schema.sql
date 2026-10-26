@@ -270,6 +270,33 @@ create table if not exists subscriptions (
 );
 insert into subscriptions (user_id, trial_ends_at) select user_id, now() + interval '4 days' from brand_profiles on conflict do nothing;
 
+-- Delivery (lib/scout/delivery.ts): agreed items go Planned → Submitted → Live → Approved → Paid. Items are created
+-- from the accepted offer when a deal is contracted; the creator submits links, Scout confirms them from YouTube.
+alter table deliverables drop constraint if exists deliverables_status_check;
+alter table deliverables add constraint deliverables_status_check
+  check (status in ('Planned', 'In production', 'Submitted', 'Live', 'Approved', 'Paid'));
+alter table deliverables add column if not exists video_url text;
+alter table deliverables add column if not exists created_at timestamptz not null default now();
+alter table deliverables add column if not exists approved_at timestamptz;
+alter table deliverables add column if not exists paid_at timestamptz;
+create index if not exists deliverables_deal_idx on deliverables (deal_id);
+-- The creator's draft cut for the brand to review before posting: a Google Drive / Docs link.
+alter table deliverables add column if not exists draft_url text;
+alter table deliverables add column if not exists draft_at timestamptz;
+
+-- Deal chat: free messages beside the offer thread; each side's last read time drives unread counts.
+create table if not exists deal_messages (
+  id         bigint generated always as identity primary key,
+  deal_id    text not null references deals (id) on delete cascade,
+  by_party   text not null check (by_party in ('brand', 'creator')),
+  user_id    uuid references users (id) on delete set null,
+  body       text not null check (length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+create index if not exists deal_messages_deal_idx on deal_messages (deal_id, id);
+alter table deals add column if not exists brand_read_at timestamptz;
+alter table deals add column if not exists creator_read_at timestamptz;
+
 -- Briefs the rules couldn't read (no niche, language, size or known topic): what to teach the parser next.
 create table if not exists unread_searches (
   query   text primary key, -- lowercased, ≤200 chars

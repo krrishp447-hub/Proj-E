@@ -66,7 +66,7 @@ export function SovView({ result, you: fixedYou, offers = false }: { result: Sov
                   <span><b>{c.creator}</b><em>{c.competitors.join(", ")} · {fmt(c.competitorViews)} views</em></span>
                   <span className="sov-links">
                     <a href={youtubeUrl(c.channelId)} target="_blank" rel="noopener noreferrer">YouTube ↗</a>
-                    {offers && <a href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</a>}
+                    {offers && c.claimed && <a href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</a>}
                   </span>
                 </li>
               ))}

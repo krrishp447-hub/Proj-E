@@ -34,8 +34,9 @@ function DealsCard({ s, side }: { s: ReturnType<typeof dealSummary>; side: "bran
         <div><dt>Needs your reply</dt><dd>{s.needsReply}</dd></div>
         <div><dt>Active</dt><dd>{s.active}</dd></div>
         <div><dt>Contracted</dt><dd>{inr(s.contractedValue)}</dd></div>
+        {s.unread > 0 && <div><dt>Unread messages</dt><dd>{s.unread}</dd></div>}
       </dl>
-      <Link className="acct-btn" href="/dashboard/deals">Open deal board{s.needsReply ? ` · ${s.needsReply} waiting` : ""}</Link>
+      <Link className="acct-btn" href="/dashboard/deals">Open deal board{s.needsReply ? ` · ${s.needsReply} waiting` : ""}{s.unread ? ` · ${s.unread} new message${s.unread === 1 ? "" : "s"}` : ""}</Link>
     </section>
   );
 }
@@ -73,7 +74,7 @@ async function BrandDashboard({ user }: { user: User }) {
     <>
       <div className="dash-head">
         <h1 className="disp big">{p.company}</h1>
-        <nav aria-label="Account"><Link href="/dashboard/deals">Deals</Link><Link href="/demo">Discover</Link><Link href="/account">Settings</Link></nav>
+        <nav aria-label="Account"><Link href="/dashboard/deals">Deals</Link><Link href="/dashboard/campaigns">Campaigns</Link><Link href="/demo">Discover</Link><Link href="/account">Settings</Link></nav>
       </div>
       <div className="dash-grid">
         <section className="acct-card dash-wide" aria-labelledby="find-h">
@@ -133,13 +134,13 @@ async function BrandDashboard({ user }: { user: User }) {
                   <li key={c.handle}>
                     <span><b>{c.name}</b></span>
                     <span className="dash-num">{s}</span>
-                    <span className="dash-meta">{c.niche} · {c.language} · {fmt(c.subs)} subs · {c.eng}% eng{c.geo.length ? " · ✓ verified audience" : ""} · <Link href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</Link></span>
+                    <span className="dash-meta">{c.niche} · {c.language} · {fmt(c.subs)} subs · {c.eng}% eng{c.geo.length ? " · ✓ verified audience" : ""} · {c.claimed ? <Link href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</Link> : "not on Scout yet"}</span>
                   </li>
                 ))}
               </ul>
               <div className="acct-actions">
                 <Link className="acct-btn" href={`/demo?q=${encodeURIComponent(p.brief)}`}>Open full shortlist</Link>
-                <Link className="acct-btn ghost" href={`/dashboard/offers/new?to=${top.slice(0, 6).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>Offer to top {Math.min(6, top.length)}</Link>
+                {top.slice(0, 6).some((m) => m.creator.claimed) && <Link className="acct-btn ghost" href={`/dashboard/offers/new?to=${top.slice(0, 6).filter((m) => m.creator.claimed).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>Offer to those on Scout</Link>}
               </div>
             </>
           ) : (

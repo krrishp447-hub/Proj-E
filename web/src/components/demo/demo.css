@@ -233,6 +233,9 @@
   .d-c-plat, .d-c-rank, .d-c-opt, .d-kpis small, .d-tag { display: none; }
   .d-meter { width: 48px; }
   .d-c-match { min-width: 96px; }
+  .d-table td, .d-table th { padding: 10px 6px; }
+  .d-table td:has(.d-name) { white-space: normal; }
+  .d-name { text-align: left; overflow-wrap: anywhere; }
 }
 .d-actions a.d-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .d-trial { margin-left: auto; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--signal); color: var(--signal); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
@@ -245,3 +248,9 @@
 .d-cmpgo { width: 100%; margin: 12px 0 4px; }
 .d-app .is-loading { opacity: .55; transition: opacity .2s; }
 .d-cmpdlg .d-cmpgo { display: inline-flex; padding: 11px 20px; margin-top: 16px; }
+
+.d-camplist { list-style: none; margin: 0 0 16px; padding: 0; display: grid; }
+.d-camplist li { display: grid; gap: 3px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.d-camplist a { color: var(--text); font-weight: 700; text-decoration: none; }
+.d-camplist a:hover { color: var(--signal); }
+@media (pointer: coarse) { .d-check input, .d-table input { width: 22px; height: 22px; } }

@@ -54,3 +54,6 @@ demo-video.html
 
 # local server log
 next.log
+
+# throwaway local scripts (test accounts, one-off checks)
+scripts/_*

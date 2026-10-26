@@ -328,3 +328,13 @@
     .manifesto .big .ln { display: inline; }
   }
 }
+
+/* Touch screens: finger-sized targets (~44px) for the small text links and controls the mobile audit found */
+@media (pointer: coarse) {
+  .topnav a, .site-footer a, .acct-back, .legal-back, .dash-head nav a, .d-back, .pbtn-arrow, .reel-sound, .d-trial {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+  .d-x { min-width: 44px; min-height: 44px; }
+  input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; }
+  input[type="range"] { height: 36px; }
+}

@@ -16,7 +16,7 @@ export type SovBrand = {
   weekly: number[]; // views per week, oldest first
 };
 export type SovPost = { videoId: string; title: string; url: string; views: number; publishedAt: string; creator: string; brands: string[]; disclosed: boolean };
-export type CreatorVoice = { channelId: string; creator: string; views: Record<string, number> }; // brand → views naming it
+export type CreatorVoice = { channelId: string; creator: string; views: Record<string, number>; claimed?: boolean }; // brand → views naming it
 export type SovResult = { days: number; brands: SovBrand[]; posts: SovPost[]; creators: CreatorVoice[] };
 
 /** One prefilter pattern for the whole set (the database scan); exact per-brand matching happens in computeSov. */

@@ -36,3 +36,4 @@
   .ht-list li { grid-template-columns: 26px 1fr; }
   .ht-score { grid-column: 2; }
 }
+@media (pointer: coarse) { .ht-who a { padding-block: 6px; } }

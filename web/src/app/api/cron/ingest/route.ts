@@ -3,6 +3,7 @@ import { syncAudiences } from "@/server/accounts";
 import { freshnessCheck, runAudits } from "@/server/audit";
 import { sql } from "@/server/db";
 import { rejectUnlessCron } from "@/server/cron";
+import { checkDeliverables } from "@/server/delivery";
 import { DB_WARN_BYTES, heartbeat } from "@/server/heartbeat";
 import { runIngest } from "@/server/ingest";
 
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
   if (rejected) return rejected;
   try {
     const result = await runIngest();
+    const delivery = await checkDeliverables(); // submitted links YouTube can now see; live deliverable videos' stats
     const audiences = await syncAudiences(); // connected creators' private audience (YouTube Analytics quota, not Data API)
     // every 100 new creators: segregation + calculation checks, recorded in quality_audits (npm run quality)
     const audits = sql ? await runAudits(sql) : [];
@@ -32,7 +34,7 @@ export async function GET(request: Request) {
     const summary = `${result.updated} refreshed · ${result.frozen?.refreshed ?? 0} frozen refreshed · ${result.quotaUnits} quota units · db ${Math.round(Number(bytes) / 1048576)} MB · ${fresh?.summary ?? ""}`;
     await heartbeat(!problems.length, problems.length ? `${problems.join("\n")}\n\n${summary}` : summary);
 
-    return Response.json({ ...result, audiences, freshness: fresh?.summary ?? null, problems, audits: audits.map((a) => ({ creators: `${a.from + 1}–${a.to}`, passed: a.passed, failed: a.checks.filter((c) => !c.passed).map((c) => c.name) })) });
+    return Response.json({ ...result, delivery, audiences, freshness: fresh?.summary ?? null, problems, audits: audits.map((a) => ({ creators: `${a.from + 1}–${a.to}`, passed: a.passed, failed: a.checks.filter((c) => !c.passed).map((c) => c.name) })) });
   } catch (e) {
     const error = e instanceof Error ? e.message : "Ingest failed";
     await heartbeat(false, `nightly ingest crashed: ${error}`);

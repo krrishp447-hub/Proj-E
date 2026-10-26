@@ -66,37 +66,45 @@ async function sendEmail(to: string, subject: string, text: string): Promise<boo
   return res.ok;
 }
 
+export type InviteResult = "sent" | "already" | "limit" | "unavailable" | "off";
+
 /**
- * A brand sent an offer to a channel that isn't on Scout: tell the creator once, at their public address, that an
- * offer is waiting. Never the offer itself (the address isn't verified). One email per channel per brand, at most
- * a few per channel per week across brands, never to an unsubscribed address. Never throws: the offer is already saved.
+ * Offers need a claimed channel, so for a creator who isn't on Scout yet a brand can invite them: one email to the address
+ * the creator published, saying a brand wants to work with them (never who or what: the address isn't verified). One
+ * email per channel per brand, at most a few per channel per week across brands, never to an unsubscribed address.
  */
-export async function inviteIfUnclaimed(channelId: string, brandId: string): Promise<void> {
+export async function inviteCreator(channelId: string, brandId: string): Promise<InviteResult> {
   try {
     const q = db();
+    const [prev] = (await q`select 1 from contact_invites where channel_id = ${channelId} and brand_id = ${brandId}`) as unknown[];
+    if (prev) return "already";
     const [c] = (await q`
       select c.name, c.public_email from creators c
       where c.channel_id = ${channelId} and c.public_email is not null
         and not exists (select 1 from channel_connections x where x.channel_id = c.channel_id)
         and not exists (select 1 from contact_optouts o where o.channel_id = c.channel_id)
         and not exists (select 1 from email_unsubscribes u where u.email = c.public_email)
-        and not exists (select 1 from contact_invites i where i.channel_id = c.channel_id and i.brand_id = ${brandId})
-        and (select count(*) from contact_invites i where i.channel_id = c.channel_id and i.sent_at > now() - interval '7 days') < ${INVITES_PER_CHANNEL_PER_WEEK}`) as { name: string; public_email: string }[];
-    if (!c) return;
-    const sent = await sendEmail(c.public_email, "A brand sent you an offer on Scout",
+`) as { name: string; public_email: string }[];
+    if (!c) return "unavailable"; // claimed meanwhile, no public email, opted out or unsubscribed
+    const [{ n }] = (await q`select count(*)::int as n from contact_invites where channel_id = ${channelId} and sent_at > now() - interval '7 days'`) as { n: number }[];
+    if (n >= INVITES_PER_CHANNEL_PER_WEEK) return "limit";
+    const sent = await sendEmail(c.public_email, "A brand wants to work with you on Scout",
       [
         `Hi ${c.name},`,
         "",
-        "A brand sent your YouTube channel a collaboration offer on Scout.",
-        "To see it, claim your channel: sign in with Google and connect YouTube (this proves the channel is yours).",
+        "A brand on Scout wants to work with your YouTube channel.",
+        "Claim your channel to receive their offer: sign in with Google and connect YouTube (this proves the channel is yours).",
         "",
         `Claim your channel: ${site.url}/api/auth/google/start?role=creator`,
         "",
         "We found this address in your channel's public description. We won't email you about the same brand again.",
         `Don't want these emails? ${unsubscribeUrl(c.public_email)}`,
       ].join("\n"));
-    if (sent) await q`insert into contact_invites (channel_id, brand_id) values (${channelId}, ${brandId}) on conflict do nothing`;
+    if (!sent) return "off"; // no email provider configured (RESEND_API_KEY / EMAIL_FROM)
+    await q`insert into contact_invites (channel_id, brand_id) values (${channelId}, ${brandId}) on conflict do nothing`;
+    return "sent";
   } catch (e) {
     console.error("invite failed", e instanceof Error ? e.message : e);
+    return "off";
   }
 }

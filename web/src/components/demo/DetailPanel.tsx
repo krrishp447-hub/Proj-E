@@ -25,6 +25,15 @@ function Sparkline({ data }: { data: number[] }) {
 }
 
 type Reveal = { email?: string; source?: string; error?: string; limit?: number };
+const INVITE_TEXT: Record<string, string> = {
+  sent: "Invited. Once they claim their channel you can send the offer.",
+  already: "You've already invited them.",
+  limit: "They've had a few invites this week already. Try again in a few days.",
+  unavailable: "They can't be invited (no public email, or they opted out).",
+  off: "Invites aren't switched on yet (email isn't set up).",
+  signin: "Sign in as a brand to invite them.",
+  plan: "Inviting creators is part of a brand plan.",
+};
 
 /**
  * How to reach the creator, in three states: on Scout (offers go straight to them), not on Scout but with a public
@@ -32,11 +41,12 @@ type Reveal = { email?: string; source?: string; error?: string; limit?: number 
  */
 function Contact({ c }: { c: Creator }) {
   const [r, setR] = useState<Reveal | null>(null);
+  const [invite, setInvite] = useState<string | null>(null);
   if (c.claimed) return <p className="d-contact">✓ On Scout: offers and messages go straight to them.</p>;
   if (!c.hasEmail) {
     return (
       <p className="d-contact">
-        Not on Scout yet, and no public business email.{" "}
+        Not on Scout yet, so offers aren&apos;t possible, and there&apos;s no public business email to invite them.{" "}
         <a href={aboutUrl(c.channelId)} target="_blank" rel="noopener noreferrer">Open their About page for contact ↗</a>
       </p>
     );
@@ -45,9 +55,17 @@ function Contact({ c }: { c: Creator }) {
     const res = await fetch(`/api/contact?channel=${encodeURIComponent(c.channelId)}`);
     setR(await res.json().catch(() => ({ error: "none" })));
   };
+  const sendInvite = async () => {
+    setInvite("…");
+    const res = await fetch("/api/invite", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ channel: c.channelId }) });
+    setInvite(((await res.json().catch(() => ({}))) as { result?: string }).result ?? "off");
+  };
   return (
     <p className="d-contact">
-      Not on Scout yet. We&apos;ll invite them when you send an offer.{" "}
+      Not on Scout yet: invite them, and once they claim their channel you can send the offer.{" "}
+      {!invite && <button type="button" className="d-linkbtn" onClick={sendInvite}>Invite to Scout</button>}
+      {invite && <><b>{invite === "…" ? "Inviting…" : INVITE_TEXT[invite] ?? INVITE_TEXT.off}</b>{" "}</>}
+      {" · "}
       {!r && <button type="button" className="d-linkbtn" onClick={reveal}>Show public email</button>}
       {r?.email && <><a href={`mailto:${r.email}`}>{r.email}</a> <span className="d-sub">· From the channel&apos;s public description</span></>}
       {r?.error === "signin" && <><a href="/login">Sign in as a brand</a> to see their public email.</>}
@@ -74,7 +92,7 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
           {inShortlist ? "✓ Shortlisted" : "+ Shortlist"}
         </button>
         {/* brand accounts: opens the offer composer (signed-out visitors are sent to log in first) */}
-        {(c.claimed || c.hasEmail) && <a className="d-btn ghost" href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer <span className="arw">→</span></a>}
+        {c.claimed && <a className="d-btn ghost" href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer <span className="arw">→</span></a>}
         <a className="d-btn ghost" href={youtubeUrl(c.channelId)} target="_blank" rel="noopener noreferrer">View on YouTube ↗</a>
       </div>
       <Contact key={c.channelId} c={c} />

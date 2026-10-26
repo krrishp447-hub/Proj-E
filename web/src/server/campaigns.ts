@@ -41,9 +41,10 @@ export type FilingResult = { campaigns: number; checked: number; filed: number; 
 /**
  * The campaign folder, automatically: match every stored upload in each live campaign's window against its
  * tracking rules. Human decisions (decided_by) are never overwritten. Filed posts from contracted creators
- * mark their earliest open deliverable Live.
+ * mark their earliest open deliverable Live. `only`: one campaign and just its own creators' uploads, for when a brand
+ * saves a campaign or adds a deal (the nightly run also scans everyone else for organic mentions).
  */
-export async function fileCampaignPosts(): Promise<FilingResult> {
+export async function fileCampaignPosts(only?: string): Promise<FilingResult> {
   const db = sql;
   const out: FilingResult = { campaigns: 0, checked: 0, filed: 0, review: 0, organic: 0, deliverablesLinked: 0 };
   if (!db) return out;
@@ -52,7 +53,7 @@ export async function fileCampaignPosts(): Promise<FilingResult> {
     select c.id, c.start_date::text as start_date, c.end_date::text as end_date, c.rules,
       (select array_agg(cc.channel_id) from campaign_creators cc where cc.campaign_id = c.id) as creators
     from campaigns c
-    where c.status = 'Live' and current_date between c.start_date and c.end_date + 7`) as CampaignRow[];
+    where c.status = 'Live' and current_date between c.start_date and c.end_date + 7 and (${only ?? null}::text is null or c.id = ${only ?? null})`) as CampaignRow[];
   out.campaigns = campaigns.length;
 
   for (const row of campaigns) {
@@ -61,7 +62,9 @@ export async function fileCampaignPosts(): Promise<FilingResult> {
     };
     const videos = (await db`
       select video_id, channel_id, title, description, published_at::text as published_at, url, paid_flag, views, likes, comments
-      from videos where published_at >= ${row.start_date}::date and published_at < ${row.end_date}::date + 2`) as VideoRow[];
+      from videos where published_at >= ${row.start_date}::date and published_at < ${row.end_date}::date + 2
+        and (${!only} or channel_id = any(${row.creators ?? []}::text[]))
+        and (${!!only} or fetched_at > now() - interval '30 hours')`) as VideoRow[]; // nightly: only what the ingest just fetched
 
     for (const v of videos) {
       out.checked++;

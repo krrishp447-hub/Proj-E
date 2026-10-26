@@ -17,7 +17,7 @@ export type YtChannel = {
 /** The subset of a `videos.list` item we request (part=snippet,statistics). */
 export type YtVideo = {
   id: string;
-  snippet: { title: string; description?: string; tags?: string[]; publishedAt: string; defaultAudioLanguage?: string; categoryId?: string };
+  snippet: { title: string; description?: string; tags?: string[]; publishedAt: string; defaultAudioLanguage?: string; categoryId?: string; channelId?: string };
   statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
 };
 

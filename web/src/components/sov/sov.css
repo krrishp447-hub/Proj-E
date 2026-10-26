@@ -28,3 +28,4 @@
   .sov-row { grid-template-columns: 1fr; gap: 6px; }
   .sov-headrow, .sov-row > :nth-child(3), .sov-row > :nth-child(4) { display: none; }
 }
+@media (pointer: coarse) { .sov-links a { display: inline-flex; align-items: center; min-height: 44px; } }

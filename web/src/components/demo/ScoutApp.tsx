@@ -5,10 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { Creator } from "@/lib/scout/data";
 import type { Match } from "@/lib/scout/engine";
 import { DEFAULT_QUERY, type SearchResult } from "@/lib/scout/search";
-import { CampaignsView } from "./CampaignsView";
 import { CompareDialog, ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
 import { DetailPanel } from "./DetailPanel";
+import { MyCampaigns } from "./MyCampaigns";
 import { ResultsTable, type SortKey } from "./ResultsTable";
 import { ShareOfVoice } from "./ShareOfVoice";
 import "./demo.css";
@@ -133,7 +133,7 @@ export function ScoutApp({ initialQuery, initialResult, creatorPool = [], source
         <button role="tab" aria-selected={brandTab === "campaigns"} onClick={() => setBrandTab("campaigns")}>Campaigns</button>
         <button role="tab" aria-selected={brandTab === "sov"} onClick={() => setBrandTab("sov")}>Share of voice</button>
       </div>
-      {brandTab === "campaigns" && <CampaignsView />}
+      {brandTab === "campaigns" && <MyCampaigns />}
       {brandTab === "sov" && <ShareOfVoice />}
       {brandTab === "discover" && <>
       <form className="d-search" role="search" onSubmit={(e) => { e.preventDefault(); run(draft); }}>
@@ -180,7 +180,11 @@ export function ScoutApp({ initialQuery, initialResult, creatorPool = [], source
         <section className={`d-tablewrap ${loading ? "is-loading" : ""}`} aria-label="Ranked creators" aria-busy={loading}>
           {rows.length ? (
             <>
-              <ResultsTable rows={rows} sort={sort} onSort={onSort} activeId={activeId} onSelect={(id) => { setSelected(id); setTab("detail"); }} shortlist={shortlist} onToggle={toggleShortlist} />
+              <ResultsTable rows={rows} sort={sort} onSort={onSort} activeId={activeId} onSelect={(id) => {
+                setSelected(id); setTab("detail");
+                // phones and tablets: the detail panel sits below the table, so bring it into view
+                if (window.matchMedia("(max-width: 1080px)").matches) requestAnimationFrame(() => document.querySelector(".d-panel")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+              }} shortlist={shortlist} onToggle={toggleShortlist} />
               {result && result.fitCount > result.fits.length && (
                 <p className="d-hint">Showing the best {result.fits.length} of {result.fitCount.toLocaleString("en-IN")} matches. Add detail to the brief to narrow it down.</p>
               )}

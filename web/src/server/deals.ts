@@ -1,9 +1,12 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { fairRate } from "@/lib/scout/campaigns";
+import { fmt } from "@/lib/scout/engine";
 import { act, whoseTurn, type DealAction, type DealStage, type OfferEntry, type Side, type Terms } from "@/lib/scout/deals";
 import type { User } from "./auth";
 import { sql } from "./db";
+import { createDeliverables, deliverablesFor, type DeliverableView } from "./delivery";
+import { unreadCounts } from "./messages";
 
 function db() {
   if (!sql) throw new Error("DATABASE_URL is not set");
@@ -15,11 +18,15 @@ export type DealView = {
   id: string; title: string; stage: DealStage; initiatedBy: Side; due: string | null; checklist: ChecklistItem[]; updatedAt: string;
   counterpart: { name: string; sub: string }; offers: OfferEntry[]; myTurn: boolean;
   fair: { low: number; high: number } | null; // market guide from the creator's real views and engagement
+  campaignId: string | null;
+  deliverables: DeliverableView[]; // once agreed: each item from planned to paid
+  unread: number; // chat messages from the other side since this side last opened the deal
+  channelId: string;
 };
 
 const sideOf = (u: User): Side => (u.role === "brand" ? "brand" : "creator");
 
-type DealRow = { id: string; title: string; stage: DealStage; initiated_by: Side; due: string | null; checklist: ChecklistItem[]; updated_at: string; cp_name: string; cp_sub: string; avg_views: number; eng: number };
+type DealRow = { id: string; title: string; stage: DealStage; initiated_by: Side; due: string | null; checklist: ChecklistItem[]; updated_at: string; cp_name: string; cp_sub: string; subs?: number; avg_views: number; eng: number; campaign_id: string | null; channel_id: string };
 type OfferRow = { deal_id: string; by_party: Side; fee: number; deliverables: string; usage_rights: string; timeline: string; note: string | null; created_at: string };
 
 /** Every deal the user is a party to: brands by brand_id, creators by the channel they've connected. */
@@ -28,11 +35,11 @@ export async function listDeals(u: User): Promise<DealView[]> {
   if (u.role === "creator" && !u.channelId) return [];
   const rows = (u.role === "brand"
     ? await q`
-        select d.id, d.title, d.stage, d.initiated_by, d.due::text as due, d.checklist, d.updated_at::text as updated_at,
-          c.name as cp_name, c.niche || ' · ' || c.language || ' · ' || c.subs::text || ' subs' as cp_sub, c.avg_views, c.eng
+        select d.id, d.title, d.stage, d.initiated_by, d.due::text as due, d.checklist, d.updated_at::text as updated_at, d.campaign_id, d.channel_id,
+          c.name as cp_name, c.niche || ' · ' || c.language as cp_sub, c.subs, c.avg_views, c.eng
         from deals d join creators c using (channel_id) where d.brand_id = ${u.id} order by d.updated_at desc`
     : await q`
-        select d.id, d.title, d.stage, d.initiated_by, d.due::text as due, d.checklist, d.updated_at::text as updated_at,
+        select d.id, d.title, d.stage, d.initiated_by, d.due::text as due, d.checklist, d.updated_at::text as updated_at, d.campaign_id, d.channel_id,
           b.name as cp_name, coalesce(bp.kind || ' · ' || coalesce(bp.category, ''), 'Brand') as cp_sub, c.avg_views, c.eng
         from deals d join brands b on b.id = d.brand_id join creators c using (channel_id) left join brand_profiles bp on bp.user_id::text = d.brand_id
         where d.channel_id = ${u.channelId} order by d.updated_at desc`) as DealRow[];
@@ -41,14 +48,17 @@ export async function listDeals(u: User): Promise<DealView[]> {
     select deal_id, by_party, fee, deliverables, usage_rights, timeline, note, created_at::text as created_at
     from offers where deal_id = any(${rows.map((r) => r.id)}) order by created_at, id`) as OfferRow[];
   const me = sideOf(u);
+  const ids = rows.map((r) => r.id);
+  const [items, unread] = await Promise.all([deliverablesFor(ids), unreadCounts(u, ids)]);
   return rows.map((r) => {
     const thread: OfferEntry[] = offers.filter((o) => o.deal_id === r.id).map((o) => ({
       by: o.by_party, fee: o.fee, deliverables: o.deliverables, usage: o.usage_rights, timeline: o.timeline, note: o.note ?? undefined, at: o.created_at,
     }));
     return {
       id: r.id, title: r.title, stage: r.stage, initiatedBy: r.initiated_by, due: r.due, checklist: r.checklist, updatedAt: r.updated_at,
-      counterpart: { name: r.cp_name, sub: r.cp_sub }, offers: thread, myTurn: whoseTurn({ stage: r.stage, offers: thread }) === me,
+      counterpart: { name: r.cp_name, sub: r.subs != null ? `${r.cp_sub} · ${fmt(r.subs)} subs` : r.cp_sub }, offers: thread, myTurn: whoseTurn({ stage: r.stage, offers: thread }) === me,
       fair: r.avg_views ? fairRate(r.avg_views, r.eng) : null,
+      campaignId: r.campaign_id, deliverables: items.get(r.id) ?? [], unread: unread.get(r.id) ?? 0, channelId: r.channel_id,
     };
   });
 }
@@ -67,7 +77,7 @@ async function addOffer(dealId: string, by: Side, t: Terms) {
 }
 
 /**
- * Open a deal. A brand makes an offer to any tracked channel (the creator sees it once they claim the channel);
+ * Open a deal. A brand makes an offer to a creator who claimed their channel;
  * a creator pitches a brand account. The opening terms are the first offer in the thread.
  */
 export async function openDeal(u: User, target: string, title: string, terms: Terms, checklist: string[], due: string | null): Promise<string> {
@@ -78,8 +88,10 @@ export async function openDeal(u: User, target: string, title: string, terms: Te
     const [p] = (await q`select company from brand_profiles where user_id = ${u.id}`) as { company: string }[];
     if (!p) throw new Error("Finish your brand profile first");
     await q`insert into brands (id, name) values (${u.id}, ${p.company}) on conflict (id) do update set name = excluded.name`;
-    const [c] = (await q`select channel_id from creators where channel_id = ${target}`) as { channel_id: string }[];
-    if (!c) throw new Error("Creator not found");
+    // offers go only to creators who claimed their channel on Scout (others can be invited first)
+    const [c] = (await q`select channel_id from creators c where channel_id = ${target}
+      and exists (select 1 from channel_connections x where x.channel_id = c.channel_id)`) as { channel_id: string }[];
+    if (!c) throw new Error("This creator hasn't claimed their channel on Scout yet");
     brandId = u.id; channelId = c.channel_id;
   } else {
     if (!u.channelId) throw new Error("Connect your channel first");
@@ -110,6 +122,8 @@ export async function dealAction(u: User, id: string, a: DealAction): Promise<st
     returning id`) as { id: string }[];
   if (!moved) return "This deal just changed. Refresh to see the latest offer.";
   if (a.type === "counter") await addOffer(id, sideOf(u), a.terms);
+  // agreed (accepted, or moved into the work stages): the offer's deliverables become trackable items, once
+  if (["Contracted", "In production", "Live", "Paid"].includes(next.stage)) await createDeliverables(id);
   return null;
 }
 
@@ -130,6 +144,7 @@ export function dealSummary(deals: DealView[]) {
   const agreed = (d: DealView) => d.offers.at(-1)?.fee ?? 0;
   return {
     needsReply: deals.filter((d) => d.myTurn).length,
+    unread: deals.reduce((s, d) => s + d.unread, 0),
     incoming: deals.filter((d) => d.stage === "Inbound" && d.myTurn).length,
     active: active.length,
     contractedValue: deals.filter((d) => ["Contracted", "In production", "Live", "Paid"].includes(d.stage)).reduce((s, d) => s + agreed(d), 0),

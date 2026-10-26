@@ -1,11 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { validTerms } from "@/lib/scout/deals";
 import { currentUser } from "@/server/auth";
-import { inviteIfUnclaimed } from "@/server/contact";
 import { openDeal } from "@/server/deals";
 import { MAX_TARGETS, creatorCards, searchCreatorCards, type CreatorCard } from "@/server/offers";
 
@@ -35,13 +33,13 @@ export async function sendOffers(fd: FormData) {
   const dueRaw = String(fd.get("due") ?? "");
   const due = /^\d{4}-\d{2}-\d{2}$/.test(dueRaw) ? dueRaw : null;
   const base = { deliverables: String(fd.get("deliverables") ?? ""), usage: String(fd.get("usage") ?? ""), timeline: String(fd.get("timeline") ?? ""), note: String(fd.get("note") ?? "") };
-  const offers = targets.map((t) => ({ target: t, terms: validTerms({ ...base, fee: Number(fd.get(`fee:${t}`)) }) }));
+  // brands: only creators who claimed their channel (anyone else is dropped here and refused by openDeal)
+  const allowed = u.role === "brand" ? new Set((await creatorCards(targets)).map((c) => c.channelId)) : null;
+  const offers = targets.filter((t) => !allowed || allowed.has(t)).map((t) => ({ target: t, terms: validTerms({ ...base, fee: Number(fd.get(`fee:${t}`)) }) }));
   if (!title || !offers.length || offers.some((o) => !o.terms)) redirect(`/dashboard/offers/new?to=${encodeURIComponent(targets.join(","))}&error=terms`);
 
   const ids: string[] = [];
   for (const o of offers) ids.push(await openDeal(u, o.target, title, o.terms!, checklist, due));
-  // channels not on Scout yet: a one-line "you have an offer" email to their public address, after the response
-  if (u.role === "brand") after(async () => { for (const o of offers) await inviteIfUnclaimed(o.target, u.id); });
   revalidatePath("/dashboard", "layout");
   redirect(`/dashboard/deals?sent=${ids.length}&open=${ids.at(-1)}`);
 }

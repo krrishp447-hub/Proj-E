@@ -1,12 +1,7 @@
-// Illustrative campaign data for the Campaigns and Share of voice tabs. Brands and creators are fictional,
-// and live separately from the real creator list, until brands run real campaigns on Scout.
-import type { Campaign, Deliverable, VideoPost } from "./campaigns.ts";
+// Illustrative deliverables for the app's Creator preview (fictional brand and creators). Real campaigns live in the
+// database (/dashboard/campaigns).
+import type { Deliverable, VideoPost } from "./campaigns.ts";
 
-/** Names of the fictional creators referenced by `creatorId` below. */
-export const DEMO_CREATOR_NAMES: Record<number, string> = {
-  0: "Tech With Arjun", 1: "GadgetGirl Priya", 2: "AudioPhile Akash", 3: "Rohit Reviews", 4: "Neha Unboxed",
-  6: "EarbudExpert", 11: "Kiran Tech Tamil", 13: "TechSavvy Sam",
-};
 
 export const DEMO_TODAY = "2026-10-14";
 
@@ -42,18 +37,6 @@ export const DEMO_VIDEOS: VideoPost[] = seeds.map((s) => ({
   daily: curve(s.views, s.publishedAt),
 }));
 
-export const DEMO_CAMPAIGNS: Campaign[] = [
-  {
-    id: "budsx", brand: "Kestrel Audio", name: "Buds X launch", status: "Live", start: "2026-09-25", end: "2026-10-31",
-    rules: { hashtags: ["#KestrelBudsX"], links: ["kestrel.audio/budsx"], mentions: ["@kestrelaudio"], keywords: ["Kestrel Buds X", "Buds X"] },
-    creatorIds: [0, 1, 2, 6, 4, 11],
-  },
-  {
-    id: "festive", brand: "Kestrel Audio", name: "Festive sale push", status: "Planned", start: "2026-10-20", end: "2026-11-10",
-    rules: { hashtags: ["#KestrelFestive"], links: ["kestrel.audio/festive"], mentions: ["@kestrelaudio"], keywords: ["Kestrel festive"] },
-    creatorIds: [0, 3],
-  },
-];
 
 const D = (p: Partial<Deliverable> & Pick<Deliverable, "id" | "dealId" | "creatorId" | "due" | "status" | "projectedViews" | "fee">): Deliverable => ({ kind: "YouTube video", campaignId: "budsx", ...p });
 export const DEMO_DELIVERABLES: Deliverable[] = [
