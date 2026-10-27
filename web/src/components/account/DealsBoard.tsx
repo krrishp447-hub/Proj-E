@@ -291,7 +291,7 @@ function DeliveryItem({ x, side, pending, late, call, actions }: { x: Deliverabl
           <button type="submit" className="acct-btn" disabled={pending}>{x.draftUrl ? (draft.trim() ? "Update draft" : "Remove draft") : "Share draft"}</button>
         </form>
       )}
-      {x.status === "Submitted" && <p className="acct-help">Link received. Scout confirms it once the video is public on the channel (checked nightly).</p>}
+      {x.status === "Submitted" && <p className="acct-help">Link received. ScoutBlack confirms it once the video is public on the channel (checked nightly).</p>}
       {side === "creator" && open && (
         <form className="deals-delivadd" onSubmit={(e) => { e.preventDefault(); call(() => actions.submit(x.id, url)); }}>
           <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Published video: YouTube link" aria-label={`YouTube link for ${x.kind}`} required />

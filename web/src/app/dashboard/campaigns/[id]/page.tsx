@@ -11,7 +11,7 @@ import { decidePostAction } from "../actions";
 import { CampaignForm } from "../CampaignForm";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Campaign — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Campaign — ScoutBlack", robots: { index: false } };
 
 type Params = Promise<{ id: string }>;
 type Search = Promise<{ saved?: string; error?: string }>;
@@ -56,7 +56,7 @@ async function Detail({ params, searchParams }: { params: Params; searchParams: 
             <div><dt>Disclosed as ads</dt><dd>{s.posts ? `${Math.round(s.disclosed)}%` : "—"}</dd></div>
           </dl>
           {s.posts > 0 ? <LineChart points={s.daily} label="Campaign views" /> : (
-            <p className="acct-help">No posts filed yet. Add deals to this campaign from the <Link className="deals-link" href="/dashboard/deals">deal board</Link>; each night Scout checks those creators&apos; new uploads against the rules below and files matching posts here.</p>
+            <p className="acct-help">No posts filed yet. Add deals to this campaign from the <Link className="deals-link" href="/dashboard/deals">deal board</Link>; each night ScoutBlack checks those creators&apos; new uploads against the rules below and files matching posts here.</p>
           )}
         </section>
 

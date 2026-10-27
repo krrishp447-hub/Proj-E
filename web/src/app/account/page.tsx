@@ -7,7 +7,7 @@ import { getBrandProfile, getCreatorProfile, getMyChannel } from "@/server/accou
 import { currentUser } from "@/server/auth";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Account — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Account — ScoutBlack", robots: { index: false } };
 
 const inr = (n: number | null) => (n ? `₹${n.toLocaleString("en-IN")}` : "—");
 const DONE: Record<string, string> = { onboarded: "You're all set.", disconnected: "YouTube disconnected. Your private audience data was deleted." };

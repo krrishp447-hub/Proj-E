@@ -6,18 +6,18 @@ import { currentUser } from "@/server/auth";
 import "@/components/account/account.css";
 
 export const metadata: Metadata = {
-  title: "Log in — Scout",
-  description: "Sign in to Scout as a brand or agency, or claim your creator channel.",
+  title: "Log in — ScoutBlack",
+  description: "Sign in to ScoutBlack as a brand or agency, or claim your creator channel.",
   alternates: { canonical: "/login" },
 };
 
 const ERRORS: Record<string, string> = {
   denied: "Sign-in was cancelled on Google. Nothing was shared.",
   expired: "That sign-in link expired. Please try again.",
-  scopes: "Scout needs both YouTube permissions to verify your channel. Please tick both boxes on Google's screen.",
+  scopes: "ScoutBlack needs both YouTube permissions to verify your channel. Please tick both boxes on Google's screen.",
   "no-channel": "That Google account doesn't own a YouTube channel. Sign in with the account that owns your channel.",
-  taken: "That channel is already claimed by another Scout account. Contact us if this is your channel.",
-  "no-refresh": "Google didn't grant ongoing access. Remove Scout at myaccount.google.com/permissions and try again.",
+  taken: "That channel is already claimed by another ScoutBlack account. Contact us if this is your channel.",
+  "no-refresh": "Google didn't grant ongoing access. Remove ScoutBlack at myaccount.google.com/permissions and try again.",
   failed: "Something went wrong signing you in. Please try again.",
   config: "Sign-in isn't set up on this server yet.",
 };
@@ -34,7 +34,7 @@ async function Status({ searchParams }: { searchParams: Search }) {
 export default function LoginPage({ searchParams }: { searchParams: Search }) {
   return (
     <main className="acct">
-      <Link href="/" className="acct-back">← Scout</Link>
+      <Link href="/" className="acct-back">← ScoutBlack</Link>
       <h1 className="disp big">Log in</h1>
       <p className="acct-lede">One sign-in with Google. Pick your side; you&apos;ll set up your account in under two minutes.</p>
       <Suspense fallback={null}>
@@ -49,7 +49,7 @@ export default function LoginPage({ searchParams }: { searchParams: Search }) {
             <li>Ranked on engagement, reach, growth and authenticity</li>
             <li>Track campaigns and share of voice</li>
           </ul>
-          <p className="acct-fine">Scout gets your name and email from Google. Nothing else.</p>
+          <p className="acct-fine">ScoutBlack gets your name and email from Google. Nothing else.</p>
           <a className="acct-btn" href="/api/auth/google/start?role=brand">Continue with Google</a>
         </section>
 
@@ -61,8 +61,8 @@ export default function LoginPage({ searchParams }: { searchParams: Search }) {
             <li>Set your rates and manage deals</li>
           </ul>
           <p className="acct-fine">
-            Scout asks Google for <b>read-only</b> YouTube access to confirm the channel is yours and read its audience (age,
-            gender, countries, retention). Brands on Scout see that audience summary. Disconnect anytime from your account. See{" "}
+            ScoutBlack asks Google for <b>read-only</b> YouTube access to confirm the channel is yours and read its audience (age,
+            gender, countries, retention). Brands on ScoutBlack see that audience summary. Disconnect anytime from your account. See{" "}
             <Link href="/privacy">Privacy</Link>.
           </p>
           <a className="acct-btn" href="/api/auth/google/start?role=creator">Continue with Google</a>

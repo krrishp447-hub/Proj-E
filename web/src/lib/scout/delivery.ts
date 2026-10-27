@@ -5,7 +5,7 @@ export type DeliverableKind = "YouTube video" | "YouTube Short";
 export const DELIVERY_STATUSES = ["Planned", "Submitted", "Live", "Approved", "Paid"] as const;
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
 //   Planned   — agreed, not posted yet
-//   Submitted — the creator shared a link Scout couldn't confirm yet (unlisted, not public, or not fetched)
+//   Submitted — the creator shared a link ScoutBlack couldn't confirm yet (unlisted, not public, or not fetched)
 //   Live      — the video is public on the creator's own channel (confirmed from YouTube); views tracked
 //   Approved  — the brand checked it
 //   Paid      — the brand marked the fee paid

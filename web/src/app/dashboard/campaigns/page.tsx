@@ -9,7 +9,7 @@ import { listCampaigns } from "@/server/brand-campaigns";
 import { CampaignForm } from "./CampaignForm";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Campaigns — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Campaigns — ScoutBlack", robots: { index: false } };
 
 const day = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
@@ -37,7 +37,7 @@ async function Campaigns({ searchParams }: { searchParams: Promise<{ error?: str
                 </li>
               ))}
             </ul>
-          ) : <p className="acct-help">No campaigns yet. Create one, then add deals to it from the deal board: Scout files the creators&apos; posts into it automatically and tracks views, cost and delivery.</p>}
+          ) : <p className="acct-help">No campaigns yet. Create one, then add deals to it from the deal board: ScoutBlack files the creators&apos; posts into it automatically and tracks views, cost and delivery.</p>}
         </section>
         <section className="acct-card dash-wide" aria-labelledby="new-h">
           <h2 id="new-h">New campaign</h2>

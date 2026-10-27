@@ -7,16 +7,16 @@ import "@/components/account/account.css";
 import "@/components/pricing/pricing.css";
 
 export const metadata: Metadata = {
-  title: "Pricing — Scout",
+  title: "Pricing — ScoutBlack",
   description: "Free for creators, forever. Brands and agencies pay for seats and depth, never per search.",
   alternates: { canonical: "/pricing" },
 };
 
 const FAQ = [
-  { q: "Why is Scout free for creators?", a: "Because a database you pay to be in stops being a fair one. If creators paid to be listed, brands would see who paid, not who fits. Every creator is ranked on the same public and verified signals." },
+  { q: "Why is ScoutBlack free for creators?", a: "Because a database you pay to be in stops being a fair one. If creators paid to be listed, brands would see who paid, not who fits. Every creator is ranked on the same public and verified signals." },
   { q: "Can creators pay to rank higher?", a: "No. Rankings come only from fit and performance. If we ever offer promoted listings, they will be labelled “Promoted” and shown apart from search results, never mixed into them." },
   { q: "Do brands pay per search?", a: "No. Search, shortlists and compare are unlimited on every plan, so your team can explore freely. Plans differ by seats, outreach volume and how deep the tracking goes." },
-  { q: "Does Scout take a cut of deals?", a: "Not today: 0% commission. Later, when contracts and payments run through Scout, we may charge a small fee on deals paid through the platform, and only on those. We'll announce it well before it applies." },
+  { q: "Does ScoutBlack take a cut of deals?", a: "Not today: 0% commission. Later, when contracts and payments run through ScoutBlack, we may charge a small fee on deals paid through the platform, and only on those. We'll announce it well before it applies." },
   { q: "Where does the data come from?", a: "Public YouTube data through the official YouTube API, refreshed daily, plus audience data that creators choose to share by connecting their channel. No scraping behind logins." },
   { q: "Is there a free trial for brands?", a: "Yes, 4 days on any brand plan, from the day you set up your brand profile. Sign in with Google and use the full app on live data. We'll contact you before any billing starts; nothing is charged automatically." },
 ];
@@ -32,7 +32,7 @@ async function AppNotice({ searchParams }: { searchParams: Promise<{ app?: strin
 export default function PricingPage({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
   return (
     <main className="acct pr">
-      <Link href="/" className="acct-back">← Scout</Link>
+      <Link href="/" className="acct-back">← ScoutBlack</Link>
       <h1 className="disp big">Pricing</h1>
       <Suspense fallback={null}><AppNotice searchParams={searchParams} /></Suspense>
       <p className="acct-lede">
@@ -52,7 +52,7 @@ export default function PricingPage({ searchParams }: { searchParams: Promise<{ 
           <article className="pr-card"><h3>Charge to be listed</h3><p>Every creator is in the index for free. Paying to exist would bias who brands see.</p></article>
           <article className="pr-card"><h3>Sell ranking</h3><p>Results are ranked by fit and performance only. Anything promoted is labelled and kept apart.</p></article>
           <article className="pr-card"><h3>Meter search</h3><p>Explore as much as you need. Searching is how good shortlists happen.</p></article>
-          <article className="pr-card"><h3>Take a hidden cut</h3><p>0% commission on deals today. Any future fee applies only to deals paid through Scout, and we&apos;ll say so first.</p></article>
+          <article className="pr-card"><h3>Take a hidden cut</h3><p>0% commission on deals today. Any future fee applies only to deals paid through ScoutBlack, and we&apos;ll say so first.</p></article>
         </div>
       </section>
 

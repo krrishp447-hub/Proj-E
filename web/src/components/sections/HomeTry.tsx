@@ -12,7 +12,7 @@ const EXAMPLES = ["Hindi tech reviewers under 1M subs", "Tamil food bloggers", "
 export type HomeResult = { query: string; understood: string[]; fitCount: number; total: number; fits: Match[] };
 
 /**
- * The homepage taste of Scout: one brief, the best few matches with why they ranked, then the way in
+ * The homepage taste of ScoutBlack: one brief, the best few matches with why they ranked, then the way in
  * (pricing, or the full app with the same brief). The full product lives at /demo, not on the homepage.
  */
 export function HomeTry({ initial }: { initial: HomeResult }) {

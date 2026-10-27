@@ -1,4 +1,4 @@
-// Pure transform: YouTube Analytics API reports (owner-only, from a connected creator) → Scout's audience fields.
+// Pure transform: YouTube Analytics API reports (owner-only, from a connected creator) → ScoutBlack's audience fields.
 import { COUNTRY } from "./metrics.ts";
 
 /** A YouTube Analytics `reports.query` response: rows of dimension values followed by metric values. */

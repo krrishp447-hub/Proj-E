@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "./db";
 
-/** Remember a brief Scout couldn't read, so the word maps can learn from real searches. Never fails a search. */
+/** Remember a brief ScoutBlack couldn't read, so the word maps can learn from real searches. Never fails a search. */
 export async function logUnread(query: string) {
   const q = query.trim().toLowerCase().slice(0, 200);
   if (!sql || !q) return;

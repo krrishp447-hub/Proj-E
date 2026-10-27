@@ -47,7 +47,7 @@ export function Showreel() {
         playsInline
         preload="none"
         controls={withSound || reduced}
-        aria-label="Scout launch film"
+        aria-label="ScoutBlack launch film"
       />
       {!withSound && !reduced && (
         <button type="button" className="chip reel-sound" onClick={soundOn}>

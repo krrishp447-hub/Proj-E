@@ -7,7 +7,7 @@ export type Brief = {
   niches: string[]; // any of these (empty = any niche)
   excludeNiches: string[];
   platform?: Platform;
-  platformMissing?: Platform; // asked for a platform Scout doesn't track yet (set by contextualize)
+  platformMissing?: Platform; // asked for a platform ScoutBlack doesn't track yet (set by contextualize)
   country?: string;
   languages: string[]; // any of these
   excludeLanguages: string[];

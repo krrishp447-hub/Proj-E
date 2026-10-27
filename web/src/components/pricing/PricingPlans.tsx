@@ -64,7 +64,7 @@ export function SavingsCalculator() {
         {field("Shortlists a month", lists, setLists, 1, 30, 1, String(lists))}
         {field("Hours per shortlist by hand", hours, setHours, 2, 40, 1, `${hours} h`)}
         {field("Team cost per hour", rate, setRate, 300, 3000, 100, inr(rate))}
-        <p className="acct-help">By hand: searching, opening every channel, checking engagement and fake followers, comparing. With Scout, about 30 minutes.</p>
+        <p className="acct-help">By hand: searching, opening every channel, checking engagement and fake followers, comparing. With ScoutBlack, about 30 minutes.</p>
       </div>
       <div className="pr-calc-out" aria-live="polite">
         <p>Time saved</p>

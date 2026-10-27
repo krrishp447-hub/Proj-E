@@ -76,7 +76,7 @@ export function priceFor(monthly: number, annual: boolean) {
 
 /**
  * What manual shortlisting costs a month: hours spent finding, vetting and checking creators by hand, minus the
- * minutes Scout takes. Assumptions are shown on the page and adjustable.
+ * minutes ScoutBlack takes. Assumptions are shown on the page and adjustable.
  */
 export function manualCost(shortlistsPerMonth: number, hoursPerShortlist: number, hourlyCost: number, scoutHours = 0.5) {
   const hoursSaved = Math.max(0, shortlistsPerMonth * (hoursPerShortlist - scoutHours));

@@ -20,7 +20,7 @@ export function MyCampaigns() {
       <h3 className="d-cardh">Your campaigns</h3>
       {failed ? <p className="d-muted">Couldn&apos;t load campaigns. Try again in a moment.</p>
         : !list ? <p className="d-muted">Loading…</p>
-        : !list.length ? <p className="d-muted">No campaigns yet. Create one, add deals to it, and Scout files the creators&apos; posts and tracks views, cost and delivery.</p>
+        : !list.length ? <p className="d-muted">No campaigns yet. Create one, add deals to it, and ScoutBlack files the creators&apos; posts and tracks views, cost and delivery.</p>
         : (
           <ul className="d-camplist">
             {list.map((c) => (

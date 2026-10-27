@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { site } from "@/config/site";
+import { Logo } from "@/components/ui/Logo";
 
 const navigate = [
   { href: "#manifesto", label: "Platform" },
@@ -15,7 +16,7 @@ export function SiteFooter() {
     <footer id="footer" className="site-footer">
       <div className="fgrid">
         <div>
-          <div className="wm">SCOUT</div>
+          <div className="wm"><Logo /></div>
           <p className="desc mt-4 max-w-[24ch] text-earth!">THE CREATOR INTELLIGENCE LAYER FOR BRANDS &amp; AGENCIES.</p>
         </div>
         <div>
@@ -35,7 +36,7 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="legal"><span>© 2026 SCOUT — ALL RIGHTS RESERVED</span><span><Link href="/privacy">PRIVACY</Link> · <Link href="/terms">TERMS</Link></span></div>
+      <div className="legal"><span>© 2026 SCOUTBLACK — ALL RIGHTS RESERVED</span><span><Link href="/privacy">PRIVACY</Link> · <Link href="/terms">TERMS</Link></span></div>
     </footer>
   );
 }

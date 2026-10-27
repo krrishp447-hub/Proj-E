@@ -9,7 +9,7 @@ import { listCampaigns } from "@/server/brand-campaigns";
 import { addDeliverableItem, removeDeliverableItem, runDealAction, saveChecklist, saveDraftLink, saveDue, setDealCampaign, setDeliveryStatus, submitDeliverableLink } from "./actions";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Deals — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Deals — ScoutBlack", robots: { index: false } };
 
 type Search = Promise<{ open?: string; new?: string; pitch?: string; sent?: string }>;
 

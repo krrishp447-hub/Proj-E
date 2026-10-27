@@ -2,7 +2,7 @@ import "server-only";
 import { sql } from "./db";
 import { searchChannels } from "./youtube";
 
-// Every niche × language search Scout runs. Rule-based, not a model: extend a list to widen discovery.
+// Every niche × language search ScoutBlack runs. Rule-based, not a model: extend a list to widen discovery.
 const TERMS: Record<string, string[]> = {
   Tech: ["tech review", "smartphone review", "gadgets unboxing", "earbuds review", "laptop review"],
   Food: ["recipes", "cooking channel", "street food"],

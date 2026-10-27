@@ -29,7 +29,7 @@ export type Creator = {
   language: string; // primary content language (spoken-audio setting, else detected from titles)
   auth: number; // authenticity score
   suspicious: number; // % suspicious followers
-  campaigns: number; // campaigns completed on Scout
+  campaigns: number; // campaigns completed on ScoutBlack
   repeat: number; // % brands that re-booked
   delivery: number; // delivered ÷ promised reach
   proven: boolean;
@@ -37,7 +37,7 @@ export type Creator = {
   lastUploadDays: number | null; // days since the newest upload (signals.ts)
   sponsoredPct: number | null; // % of recent uploads with an ad disclosure; null = unknown
   safety: string[]; // brand-safety flags in recent titles: profanity, adult, gambling
-  claimed: boolean; // the creator connected this channel on Scout
+  claimed: boolean; // the creator connected this channel on ScoutBlack
   hasEmail: boolean; // a public business email is on file (the address itself is only revealed to signed-in brands)
   source: "youtube";
 };

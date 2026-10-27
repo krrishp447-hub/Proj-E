@@ -16,7 +16,7 @@ import { SovView } from "@/components/sov/SovView";
 import type { BrandProfile } from "@/server/accounts";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Dashboard — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Dashboard — ScoutBlack", robots: { index: false } };
 
 // "7 Oct" this year, "14 Dec 2025" otherwise
 const day = (d: string) => {
@@ -134,13 +134,13 @@ async function BrandDashboard({ user }: { user: User }) {
                   <li key={c.handle}>
                     <span><b>{c.name}</b></span>
                     <span className="dash-num">{s}</span>
-                    <span className="dash-meta">{c.niche} · {c.language} · {fmt(c.subs)} subs · {c.eng}% eng{c.geo.length ? " · ✓ verified audience" : ""} · {c.claimed ? <Link href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</Link> : "not on Scout yet"}</span>
+                    <span className="dash-meta">{c.niche} · {c.language} · {fmt(c.subs)} subs · {c.eng}% eng{c.geo.length ? " · ✓ verified audience" : ""} · {c.claimed ? <Link href={`/dashboard/offers/new?to=${encodeURIComponent(c.channelId)}`}>Send offer →</Link> : "not on ScoutBlack yet"}</span>
                   </li>
                 ))}
               </ul>
               <div className="acct-actions">
                 <Link className="acct-btn" href={`/demo?q=${encodeURIComponent(p.brief)}`}>Open full shortlist</Link>
-                {top.slice(0, 6).some((m) => m.creator.claimed) && <Link className="acct-btn ghost" href={`/dashboard/offers/new?to=${top.slice(0, 6).filter((m) => m.creator.claimed).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>Offer to those on Scout</Link>}
+                {top.slice(0, 6).some((m) => m.creator.claimed) && <Link className="acct-btn ghost" href={`/dashboard/offers/new?to=${top.slice(0, 6).filter((m) => m.creator.claimed).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>Offer to those on ScoutBlack</Link>}
               </div>
             </>
           ) : (
@@ -214,7 +214,7 @@ async function CreatorDashboard({ user }: { user: User }) {
               ))}
             </ul>
           ) : (
-            <p className="acct-help">No brand briefs on Scout match your channel yet. Brands that do show up here, and you can pitch them directly.</p>
+            <p className="acct-help">No brand briefs on ScoutBlack match your channel yet. Brands that do show up here, and you can pitch them directly.</p>
           )}
         </section>
 
@@ -245,7 +245,7 @@ async function CreatorDashboard({ user }: { user: User }) {
           <section className="acct-card" aria-labelledby="trend-h">
             <h2 id="trend-h">Subscribers</h2>
             <LineChart points={activity.trend} label="Subscribers" />
-            <p className="acct-help">Daily since Scout started tracking your channel. 90-day growth appears after a month of history.</p>
+            <p className="acct-help">Daily since ScoutBlack started tracking your channel. 90-day growth appears after a month of history.</p>
           </section>
         )}
 

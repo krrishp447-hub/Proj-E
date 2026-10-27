@@ -15,7 +15,7 @@ const medianEng = (cs: Creator[]) => {
   return xs.length ? Math.round(xs[Math.floor(xs.length / 2)] * 10) / 10 : 0;
 };
 
-// Each step is one filter Scout applies; toggling them shows how the field narrows.
+// Each step is one filter ScoutBlack applies; toggling them shows how the field narrows.
 function steps(creators: Creator[]): Step[] {
   const eng = medianEng(creators.filter((c) => c.niche === "Tech"));
   return [
@@ -28,7 +28,7 @@ function steps(creators: Creator[]): Step[] {
   ];
 }
 
-/** Live "from many to the right few": toggle Scout's filters and watch the shortlist narrow. */
+/** Live "from many to the right few": toggle ScoutBlack's filters and watch the shortlist narrow. */
 export function ResultsFunnel({ creators }: { creators: Creator[] }) {
   const STEPS = useMemo(() => steps(creators), [creators]);
   const [on, setOn] = useState(() => STEPS.map(() => true));
@@ -48,7 +48,7 @@ export function ResultsFunnel({ creators }: { creators: Creator[] }) {
 
   return (
     <>
-      <div className="funnel" role="group" aria-label="Scout's filters">
+      <div className="funnel" role="group" aria-label="ScoutBlack's filters">
         <span className="funnel-start mono">{creators.length} creators</span>
         {STEPS.map((s, i) => (
           <button key={s.label} type="button" className="funnel-step" aria-pressed={on[i]} onClick={() => setOn((o) => o.map((v, k) => (k === i ? !v : v)))}>

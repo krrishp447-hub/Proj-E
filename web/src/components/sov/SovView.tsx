@@ -51,8 +51,8 @@ export function SovView({ result, you: fixedYou, offers = false }: { result: Sov
         ))}
       </div>
       <p className="sov-note">
-        Last {result.days} days · uploads by Scout&apos;s tracked creators that name each brand (a video naming two counts for both).
-        Paid = carries an ad disclosure; the rest is earned. Weekly bars undercount older weeks for daily uploaders (Scout keeps each
+        Last {result.days} days · uploads by ScoutBlack&apos;s tracked creators that name each brand (a video naming two counts for both).
+        Paid = carries an ad disclosure; the rest is earned. Weekly bars undercount older weeks for daily uploaders (ScoutBlack keeps each
         channel&apos;s latest ~20 uploads).
       </p>
 

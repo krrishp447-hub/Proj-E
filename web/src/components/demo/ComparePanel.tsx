@@ -10,7 +10,7 @@ const rate = (m: Match) => fairRate(m.creator.views, m.creator.eng);
 const ageIdx = (m: Match) => m.creator.age.indexOf(Math.max(...m.creator.age));
 
 // `value`: higher is better (best per row is highlighted). `has`: hide the row when no creator has the data,
-// e.g. campaign history before anyone has run a campaign on Scout.
+// e.g. campaign history before anyone has run a campaign on ScoutBlack.
 const ROWS: Row[] = [
   { label: "Match", show: (m) => `${m.score}`, value: (m) => m.score },
   { label: "Subscribers", show: (m) => fmt(m.creator.subs), value: (m) => m.creator.subs },
@@ -33,7 +33,7 @@ const ROWS: Row[] = [
   { label: "Top market", show: (m) => (m.creator.geo[0] ? `${m.creator.geo[0][0]} ${m.creator.geo[0][1]}%` : "—"), has: (m) => m.creator.geo.length > 0 },
   { label: "Largest age group", show: (m) => (m.creator.age.length ? `${AGE_BANDS[ageIdx(m)]} · ${m.creator.age[ageIdx(m)]}%` : "—"), has: (m) => m.creator.age.length > 0 },
   { label: "Male audience", show: (m) => (m.creator.male !== null ? `${m.creator.male}%` : "—"), has: (m) => m.creator.male !== null },
-  { label: "Campaigns on Scout", show: (m) => `${m.creator.campaigns}`, value: (m) => m.creator.campaigns, has: (m) => m.creator.campaigns > 0 },
+  { label: "Campaigns on ScoutBlack", show: (m) => `${m.creator.campaigns}`, value: (m) => m.creator.campaigns, has: (m) => m.creator.campaigns > 0 },
   { label: "Repeat brands", show: (m) => `${m.creator.repeat}%`, value: (m) => m.creator.repeat, has: (m) => m.creator.repeat > 0 },
   { label: "Delivered ÷ promised", show: (m) => `${m.creator.delivery}×`, value: (m) => m.creator.delivery, has: (m) => m.creator.campaigns > 0 },
 ];
@@ -95,14 +95,14 @@ export function ComparePanel({ matches, onRemove }: { matches: Match[]; onRemove
             <tr>
               <th scope="row"><span className="sr-only">Actions</span></th>
               {matches.map((m) => (
-                <td key={m.creator.channelId}>{m.creator.claimed ? <a className="d-link" href={`/dashboard/offers/new?to=${encodeURIComponent(m.creator.channelId)}`}>Offer →</a> : <span className="d-sub">Not on Scout yet</span>}</td>
+                <td key={m.creator.channelId}>{m.creator.claimed ? <a className="d-link" href={`/dashboard/offers/new?to=${encodeURIComponent(m.creator.channelId)}`}>Offer →</a> : <span className="d-sub">Not on ScoutBlack yet</span>}</td>
               ))}
             </tr>
           </tbody>
         </table>
       </div>
       {matches.some((m) => m.creator.claimed) && <a className="d-btn d-cmpgo" href={`/dashboard/offers/new?to=${matches.filter((m) => m.creator.claimed).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>
-        Send offer to {matches.every((m) => m.creator.claimed) ? `all ${matches.length}` : `the ${matches.filter((m) => m.creator.claimed).length} on Scout`} <span className="arw">→</span>
+        Send offer to {matches.every((m) => m.creator.claimed) ? `all ${matches.length}` : `the ${matches.filter((m) => m.creator.claimed).length} on ScoutBlack`} <span className="arw">→</span>
       </a>}
       <p className="d-legend">
         Best value per row highlighted. Market rate is ₹400–₹900 per 1,000 views, adjusted for engagement.

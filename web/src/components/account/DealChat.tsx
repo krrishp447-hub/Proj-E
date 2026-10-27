@@ -38,7 +38,7 @@ export function DealChat({ dealId, side, counterpart, full = false }: { dealId: 
     setSending(true);
     setError(null);
     const r = await fetch(`/api/deals/${encodeURIComponent(dealId)}/messages`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ body }) }).catch(() => null);
-    const data = r ? ((await r.json().catch(() => ({}))) as { message?: Message; error?: string }) : { error: "Couldn't reach Scout. Check your connection." };
+    const data = r ? ((await r.json().catch(() => ({}))) as { message?: Message; error?: string }) : { error: "Couldn't reach ScoutBlack. Check your connection." };
     if (data.message) {
       last.current = Math.max(last.current, data.message.id);
       setMessages((m) => [...m, data.message!]);

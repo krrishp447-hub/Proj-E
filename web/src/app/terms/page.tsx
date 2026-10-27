@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/LegalPage";
 import { site } from "@/config/site";
 
-export const metadata: Metadata = { title: "Terms — Scout", alternates: { canonical: "/terms" } };
+export const metadata: Metadata = { title: "Terms — ScoutBlack", alternates: { canonical: "/terms" } };
 
 export default function TermsPage() {
   return (
     <LegalPage title="Terms" updated="12 October 2026">
       <h2>The service</h2>
       <p>
-        Scout helps brands and agencies find, rank and compare creators, and helps creators understand how brands find them.
+        ScoutBlack helps brands and agencies find, rank and compare creators, and helps creators understand how brands find them.
         Match scores, authenticity estimates and audience-overlap figures are calculated signals to support your decisions —
         not guarantees of campaign results.
       </p>
@@ -22,7 +22,7 @@ export default function TermsPage() {
 
       <h2>Acceptable use</h2>
       <p>
-        Don&apos;t scrape, resell or bulk-export Scout data, attempt to access other users&apos; accounts, or use Scout to harass
+        Don&apos;t scrape, resell or bulk-export ScoutBlack data, attempt to access other users&apos; accounts, or use ScoutBlack to harass
         creators. Contact creators only about genuine collaboration opportunities.
       </p>
 

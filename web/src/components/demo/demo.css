@@ -1,4 +1,4 @@
-/* Scout demo — minimal, data-first. Solid colours only; colour carries meaning:
+/* ScoutBlack demo — minimal, data-first. Solid colours only; colour carries meaning:
    signal = interactive, emerald = good / match, amber = caution, red = risk. */
 .d-app {
   --bg: #0c0d0b; --panel: #141512; --line: #272824; --text: #efede6; --muted: #9a978e; --faint: #6b6a63;
@@ -13,7 +13,8 @@
 
 /* top bar */
 .d-top { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-.d-wm { font-family: var(--disp); text-transform: uppercase; font-size: 26px; color: var(--signal); }
+.d-wm { display: block; color: var(--text); }
+.d-wm svg { display: block; height: 24px; width: auto; }
 .d-tag { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
 .d-back { margin-left: auto; color: var(--muted); font-size: 13px; }
 .d-back:hover { color: var(--text); }

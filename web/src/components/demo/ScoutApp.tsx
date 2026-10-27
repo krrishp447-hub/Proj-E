@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Creator } from "@/lib/scout/data";
 import type { Match } from "@/lib/scout/engine";
 import { DEFAULT_QUERY, type SearchResult } from "@/lib/scout/search";
+import { Logo } from "@/components/ui/Logo";
 import { CompareDialog, ComparePanel } from "./ComparePanel";
 import { CreatorView } from "./CreatorView";
 import { DetailPanel } from "./DetailPanel";
@@ -116,7 +117,7 @@ export function ScoutApp({ initialQuery, initialResult, creatorPool = [], source
   return (
     <div className="d-app">
       <header className="d-top">
-        <Link href="/" className="d-wm">Scout</Link>
+        <Link href="/" className="d-wm" aria-label="ScoutBlack home"><Logo /></Link>
         <span className="d-tag">{source === "youtube" ? "Live · YouTube public data" : "No creator data yet"}</span>
         {trialDaysLeft !== null && <Link href="/pricing" className="d-trial">Free trial · {trialDaysLeft} day{trialDaysLeft === 1 ? "" : "s"} left · Plans</Link>}
         <Link href="/" className="d-back">← Site</Link>

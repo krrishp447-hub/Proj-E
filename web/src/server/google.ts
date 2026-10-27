@@ -4,7 +4,7 @@ import { audienceFrom, type Audience, type Report } from "@/lib/scout/audience";
 
 // Google OAuth 2.0 (authorization-code flow, confidential client) + the owner-only YouTube APIs it unlocks.
 const BASE_SCOPES = ["openid", "email", "profile"];
-// Read-only. Creators only: lets Scout confirm which channel they own and read its private audience analytics.
+// Read-only. Creators only: lets ScoutBlack confirm which channel they own and read its private audience analytics.
 const CREATOR_SCOPES = ["https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/yt-analytics.readonly"];
 
 export type Role = "creator" | "brand";
@@ -71,7 +71,7 @@ export async function fetchAudience(access: string): Promise<Audience> {
   return audienceFrom(ageGender, countries, retention);
 }
 
-/** Revoke Scout's access at Google (on disconnect / account deletion). Best effort: the token may already be gone. */
+/** Revoke ScoutBlack's access at Google (on disconnect / account deletion). Best effort: the token may already be gone. */
 export async function revoke(tokenValue: string) {
   await fetch(`https://oauth2.googleapis.com/revoke?${new URLSearchParams({ token: tokenValue })}`, { method: "POST" }).catch(() => {});
 }

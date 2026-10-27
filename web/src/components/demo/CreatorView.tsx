@@ -71,7 +71,7 @@ export function CreatorView({ creators }: { creators: Creator[] }) {
   };
 
   const kpis = [
-    { label: "Scout quality", value: quality, note: "/100" },
+    { label: "ScoutBlack quality", value: quality, note: "/100" },
     { label: "Subscribers", value: fmt(base.subs) },
     { label: "Engagement", value: `${base.eng}%` },
     { label: "Authenticity", value: base.auth, tone: authTone(base.auth) },
@@ -162,7 +162,7 @@ export function CreatorView({ creators }: { creators: Creator[] }) {
             <div><dt>Repeat brands</dt><dd>{base.repeat}%</dd></div>
             <div><dt>Delivered</dt><dd className={base.delivery >= 1 ? "is-good" : "is-warn"}>{base.delivery}×</dd></div>
           </dl>
-          <p className="d-hint">{base.proven ? "◆ Proven on-platform record — brands see this badge in search." : "Complete more campaigns on Scout to earn the ◆ Proven badge."}</p>
+          <p className="d-hint">{base.proven ? "◆ Proven on-platform record — brands see this badge in search." : "Complete more campaigns on ScoutBlack to earn the ◆ Proven badge."}</p>
         </aside>
       </div>
       )}

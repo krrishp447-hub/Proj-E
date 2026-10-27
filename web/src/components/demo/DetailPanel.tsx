@@ -36,17 +36,17 @@ const INVITE_TEXT: Record<string, string> = {
 };
 
 /**
- * How to reach the creator, in three states: on Scout (offers go straight to them), not on Scout but with a public
+ * How to reach the creator, in three states: on ScoutBlack (offers go straight to them), not on ScoutBlack but with a public
  * business email (an offer invites them; signed-in brands can reveal the address), or neither (their About page).
  */
 function Contact({ c }: { c: Creator }) {
   const [r, setR] = useState<Reveal | null>(null);
   const [invite, setInvite] = useState<string | null>(null);
-  if (c.claimed) return <p className="d-contact">✓ On Scout: offers and messages go straight to them.</p>;
+  if (c.claimed) return <p className="d-contact">✓ On ScoutBlack: offers and messages go straight to them.</p>;
   if (!c.hasEmail) {
     return (
       <p className="d-contact">
-        Not on Scout yet, so offers aren&apos;t possible, and there&apos;s no public business email to invite them.{" "}
+        Not on ScoutBlack yet, so offers aren&apos;t possible, and there&apos;s no public business email to invite them.{" "}
         <a href={aboutUrl(c.channelId)} target="_blank" rel="noopener noreferrer">Open their About page for contact ↗</a>
       </p>
     );
@@ -62,8 +62,8 @@ function Contact({ c }: { c: Creator }) {
   };
   return (
     <p className="d-contact">
-      Not on Scout yet: invite them, and once they claim their channel you can send the offer.{" "}
-      {!invite && <button type="button" className="d-linkbtn" onClick={sendInvite}>Invite to Scout</button>}
+      Not on ScoutBlack yet: invite them, and once they claim their channel you can send the offer.{" "}
+      {!invite && <button type="button" className="d-linkbtn" onClick={sendInvite}>Invite to ScoutBlack</button>}
       {invite && <><b>{invite === "…" ? "Inviting…" : INVITE_TEXT[invite] ?? INVITE_TEXT.off}</b>{" "}</>}
       {" · "}
       {!r && <button type="button" className="d-linkbtn" onClick={reveal}>Show public email</button>}
@@ -128,7 +128,7 @@ export function DetailPanel({ m, inShortlist, onToggle }: { m: Match; inShortlis
           {c.male !== null && <Bar label="Male / female" value={c.male} text={`${c.male} / ${100 - c.male}`} />}
         </>
       ) : (
-        <p className="d-hint">Audience demographics appear once {c.name} claims their channel on Scout — YouTube only shares them with the channel owner.</p>
+        <p className="d-hint">Audience demographics appear once {c.name} claims their channel on ScoutBlack — YouTube only shares them with the channel owner.</p>
       )}
 
       {c.trend.length > 1 && (

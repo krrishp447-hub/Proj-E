@@ -11,7 +11,7 @@ import { creatorCards, pitchableBrands } from "@/server/offers";
 import { creatorsByIds, findCreators, sendOffers } from "./actions";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Send offer — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Send offer — ScoutBlack", robots: { index: false } };
 
 type Search = Promise<{ to?: string; error?: string }>;
 
@@ -30,8 +30,8 @@ async function Composer({ searchParams }: { searchParams: Search }) {
       <>
         <h1 className="disp big">Send offers</h1>
         <p className="acct-lede">Pick creators, set each fee against their market rate, and send. Each creator gets their own deal on the board.</p>
-        <p className="acct-help">Offers go to creators who&apos;ve claimed their channel on Scout. For anyone else, use <b>Invite to Scout</b> on their profile in the app; you can send the offer once they join.</p>
-        {notOnScout > 0 && <p className="acct-alert" role="status">{notOnScout} of the creators you picked {notOnScout === 1 ? "isn’t" : "aren’t"} on Scout yet, so {notOnScout === 1 ? "it was" : "they were"} left out. Invite them from the app first.</p>}
+        <p className="acct-help">Offers go to creators who&apos;ve claimed their channel on ScoutBlack. For anyone else, use <b>Invite to ScoutBlack</b> on their profile in the app; you can send the offer once they join.</p>
+        {notOnScout > 0 && <p className="acct-alert" role="status">{notOnScout} of the creators you picked {notOnScout === 1 ? "isn’t" : "aren’t"} on ScoutBlack yet, so {notOnScout === 1 ? "it was" : "they were"} left out. Invite them from the app first.</p>}
         <OfferComposer side="brand" initial={initial} brands={[]} myRate={null} initialBrand={null} error={!!s.error} actions={actions} />
       </>
     );

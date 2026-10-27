@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import type { Creator } from "@/lib/scout/data";
 import { contextualize, describe, parseBrief, score } from "@/lib/scout/engine";
 
-/** Live version of pillar 01: type a brief, see what Scout understood and how many creators fit. */
+/** Live version of pillar 01: type a brief, see what ScoutBlack understood and how many creators fit. */
 export function BriefTry({ creators }: { creators: Creator[] }) {
   const [text, setText] = useState("Fast-growing YouTube fitness creators in India");
   const { tokens, fits, top } = useMemo(() => {

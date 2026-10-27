@@ -1,4 +1,4 @@
-// Pure transforms: YouTube Data API v3 payloads → Scout signals. No I/O, so it is unit-tested directly.
+// Pure transforms: YouTube Data API v3 payloads → ScoutBlack signals. No I/O, so it is unit-tested directly.
 import { NICHES } from "./data.ts";
 import { KEYWORDS } from "./engine.ts";
 import { nicheHits, segment } from "./segment.ts";
@@ -87,7 +87,7 @@ const HINGLISH = /\b(kya|kaise|kaisa|sabse|hai|hain|nahi|mein|wala|wale|bhai|kyu
 const NAMED = ["Hindi", "Tamil", "Telugu", "Bengali", "Bangla", "Marathi", "Kannada", "Malayalam", "Gujarati", "Punjabi"];
 
 /** Primary content language: a script or language name in ≥30% of recent titles (min 2), else English. */
-// YouTube language codes → Scout language names ("hi", "en-IN", "ta"…).
+// YouTube language codes → ScoutBlack language names ("hi", "en-IN", "ta"…).
 const CODES: Record<string, string> = { hi: "Hindi", en: "English", ta: "Tamil", te: "Telugu", bn: "Bengali", mr: "Marathi", kn: "Kannada", ml: "Malayalam", gu: "Gujarati", pa: "Punjabi" };
 
 /**

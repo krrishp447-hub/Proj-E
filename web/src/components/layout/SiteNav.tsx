@@ -1,6 +1,8 @@
 "use client";
 
 import { site } from "@/config/site";
+import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
 import { useAnimatedDialog } from "@/hooks/useAnimatedDialog";
 
 const sectionLinks = [
@@ -21,7 +23,7 @@ export function SiteNav() {
             <a key={l.href} href={l.href}>{l.label.toUpperCase()}</a>
           ))}
         </div>
-        <div className="wm">SCOUT</div>
+        <Link href="/" className="wm" aria-label="ScoutBlack home"><Logo /></Link>
         <div className="r">
           <a href="/pricing">PRICING</a>
           <a href="/login">LOG IN</a>
@@ -39,7 +41,7 @@ export function SiteNav() {
         onCancel={onMenuCancel}
       >
         <button className="x" type="button" onClick={closeMenu}>CLOSE ✕</button>
-        <div className="idx">MENU · SCOUT / 25</div>
+        <div className="idx">MENU · SCOUTBLACK / 25</div>
         <nav className="links" aria-label="Menu">
           {sectionLinks.map((l) => (
             <a key={l.href} href={l.href} onClick={closeMenu}>{l.label}</a>

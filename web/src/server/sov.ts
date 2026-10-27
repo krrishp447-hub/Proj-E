@@ -24,7 +24,7 @@ export async function getShareOfVoice(brands: BrandTerms[], category: string | n
       and (v.title ~* ${pattern} or v.description ~* ${pattern})
     order by v.views desc limit 5000`) as SovVideo[];
   const r = computeSov(rows, brands, days);
-  // offers need a claimed channel: mark who's on Scout so the outreach list links offers only for them
+  // offers need a claimed channel: mark who's on ScoutBlack so the outreach list links offers only for them
   const claimed = new Set(((await sql`select channel_id from channel_connections where channel_id = any(${r.creators.map((c) => c.channelId)})`) as { channel_id: string }[]).map((x) => x.channel_id));
   for (const c of r.creators) c.claimed = claimed.has(c.channelId);
   return r;

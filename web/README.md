@@ -100,6 +100,6 @@ summary, or `/fail` with the reason (crash, failed quality audit, data past 30 d
 failing). healthchecks.io emails you on a failure, or when no ping arrives at all (the job didn't run).
 
 ### Before announcing
-- Replace `site.email` (`hello@scout.io` placeholder) in `src/config/site.ts`; add social URLs.
+- Contact details live in `src/config/site.ts` (hello@scoutblack.in, Mumbai); add social URLs there.
 - Have `/privacy` and `/terms` (drafts) reviewed by counsel.
 - Swap the placeholder music in the launch film / showreel.

@@ -4,7 +4,7 @@ import "@/components/account/account.css";
 export default function NotFound() {
   return (
     <main className="acct">
-      <Link href="/" className="acct-back">← Scout</Link>
+      <Link href="/" className="acct-back">← ScoutBlack</Link>
       <h1 className="disp big">Not found</h1>
       <p className="acct-lede">That page doesn&apos;t exist, or it moved.</p>
       <div className="acct-actions">

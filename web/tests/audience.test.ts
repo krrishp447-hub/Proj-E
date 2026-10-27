@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { audienceFrom } from "../src/lib/scout/audience.ts";
 
-test("audienceFrom folds YouTube Analytics reports into Scout's bands, gender split and top markets", () => {
+test("audienceFrom folds YouTube Analytics reports into ScoutBlack's bands, gender split and top markets", () => {
   const a = audienceFrom(
     { rows: [["age13-17", "male", 10], ["age18-24", "male", 30], ["age18-24", "female", 20], ["age25-34", "female", 15], ["age35-44", "male", 15], ["age55-64", "female", 10]] },
     { rows: [["US", 100], ["IN", 700], ["AE", 100], ["GB", 50], ["SG", 50]] },

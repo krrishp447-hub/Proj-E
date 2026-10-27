@@ -38,7 +38,7 @@ export function rowToCreator(r: CreatorRow, id: number): Creator {
     language: r.language,
     auth: r.auth,
     suspicious: r.suspicious,
-    campaigns: 0, // outcome data accrues from campaigns run on Scout
+    campaigns: 0, // outcome data accrues from campaigns run on ScoutBlack
     repeat: 0,
     delivery: 0,
     proven: false,

@@ -64,7 +64,7 @@ export async function endSessions(userId: string) {
 }
 
 /**
- * Destructive POSTs (sign-out, disconnect, delete) only from Scout's own pages. SameSite=Lax already keeps the session
+ * Destructive POSTs (sign-out, disconnect, delete) only from ScoutBlack's own pages. SameSite=Lax already keeps the session
  * cookie off cross-site form posts; this checks the Origin / Fetch-Metadata headers as a second layer.
  */
 export function sameOrigin(request: Request): boolean {

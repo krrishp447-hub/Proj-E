@@ -10,7 +10,7 @@ import { currentUser } from "@/server/auth";
 import { saveBrandOnboarding, saveCreatorOnboarding } from "./actions";
 import "@/components/account/account.css";
 
-export const metadata: Metadata = { title: "Set up your account — Scout", robots: { index: false } };
+export const metadata: Metadata = { title: "Set up your account — ScoutBlack", robots: { index: false } };
 
 async function Flow() {
   const user = await currentUser();
@@ -21,7 +21,7 @@ async function Flow() {
     return (
       <>
         <h1 className="disp big">Set up</h1>
-        <p className="acct-lede">Three quick steps, then Scout runs your first brief.</p>
+        <p className="acct-lede">Three quick steps, then ScoutBlack runs your first brief.</p>
         <BrandOnboarding
           action={saveBrandOnboarding}
           defaults={p ?? { company: "", kind: "brand", website: null, category: null, brief: null, budget: null, tracked: [], pitchable: false, competitors: [] }}

@@ -88,10 +88,10 @@ export async function openDeal(u: User, target: string, title: string, terms: Te
     const [p] = (await q`select company from brand_profiles where user_id = ${u.id}`) as { company: string }[];
     if (!p) throw new Error("Finish your brand profile first");
     await q`insert into brands (id, name) values (${u.id}, ${p.company}) on conflict (id) do update set name = excluded.name`;
-    // offers go only to creators who claimed their channel on Scout (others can be invited first)
+    // offers go only to creators who claimed their channel on ScoutBlack (others can be invited first)
     const [c] = (await q`select channel_id from creators c where channel_id = ${target}
       and exists (select 1 from channel_connections x where x.channel_id = c.channel_id)`) as { channel_id: string }[];
-    if (!c) throw new Error("This creator hasn't claimed their channel on Scout yet");
+    if (!c) throw new Error("This creator hasn't claimed their channel on ScoutBlack yet");
     brandId = u.id; channelId = c.channel_id;
   } else {
     if (!u.channelId) throw new Error("Connect your channel first");

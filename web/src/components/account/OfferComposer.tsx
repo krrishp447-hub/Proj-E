@@ -149,7 +149,7 @@ export function OfferComposer({ side, initial, brands, myRate, initialBrand, err
                 ))}
               </div>
             ) : (
-              <p className="acct-help">No brands on Scout yet.</p>
+              <p className="acct-help">No brands on ScoutBlack yet.</p>
             )}
           </>
         )}

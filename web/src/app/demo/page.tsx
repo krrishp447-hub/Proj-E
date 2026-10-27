@@ -10,8 +10,8 @@ import { appAccess } from "@/server/billing";
 import { logUnread } from "@/server/unread";
 
 export const metadata: Metadata = {
-  title: "App — Scout",
-  description: "Search, rank and compare Indian YouTube creators on Scout's signals. Live YouTube public data.",
+  title: "App — ScoutBlack",
+  description: "Search, rank and compare Indian YouTube creators on ScoutBlack's signals. Live YouTube public data.",
   robots: { index: false }, // members only (a brand trial or plan)
 };
 
@@ -32,7 +32,7 @@ async function Demo({ searchParams }: { searchParams: Search }) {
 
 export default function DemoPage({ searchParams }: { searchParams: Search }) {
   return (
-    <Suspense fallback={<p className="d-empty">Loading Scout…</p>}>
+    <Suspense fallback={<p className="d-empty">Loading ScoutBlack…</p>}>
       <Demo searchParams={searchParams} />
     </Suspense>
   );

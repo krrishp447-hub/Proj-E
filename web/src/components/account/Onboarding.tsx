@@ -33,7 +33,7 @@ export function CreatorOnboarding({ action, channel, defaults, fair }: { action:
             <>
               <ChannelCard c={channel} />
               <p className="acct-help">
-                This is what brands see on your Scout profile. The audience section comes from YouTube Analytics and is marked
+                This is what brands see on your ScoutBlack profile. The audience section comes from YouTube Analytics and is marked
                 verified; only you could have shared it.
               </p>
             </>
@@ -111,7 +111,7 @@ export function BrandOnboarding({ action, defaults }: { action: Action; defaults
           body: (
             <>
               <label>Who are you looking for?
-                <span className="acct-help">Plain English: niche, language, size, platform. Scout turns it into filters.</span>
+                <span className="acct-help">Plain English: niche, language, size, platform. ScoutBlack turns it into filters.</span>
                 <textarea name="brief" maxLength={300} defaultValue={defaults.brief ?? ""} placeholder="Hindi tech YouTubers reviewing earbuds, 100K–1M subs, strong engagement" />
               </label>
               <div className="acct-q">Typical campaign budget
@@ -132,7 +132,7 @@ export function BrandOnboarding({ action, defaults }: { action: Action; defaults
           body: (
             <>
             <label>Brand names and hashtags to track
-              <span className="acct-help">Comma-separated. Scout uses them for share of voice and to file creator posts into your campaigns. Common-word name? Add product names, and exclude phrases with a minus: “Noise, Noise Buds, -noise cancelling”.</span>
+              <span className="acct-help">Comma-separated. ScoutBlack uses them for share of voice and to file creator posts into your campaigns. Common-word name? Add product names, and exclude phrases with a minus: “Noise, Noise Buds, -noise cancelling”.</span>
               <input type="text" name="tracked" maxLength={400} defaultValue={defaults.tracked.join(", ")} placeholder="Acme, Acme Buds, #AcmeSound" />
             </label>
             <label>Competitors for share of voice

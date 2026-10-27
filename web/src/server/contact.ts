@@ -4,7 +4,7 @@ import { sign, type User } from "./auth";
 import { sql } from "./db";
 
 // A creator's public business email is personal data (DPDP Act): shown only to signed-in brands, one channel at a time,
-// a limited number per day, never once the creator manages contact on Scout or asked for it to be removed.
+// a limited number per day, never once the creator manages contact on ScoutBlack or asked for it to be removed.
 export const REVEALS_PER_DAY = 25;
 const INVITES_PER_CHANNEL_PER_WEEK = 3;
 
@@ -69,7 +69,7 @@ async function sendEmail(to: string, subject: string, text: string): Promise<boo
 export type InviteResult = "sent" | "already" | "limit" | "unavailable" | "off";
 
 /**
- * Offers need a claimed channel, so for a creator who isn't on Scout yet a brand can invite them: one email to the address
+ * Offers need a claimed channel, so for a creator who isn't on ScoutBlack yet a brand can invite them: one email to the address
  * the creator published, saying a brand wants to work with them (never who or what: the address isn't verified). One
  * email per channel per brand, at most a few per channel per week across brands, never to an unsubscribed address.
  */
@@ -88,11 +88,11 @@ export async function inviteCreator(channelId: string, brandId: string): Promise
     if (!c) return "unavailable"; // claimed meanwhile, no public email, opted out or unsubscribed
     const [{ n }] = (await q`select count(*)::int as n from contact_invites where channel_id = ${channelId} and sent_at > now() - interval '7 days'`) as { n: number }[];
     if (n >= INVITES_PER_CHANNEL_PER_WEEK) return "limit";
-    const sent = await sendEmail(c.public_email, "A brand wants to work with you on Scout",
+    const sent = await sendEmail(c.public_email, "A brand wants to work with you on ScoutBlack",
       [
         `Hi ${c.name},`,
         "",
-        "A brand on Scout wants to work with your YouTube channel.",
+        "A brand on ScoutBlack wants to work with your YouTube channel.",
         "Claim your channel to receive their offer: sign in with Google and connect YouTube (this proves the channel is yours).",
         "",
         `Claim your channel: ${site.url}/api/auth/google/start?role=creator`,

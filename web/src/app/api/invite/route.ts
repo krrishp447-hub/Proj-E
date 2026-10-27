@@ -2,7 +2,7 @@ import { currentUser, sameOrigin } from "@/server/auth";
 import { appAccess } from "@/server/billing";
 import { inviteCreator } from "@/server/contact";
 
-// "Invite to Scout": brands (with a plan) invite a creator who hasn't claimed their channel, so they can be sent offers.
+// "Invite to ScoutBlack": brands (with a plan) invite a creator who hasn't claimed their channel, so they can be sent offers.
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: "forbidden" }, { status: 403 });
   const u = await currentUser();

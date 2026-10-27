@@ -9,7 +9,7 @@ test("monthly prices are exact; yearly is 20% off (₹100 steps for brand plans)
   assert.equal(priceFor(499, true), 399);
 });
 
-test("time saved: hours minus Scout's half hour per shortlist, never negative", () => {
+test("time saved: hours minus ScoutBlack's half hour per shortlist, never negative", () => {
   assert.deepEqual(manualCost(4, 12, 800), { hoursSaved: 46, rupees: 36_800 });
   assert.deepEqual(manualCost(4, 0.25, 800), { hoursSaved: 0, rupees: 0 });
 });

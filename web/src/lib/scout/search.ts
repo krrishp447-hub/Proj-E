@@ -6,7 +6,7 @@ import { contextualize, describe, parseBrief, score, understoodNothing, type Mat
 export type SearchResult = {
   query: string;
   understood: string[]; // chips: what the parser understood
-  unread: boolean; // a non-empty brief Scout couldn't read at all (logged, and the UI says so)
+  unread: boolean; // a non-empty brief ScoutBlack couldn't read at all (logged, and the UI says so)
   total: number; // creators searched
   fitCount: number; // creators that fit every part of the brief
   missCount: number; // near misses

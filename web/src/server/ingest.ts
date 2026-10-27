@@ -10,7 +10,7 @@ export type IngestResult = { seeds: number; updated: number; failed: { channelId
   frozen?: { refreshed: number; removed: number } }; // the 30-day rotation for channels outside the nightly refresh
 
 /**
- * Refresh every seeded channel: pull public stats + recent uploads, derive Scout signals,
+ * Refresh every seeded channel: pull public stats + recent uploads, derive ScoutBlack signals,
  * upsert the creator row and record today's subscriber snapshot, store recent uploads with today's stats,
  * then file new posts into live campaigns.
  * ~2 quota units per channel + 1 per 50 channels, so 1,000 channels ≈ 2,020 of the 10,000 daily units.
