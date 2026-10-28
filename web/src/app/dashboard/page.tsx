@@ -74,12 +74,12 @@ async function BrandDashboard({ user }: { user: User }) {
     <>
       <div className="dash-head">
         <h1 className="disp big">{p.company}</h1>
-        <nav aria-label="Account"><Link href="/dashboard/deals">Deals</Link><Link href="/dashboard/campaigns">Campaigns</Link><Link href="/demo">Discover</Link><Link href="/account">Settings</Link></nav>
+        <nav aria-label="Account"><Link href="/dashboard/deals">Deals</Link><Link href="/dashboard/campaigns">Campaigns</Link><Link href="/discover">Discover</Link><Link href="/account">Settings</Link></nav>
       </div>
       <div className="dash-grid">
         <section className="acct-card dash-wide" aria-labelledby="find-h">
           <h2 id="find-h">Find creators</h2>
-          <form action="/demo" className="dash-search">
+          <form action="/discover" className="dash-search">
             <input name="q" aria-label="Brief" defaultValue={p.brief ?? ""} placeholder="Hindi tech YouTubers reviewing earbuds, 100K–1M subs" maxLength={300} />
             <button className="acct-btn" type="submit">Search</button>
           </form>
@@ -139,7 +139,7 @@ async function BrandDashboard({ user }: { user: User }) {
                 ))}
               </ul>
               <div className="acct-actions">
-                <Link className="acct-btn" href={`/demo?q=${encodeURIComponent(p.brief)}`}>Open full shortlist</Link>
+                <Link className="acct-btn" href={`/discover?q=${encodeURIComponent(p.brief)}`}>Open full shortlist</Link>
                 {top.slice(0, 6).some((m) => m.creator.claimed) && <Link className="acct-btn ghost" href={`/dashboard/offers/new?to=${top.slice(0, 6).filter((m) => m.creator.claimed).map((m) => encodeURIComponent(m.creator.channelId)).join(",")}`}>Offer to those on ScoutBlack</Link>}
               </div>
             </>

@@ -22,7 +22,7 @@ async function Campaigns({ searchParams }: { searchParams: Promise<{ error?: str
     <>
       <div className="dash-head">
         <h1 className="disp big">Campaigns</h1>
-        <nav aria-label="Account"><Link href="/dashboard">Dashboard</Link><Link href="/dashboard/deals">Deals</Link><Link href="/demo">Discover</Link></nav>
+        <nav aria-label="Account"><Link href="/dashboard">Dashboard</Link><Link href="/dashboard/deals">Deals</Link><Link href="/discover">Discover</Link></nav>
       </div>
       <div className="dash-grid">
         <section className="acct-card dash-wide" aria-labelledby="list-h">

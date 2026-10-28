@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
     { source: "/film", destination: "/demo-video.html" },
   ],
   headers: async () => [{ source: "/:path*", headers: securityHeaders }],
+  // the app moved from /demo (read as unfinished) to /discover; old links, bookmarks and shared briefs (?q=) follow
+  redirects: async () => [{ source: "/demo", destination: "/discover", permanent: true }],
 };
 
 export default nextConfig;

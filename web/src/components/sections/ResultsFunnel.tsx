@@ -63,7 +63,7 @@ export function ResultsFunnel({ creators }: { creators: Creator[] }) {
 
       <div className="lgrid">
         {rows.slice(0, 9).map(({ creator: c, score: s }) => (
-          <Link key={c.id} href={`/demo?q=${encodeURIComponent(BRIEF)}`} className="lcell lcell-live">
+          <Link key={c.id} href={`/discover?q=${encodeURIComponent(BRIEF)}`} className="lcell lcell-live">
             <div className="lab">{c.platform === "YouTube" ? "YT" : "IG"} · {c.country} · {c.niche}</div>
             <h3 className="lname">{c.name}</h3>
             <div className="met">

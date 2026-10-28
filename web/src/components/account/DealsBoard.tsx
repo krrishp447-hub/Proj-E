@@ -189,7 +189,7 @@ function Drawer({ d, side, pending, onClose, run, call, actions, campaigns }: { 
           action={(fd) => { run(d.id, { type: "counter", terms: { fee: Number(fd.get("fee")), deliverables: String(fd.get("deliverables")), usage: String(fd.get("usage")), timeline: String(fd.get("timeline")), note: String(fd.get("note") ?? "") } }); setCounter(false); }}
         >
           <div className="acct-row">
-            <label>Fee (₹)<input type="number" name="fee" min={0} step={500} required defaultValue={last.fee} /></label>
+            <label>Fee (₹)<input type="number" name="fee" min={0} step={1} required defaultValue={last.fee} /></label>
             <label>Timeline<input type="text" name="timeline" required maxLength={100} defaultValue={last.timeline} /></label>
           </div>
           <label>Deliverables<input type="text" name="deliverables" required maxLength={200} defaultValue={last.deliverables} /></label>

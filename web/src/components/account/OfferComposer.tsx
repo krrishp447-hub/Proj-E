@@ -116,7 +116,7 @@ export function OfferComposer({ side, initial, brands, myRate, initialBrand, err
                       <td>{fmt(c.views)} views</td>
                       <td>{inr(c.fair.low)}–{inr(c.fair.high)}</td>
                       <td>
-                        <input type="number" name={`fee:${c.channelId}`} min={0} step={500} required aria-label={`Offer to ${c.name}`}
+                        <input type="number" name={`fee:${c.channelId}`} min={0} step={1} required aria-label={`Offer to ${c.name}`}
                           value={fees[c.channelId] ?? ""} onChange={(e) => setFees((f) => ({ ...f, [c.channelId]: Number(e.target.value) }))} />
                         {(fees[c.channelId] ?? 0) < c.fair.low * tpl.x * 0.8 && <span className="offer-warn">below market</span>}
                       </td>
@@ -173,7 +173,7 @@ export function OfferComposer({ side, initial, brands, myRate, initialBrand, err
         </div>
         {side === "creator" && (
           <label>Your rate (₹)
-            <input type="number" name={brand ? `fee:${brand}` : "fee"} min={0} step={500} required value={pitchFee || ""} onChange={(e) => setPitchFee(Number(e.target.value))} />
+            <input type="number" name={brand ? `fee:${brand}` : "fee"} min={0} step={1} required value={pitchFee || ""} onChange={(e) => setPitchFee(Number(e.target.value))} />
             {myRate && <span className="acct-help">Your market guide: {inr(myRate.low)}–{inr(myRate.high)} per dedicated video, from your real views and engagement.</span>}
           </label>
         )}

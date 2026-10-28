@@ -316,7 +316,16 @@ export function score(c: Creator, b: Brief): Match {
   }
   exclude(b.excludeNiches.includes(c.niche), `Excluded niche · ${c.niche}`);
   if (b.platform) gate(c.platform === b.platform, `Platform · ${c.platform}`, 10, "Different platform", 15);
-  if (b.country) gate(c.country === b.country, `Audience · ${c.country}`, 10, "Different geography", 15);
+  // Country: a third of channels never set one ("Unknown"). That's missing data, not a mismatch: it never fails the
+  // brief, and an Indian-language channel is very likely Indian. ScoutBlack is for the Indian market: a brief that names
+  // no country means India, so channels from elsewhere are near misses ("Outside India") rather than competing on points
+  // (a points bonus let generic Indian channels outrank the foreign MSI reviewer a brief actually described).
+  const likelyIndian = c.country === "Unknown" && c.language !== "English";
+  const market = b.country ?? "India";
+  if (c.country === market) { if (b.country) add(`Audience · ${c.country}`, 10, 10); }
+  else if (c.country === "Unknown") { if (b.country) add(market === "India" && likelyIndian ? `Audience · likely India (${c.language})` : "Country not set", market === "India" && likelyIndian ? 8 : 3, 10); }
+  else if (b.country) { add("Different geography", -15, 10); fits = false; }
+  else { add(`Outside India · ${c.country}`, -15, 0); fits = false; }
   if (b.languages.length) gate(b.languages.includes(c.language), `Language · ${c.language}`, 10, `Language · ${c.language}`, 12);
   exclude(b.excludeLanguages.includes(c.language), `Excluded language · ${c.language}`);
   const vocab = topicsOf(c);

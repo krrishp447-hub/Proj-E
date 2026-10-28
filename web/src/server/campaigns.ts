@@ -2,6 +2,7 @@ import "server-only";
 import { matchVideo, type Campaign, type TrackingRules, type VideoPost } from "@/lib/scout/campaigns";
 import type { YtVideo } from "@/lib/scout/metrics";
 import { sql } from "./db";
+import { syncStage } from "./delivery"; // circular with delivery → campaigns, safe: both only call each other at run time
 
 type Db = NonNullable<typeof sql>;
 const n = (s?: string) => Number(s ?? 0) || 0;
@@ -83,16 +84,17 @@ export async function fileCampaignPosts(only?: string): Promise<FilingResult> {
           status = case when campaign_posts.decided_by is null then excluded.status else campaign_posts.status end`;
 
       if (m.status === "filed") {
-        const linked = await db`
-          update deliverables set video_id = ${v.video_id}, status = 'Live'
+        const linked = (await db`
+          update deliverables set video_id = ${v.video_id}, video_url = coalesce(video_url, ${v.url}), status = 'Live'
           where id = (
             select id from deliverables
-            where campaign_id = ${row.id} and channel_id = ${v.channel_id} and video_id is null and status <> 'Live'
+            where campaign_id = ${row.id} and channel_id = ${v.channel_id} and video_id is null and status in ('Planned', 'In production')
             order by due limit 1
           )
           and not exists (select 1 from deliverables where video_id = ${v.video_id})
-          returning id`;
+          returning deal_id`) as { deal_id: string }[];
         out.deliverablesLinked += linked.length;
+        for (const l of linked) await syncStage(l.deal_id); // the deal moves along like a creator-submitted link
       }
     }
   }

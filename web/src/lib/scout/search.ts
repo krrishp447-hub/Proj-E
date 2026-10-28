@@ -1,5 +1,5 @@
 // One search over every creator: parse the brief, score everyone, return the best few with summary numbers.
-// Runs on the server for /demo (so the browser never downloads every creator) and locally for the homepage sample.
+// Runs on the server for /discover (so the browser never downloads every creator) and locally for the homepage sample.
 import type { Creator } from "./data.ts";
 import { contextualize, describe, parseBrief, score, understoodNothing, type Match } from "./engine.ts";
 
@@ -19,7 +19,7 @@ export type SearchResult = {
 };
 
 // Shared by the demo page (server) and ScoutApp (client): a constant exported from a "use client" module is only a
-// client reference on the server, not the string (it crashed /demo without ?q=).
+// client reference on the server, not the string (it crashed /discover without ?q=).
 export const DEFAULT_QUERY = "Indian YouTube tech creators who review earbuds, 50K–500K subs, strong engagement";
 
 export const HOME_RESULTS = 6; // the homepage shows this many matches, then pricing and the full app

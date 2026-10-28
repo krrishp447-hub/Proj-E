@@ -4,7 +4,13 @@ import { DISCLOSURE } from "./campaigns.ts";
 import { mentionMatcher, mentionPattern } from "./mentions.ts";
 
 export type BrandTerms = { name: string; terms: string[] };
-export type SovVideo = { videoId: string; title: string; description: string; url: string; views: number; publishedAt: string; channelId: string; creator: string };
+export type SovVideo = {
+  videoId: string; title: string; description: string; url: string; views: number; publishedAt: string; channelId: string; creator: string;
+  snaps?: [date: string, views: number][]; // daily view counts, oldest first (stored ~30 days, only for videos under 45 days old)
+};
+
+/** Weeks of "views gained" the trend can honestly show: daily view counts are kept 30 days (the YouTube data rule). */
+export const TREND_WEEKS = 4;
 
 export type SovBrand = {
   name: string;
@@ -13,7 +19,7 @@ export type SovBrand = {
   share: number; // % of all brand-naming views (a video naming two brands counts for both)
   paidViews: number; // views on videos with an ad disclosure; the rest is earned (organic)
   creators: number;
-  weekly: number[]; // views per week, oldest first
+  weekly: number[]; // views gained in each of the last TREND_WEEKS weeks, oldest first (not views by publish week)
 };
 export type SovPost = { videoId: string; title: string; url: string; views: number; publishedAt: string; creator: string; brands: string[]; disclosed: boolean };
 export type CreatorVoice = { channelId: string; creator: string; views: Record<string, number>; claimed?: boolean }; // brand → views naming it
@@ -22,8 +28,22 @@ export type SovResult = { days: number; brands: SovBrand[]; posts: SovPost[]; cr
 /** One prefilter pattern for the whole set (the database scan); exact per-brand matching happens in computeSov. */
 export const sovPattern = (brands: BrandTerms[]) => mentionPattern(brands.flatMap((b) => b.terms));
 
+const DAY = 86_400_000;
+
+/**
+ * A video's view count at time t: 0 before it was published, else the last daily count at or before t. Without a count
+ * that early, its first count (so gain before ScoutBlack first saw it isn't invented); with no counts at all (older
+ * than 45 days), its current views, i.e. no gain: videos that old add little.
+ */
+function viewsAt(v: SovVideo, t: number): number {
+  if (Date.parse(v.publishedAt) > t) return 0;
+  const s = v.snaps ?? [];
+  let at: number | undefined;
+  for (const [d, views] of s) { if (Date.parse(d) <= t) at = views; else break; }
+  return at ?? (s.length ? s[0][1] : v.views);
+}
+
 export function computeSov(videos: SovVideo[], brands: BrandTerms[], days: number, now = new Date()): SovResult {
-  const weeks = Math.max(1, Math.ceil(days / 7));
   const matchers = brands.map((b) => ({ name: b.name, named: mentionMatcher(b.terms) }));
   const posts = videos
     .map((v) => {
@@ -34,11 +54,12 @@ export function computeSov(videos: SovVideo[], brands: BrandTerms[], days: numbe
 
   const rows = brands.map((b) => {
     const mine = posts.filter((p) => p.brands.includes(b.name));
-    const weekly = Array<number>(weeks).fill(0);
-    for (const p of mine) {
-      const ago = Math.floor((now.getTime() - new Date(p.v.publishedAt).getTime()) / (7 * 86_400_000));
-      if (ago >= 0 && ago < weeks) weekly[weeks - 1 - ago] += p.v.views;
-    }
+    // views gained per week: the conversation's momentum, fair to new and old videos alike (total views would credit
+    // an 80-day-old video with 80 days of views and last week's with 7)
+    const weekly = Array.from({ length: TREND_WEEKS }, (_, w) => {
+      const end = now.getTime() - (TREND_WEEKS - 1 - w) * 7 * DAY, start = end - 7 * DAY;
+      return mine.reduce((s, p) => s + Math.max(0, (w === TREND_WEEKS - 1 ? p.v.views : viewsAt(p.v, end)) - viewsAt(p.v, start)), 0);
+    });
     return {
       name: b.name,
       videos: mine.length,

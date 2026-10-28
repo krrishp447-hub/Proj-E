@@ -32,7 +32,7 @@ async function Account({ searchParams }: { searchParams: Search }) {
         </dl>
         {p?.tracked.length ? <p className="acct-section">Tracking: {p.tracked.join(", ")}</p> : null}
         <div className="acct-actions">
-          <Link className="acct-btn on-ink" href={p?.brief ? `/demo?q=${encodeURIComponent(p.brief)}` : "/demo"}>Find creators</Link>
+          <Link className="acct-btn on-ink" href={p?.brief ? `/discover?q=${encodeURIComponent(p.brief)}` : "/discover"}>Find creators</Link>
           <Link className="acct-btn ghost" href="/onboarding">Edit profile</Link>
         </div>
       </>

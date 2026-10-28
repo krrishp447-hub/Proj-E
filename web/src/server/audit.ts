@@ -1,7 +1,8 @@
 // Runs the data-quality audit (lib/scout/audit.ts) on every 100 newly added creators and records the result.
 // Takes the database client as a parameter (no "server-only" import) so `npm run quality` can run it too.
 import type { NeonQueryFunction } from "@neondatabase/serverless";
-import { GOLDEN, auditBatch, type AuditRow, type Check } from "../lib/scout/audit.ts"; // relative: also run by scripts/quality.ts outside Next
+import { GOLDEN, auditBatch, type AuditRow, type Check } from "../lib/scout/audit.ts";
+import { LATEST_UPLOADS } from "../lib/scout/metrics.ts"; // relative: also run by scripts/quality.ts outside Next
 
 type Db = NeonQueryFunction<false, false>;
 export type AuditResult = { from: number; to: number; passed: boolean; checks: Check[] };
@@ -17,15 +18,17 @@ async function loadBatch(db: Db, offset: number, limit: number): Promise<AuditRo
   const ids = creators.map((c) => c.channel_id);
   // exactly the uploads the creator's last ingest used: saved in the same run, right after the creator row
   const vids = (await db`
-    select v.channel_id, v.title, v.views, v.likes, v.comments, v.category_id from videos v join creators c using (channel_id)
+    select v.channel_id, v.title, v.views, v.likes, v.comments, v.category_id,
+      extract(epoch from c.fetched_at - v.published_at) / 86400 as age_days from videos v join creators c using (channel_id)
     where v.channel_id = any(${ids}) and v.fetched_at between c.fetched_at - interval '5 minutes' and c.fetched_at + interval '30 minutes'
-    order by v.channel_id, v.published_at desc`) as { channel_id: string; title: string; views: number; likes: number | null; comments: number; category_id: string | null }[];
+    order by v.channel_id, v.published_at desc`) as { channel_id: string; title: string; views: number; likes: number | null; comments: number; category_id: string | null; age_days: number }[];
   return creators.map((c) => {
-    const mine = vids.filter((v) => v.channel_id === c.channel_id);
+    // the latest 20, as the ingest's metrics use (more may be stored for share of voice: UPLOAD_HISTORY_DAYS)
+    const mine = vids.filter((v) => v.channel_id === c.channel_id).slice(0, LATEST_UPLOADS);
     return {
       channelId: c.channel_id, name: c.name, about: c.about, niche: c.niche, niche2: c.niche2, nicheConf: c.niche_conf, language: c.language,
       subs: c.subs, avgViews: c.avg_views, eng: c.eng, auth: c.auth, suspicious: c.suspicious, consistency: c.consistency,
-      titles: mine.map((v) => v.title), categories: mine.map((v) => v.category_id), topics: c.yt_topics, videos: mine.map((v) => ({ views: v.views, likes: v.likes, comments: v.comments })),
+      titles: mine.map((v) => v.title), categories: mine.map((v) => v.category_id), topics: c.yt_topics, videos: mine.map((v) => ({ views: v.views, likes: v.likes, comments: v.comments, ageDays: Number(v.age_days) })),
     };
   });
 }

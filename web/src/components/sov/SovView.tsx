@@ -3,15 +3,13 @@
 import { useState } from "react";
 import { youtubeUrl } from "@/lib/scout/contact";
 import { fmt } from "@/lib/scout/engine";
-import { opportunities, type SovResult } from "@/lib/scout/sov";
+import { opportunities, TREND_WEEKS, type SovResult } from "@/lib/scout/sov";
 import "./sov.css";
-
-const TREND_WEEKS = 8;
 
 function Trend({ weekly }: { weekly: number[] }) {
   const w = weekly.slice(-TREND_WEEKS), top = Math.max(...w, 1);
   return (
-    <span className="sov-trend" aria-label={`Views per week, last ${w.length} weeks: ${w.map(fmt).join(", ")}`}>
+    <span className="sov-trend" aria-label={`Views gained per week, last ${w.length} weeks: ${w.map(fmt).join(", ")}`}>
       {w.map((v, i) => <i key={i} style={{ height: `${Math.max(4, (v / top) * 100)}%` }} />)}
     </span>
   );
@@ -39,7 +37,7 @@ export function SovView({ result, you: fixedYou, offers = false }: { result: Sov
       )}
       <div className="sov-rows" role="table" aria-label="Share of voice by brand">
         <div className="sov-row sov-headrow" role="row">
-          <span role="columnheader">Brand</span><span role="columnheader">Share of views</span><span role="columnheader">Paid</span><span role="columnheader">Last {TREND_WEEKS} weeks</span>
+          <span role="columnheader">Brand</span><span role="columnheader">Share of views</span><span role="columnheader">Paid</span><span role="columnheader">Views gained, {TREND_WEEKS} wks</span>
         </div>
         {result.brands.map((b) => (
           <div key={b.name} className={`sov-row ${b.name === you ? "is-you" : ""}`} role="row">
@@ -52,8 +50,8 @@ export function SovView({ result, you: fixedYou, offers = false }: { result: Sov
       </div>
       <p className="sov-note">
         Last {result.days} days · uploads by ScoutBlack&apos;s tracked creators that name each brand (a video naming two counts for both).
-        Paid = carries an ad disclosure; the rest is earned. Weekly bars undercount older weeks for daily uploaders (ScoutBlack keeps each
-        channel&apos;s latest ~20 uploads).
+        Paid = carries an ad disclosure; the rest is earned. Weekly bars are views gained that week on those videos, old and new
+        alike, so they show momentum rather than favouring older posts.
       </p>
 
       {you && (

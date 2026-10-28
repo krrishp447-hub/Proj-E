@@ -36,6 +36,11 @@ test("deriveMetrics: median views, median engagement %, cadence, country, handle
   assert.equal(m.growth, 0); // no history yet → no growth claim
 });
 
+test("deriveMetrics: average views ignore videos still collecting views (under a week) when 3+ settled ones exist", () => {
+  const vids = [video(5000, 250, 50, 1), video(8000, 400, 80, 2), video(9000, 450, 90, 3), video(60000, 3000, 600, 10), video(50000, 2500, 500, 14), video(70000, 3500, 700, 21)];
+  assert.equal(deriveMetrics(channel, vids, [], today).avgViews, 60000);
+});
+
 test("growthFrom uses the snapshot closest to 90 days old, ignores too-recent history", () => {
   assert.equal(growthFrom([{ takenOn: daysAgo(10), subs: 50 }], 100, today), 0);
   assert.equal(growthFrom([{ takenOn: daysAgo(88), subs: 100_000 }, { takenOn: daysAgo(40), subs: 110_000 }], 120_000, today), 20);
@@ -86,11 +91,23 @@ test("spoken-audio language from YouTube wins over English-looking titles", asyn
   assert.equal(contentLanguage([v("Phone review"), v("Unboxing")], "नमस्कार दोस्तों, हमारे चैनल में स्वागत है"), "Hindi");
 });
 
+test("declared English (YouTube's default) loses to clearly Hinglish titles; other declared languages stand", async () => {
+  const { contentLanguage, detectLanguage } = await import("../src/lib/scout/metrics.ts");
+  const v = (title: string, lang?: string) => ({ id: title, snippet: { title, publishedAt: daysAgo(1), defaultAudioLanguage: lang }, statistics: {} });
+  const hinglish = [v("Mera naya setup kaisa hai?", "en"), v("Bhai ye phone mat lena", "en"), v("Aaj kuch alag karte hain", "en"), v("iPhone 17 review", "en")];
+  assert.equal(contentLanguage(hinglish), "Hindi");
+  assert.equal(contentLanguage([v("Mera naya setup", "ta"), v("Bhai ye phone", "ta")]), "Tamil"); // a deliberate choice stands
+  // plain English titles stay English (no false Hinglish from short words like "to", "do", "log", "par")
+  assert.equal(detectLanguage(["How to log your workouts", "Do this before you buy", "Par 3 golf hole", "Kia Seltos review"]), "English");
+});
+
 test("brand channels by known-brand title; a creator whose name merely contains a brand is not one", async () => {
   const { isBrandChannel } = await import("../src/lib/scout/metrics.ts");
   assert.equal(isBrandChannel({ snippet: { title: "Nothing", description: "Inspiring human creativity by making tech fun." } }), true);
   assert.equal(isBrandChannel({ snippet: { title: "Samsung India", description: "" } }), true);
   assert.equal(isBrandChannel({ snippet: { title: "Nothing But Tech", description: "Reviews" } }), false);
+  assert.equal(isBrandChannel({ snippet: { title: "Free Fire - Topic", description: "" } }), true); // auto-generated, not a creator
+  assert.equal(isBrandChannel({ snippet: { title: "Topic Talks with Rahul", description: "" } }), false);
 });
 
 test("classify covers the extended niches without short-stem false hits", () => {

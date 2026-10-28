@@ -1,5 +1,5 @@
 import "server-only";
-import { deriveMetrics, type Snapshot } from "@/lib/scout/metrics";
+import { deriveMetrics, LATEST_UPLOADS, type Snapshot } from "@/lib/scout/metrics";
 import { publicEmail } from "@/lib/scout/contact";
 import { safetyFlags, sponsoredShare } from "@/lib/scout/signals";
 import { fileCampaignPosts, saveVideos, type FilingResult } from "./campaigns";
@@ -16,6 +16,10 @@ export type IngestResult = { seeds: number; updated: number; failed: { channelId
  * ~2 quota units per channel + 1 per 50 channels, so 1,000 channels ≈ 2,020 of the 10,000 daily units.
  */
 const PRUNE_BELOW_SUBS = 5_000; // half the search floor (MIN_AUDIENCE), so channels near it still get tracked
+// Share of voice looks back 90 days, but by default only each channel's latest 20 uploads are fetched (a daily uploader's
+// last ~20 days). UPLOAD_HISTORY_DAYS=90 fetches the whole window: ~2–4 more quota units for frequent uploaders and
+// ~100K more stored videos (~110 MB). Off until the YouTube quota increase and a database plan with room for it.
+const HISTORY_DAYS = Number(process.env.UPLOAD_HISTORY_DAYS) || undefined;
 
 export async function runIngest(limit = 1000, only?: string[]): Promise<IngestResult> {
   if (!sql) throw new Error("DATABASE_URL is not set");
@@ -39,8 +43,11 @@ export async function runIngest(limit = 1000, only?: string[]): Promise<IngestRe
   const one = async (ch: (typeof channels)[number]) => {
     if (result.quotaExhausted) return; // out of quota: leave the rest for the next run (stalest-first picks them up)
     try {
-      const recent = await fetchRecentVideos(ch.contentDetails.relatedPlaylists.uploads);
-      result.quotaUnits += 2;
+      const { videos: all, units } = await fetchRecentVideos(ch.contentDetails.relatedPlaylists.uploads, HISTORY_DAYS);
+      result.quotaUnits += units;
+      // metrics, niche and language stay on the latest 20 (what they're calibrated on); every fetched upload is stored
+      // for share of voice and campaign filing
+      const recent = all.slice(0, LATEST_UPLOADS);
       const snaps: Snapshot[] = history.filter((h) => h.channel_id === ch.id).map((h) => ({ takenOn: h.taken_on, subs: h.subs }));
       const m = deriveMetrics(ch, recent, snaps);
       // kept so categorisation can be re-run later from stored data, without spending API quota
@@ -60,7 +67,7 @@ export async function runIngest(limit = 1000, only?: string[]): Promise<IngestRe
       await db`
         insert into snapshots (channel_id, taken_on, subs) values (${m.channelId}, current_date, ${m.subs})
         on conflict (channel_id, taken_on) do update set subs = excluded.subs`;
-      await saveVideos(db, ch.id, recent); // after the creator row exists (videos → creators FK)
+      await saveVideos(db, ch.id, all); // after the creator row exists (videos → creators FK)
       result.updated++;
     } catch (e) {
       if (isQuotaError(e)) { result.quotaExhausted = true; return; }

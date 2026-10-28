@@ -19,7 +19,9 @@ const WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, f
 export function parseDeliverables(text: string): DeliverableKind[] {
   const out: DeliverableKind[] = [];
   const t = text.toLowerCase();
-  for (const m of t.matchAll(/(\d+|a|an|one|two|three|four|five|six)?\s*(?:x\s*)?(?:youtube\s+|yt\s+|dedicated\s+|integrated\s+|long[- ]form\s+)*(shorts?|videos?|integrations?|reviews?)\b/g)) {
+  // "review" / "integration" / "unboxing" describe a video ("1 review video" is one item); a lone "review" (as in
+  // "script review") isn't a deliverable, so only videos, Shorts and standalone integrations are counted.
+  for (const m of t.matchAll(/(\d+|a|an|one|two|three|four|five|six)?\s*(?:x\s*)?(?:(?:youtube|yt|dedicated|integrated|long[- ]form|review|integration|unboxing)\s+)*(shorts?|videos?|integrations?)\b/g)) {
     const n = Math.min(10, m[1] ? Number(m[1]) || WORDS[m[1]] || 1 : 1);
     const kind: DeliverableKind = m[2].startsWith("short") ? "YouTube Short" : "YouTube video";
     for (let i = 0; i < n; i++) out.push(kind);

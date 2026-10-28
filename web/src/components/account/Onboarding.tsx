@@ -63,8 +63,8 @@ export function CreatorOnboarding({ action, channel, defaults, fair }: { action:
                 Shown to brands as a starting point; every deal is still negotiated.
               </p>
               <div className="acct-row">
-                <label>Per dedicated video (₹)<input type="number" name="rateVideo" min={0} step={500} inputMode="numeric" defaultValue={defaults.rateVideo ?? undefined} placeholder={fair ? String(fair.low) : "e.g. 40000"} /></label>
-                <label>Per Short (₹)<input type="number" name="rateShort" min={0} step={500} inputMode="numeric" defaultValue={defaults.rateShort ?? undefined} placeholder="e.g. 15000" /></label>
+                <label>Per dedicated video (₹)<input type="number" name="rateVideo" min={0} step={1} inputMode="numeric" defaultValue={defaults.rateVideo ?? undefined} placeholder={fair ? String(fair.low) : "e.g. 40000"} /></label>
+                <label>Per Short (₹)<input type="number" name="rateShort" min={0} step={1} inputMode="numeric" defaultValue={defaults.rateShort ?? undefined} placeholder="e.g. 15000" /></label>
               </div>
               <label className="acct-inline"><input type="checkbox" name="openToCollabs" defaultChecked={defaults.openToCollabs} /> Open to brand collaborations</label>
             </>

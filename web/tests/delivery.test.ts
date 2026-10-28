@@ -8,6 +8,10 @@ test("agreed deliverables text becomes items", () => {
   assert.deepEqual(parseDeliverables("integration in my next upload"), ["YouTube video"]);
   assert.deepEqual(parseDeliverables("something custom"), ["YouTube video"]); // always something to track
   assert.equal(parseDeliverables("50 shorts").length, 10); // capped
+  assert.deepEqual(parseDeliverables("1 review video"), ["YouTube video"]); // "review" describes the video
+  assert.deepEqual(parseDeliverables("1 dedicated integration video"), ["YouTube video"]);
+  assert.deepEqual(parseDeliverables("1 video with script review before posting"), ["YouTube video"]);
+  assert.deepEqual(parseDeliverables("2 integrations"), ["YouTube video", "YouTube video"]);
 });
 
 test("video ids from every YouTube link shape, nothing from others", () => {

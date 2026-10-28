@@ -16,7 +16,7 @@ npm run lint && npm run typecheck
 | Path | Source |
 |---|---|
 | `/` | Poster site — `src/app/page.tsx` + `src/components/sections/*` |
-| `/demo` | Product demo (React): `src/app/demo` + `src/components/demo`, engine in `src/lib/scout` |
+| `/discover` | The app (React): `src/app/discover` + `src/components/demo`, engine in `src/lib/scout` |
 | `/film` | Original product film, served as-is from `public/demo-video.html` |
 
 ## How it fits together
@@ -77,7 +77,7 @@ Analytics / Instagram insights OAuth — not built yet); outcome metrics (campai
 campaigns run on Scout.
 
 ### Plans (who can open the app)
-The full app (`/demo`: every result, compare, share of voice, contact) needs a brand plan: a 4-day free trial starts
+The full app (`/discover`: every result, compare, share of voice, contact) needs a brand plan: a 4-day free trial starts
 when a brand finishes its profile; after that, access needs an active plan. Payments aren't built yet, so plans are
 switched on by hand (the pricing FAQ promises we talk to the brand before any billing):
 ```bash

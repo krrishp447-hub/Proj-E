@@ -26,6 +26,19 @@ test("parseBrief reads niche, platform, country, sub-niche, size and intent", ()
   assert.equal(b.wantEng, true);
 });
 
+test("market: India by default, an unset country is missing data (never a mismatch), other countries when named", () => {
+  const brief = (q: string) => contextualize(parseBrief(q), CREATORS);
+  const unknownHindi = { ...base, country: "Unknown", language: "Hindi" };
+  const uk = { ...base, country: "UK" };
+  assert.equal(score(unknownHindi, brief("Indian tech creators")).fits, true);
+  assert.ok(score(unknownHindi, brief("Indian tech creators")).signals.some((s) => s.label.startsWith("Audience · likely India")));
+  assert.equal(score({ ...base, country: "Unknown" }, brief("Indian tech creators")).fits, true); // English, country not set
+  assert.equal(score(uk, brief("tech creators")).fits, false); // no country named → India
+  assert.ok(score(uk, brief("tech creators")).signals.some((s) => s.label === "Outside India · UK"));
+  assert.equal(score({ ...base, country: "US" }, brief("US tech creators")).fits, true);
+  assert.equal(score(base, brief("US tech creators")).fits, false);
+});
+
 test("size phrasing: M units, under, over, plus", () => {
   assert.deepEqual([parseBrief("1m-2m").minSubs, parseBrief("1m-2m").maxSubs], [1e6, 2e6]);
   assert.deepEqual([parseBrief("under 100k").minSubs, parseBrief("under 100k").maxSubs], [0, 1e5]);

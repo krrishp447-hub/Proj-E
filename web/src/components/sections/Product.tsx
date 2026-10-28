@@ -5,7 +5,7 @@ import { getCreators } from "@/server/creators";
 
 /**
  * A taste of the product on the homepage: one brief over every creator, the best few matches, then pricing or the full
- * app. The app itself (shortlist, compare, campaigns, share of voice) lives at /demo.
+ * app. The app itself (shortlist, compare, campaigns, share of voice) lives at /discover.
  */
 export async function Product() {
   const { creators } = await getCreators();

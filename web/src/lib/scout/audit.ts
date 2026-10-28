@@ -8,7 +8,8 @@ import { NICHES } from "./data.ts";
 import { LANGUAGES } from "./engine.ts";
 import { segment } from "./segment.ts";
 
-export type AuditVideo = { views: number; likes: number | null; comments: number }; // likes null = hidden by the creator
+// likes null = hidden by the creator; ageDays = days old when the channel was ingested (absent: treated as settled)
+export type AuditVideo = { views: number; likes: number | null; comments: number; ageDays?: number };
 export type AuditRow = {
   channelId: string; name: string; about: string; niche: string; niche2: string | null; nicheConf: number; language: string;
   subs: number; avgViews: number; eng: number; auth: number; suspicious: number; consistency: number;
@@ -60,7 +61,9 @@ export function checkCalculations(rows: AuditRow[]): Check {
   const failures: string[] = [];
   let good = 0;
   for (const r of judged) {
-    const views = median(r.videos.map((v) => v.views).filter((v) => v > 0));
+    // same rule as deriveMetrics: settled videos (a week or older) when there are 3+, else all with views
+    const viewed = r.videos.filter((v) => v.views > 0), settled = viewed.filter((v) => (v.ageDays ?? 7) >= 7);
+    const views = median((settled.length >= 3 ? settled : viewed).map((v) => v.views));
     // hidden likes carry no engagement evidence; a genuine 0 does (same rule as deriveMetrics)
     const engs = r.videos.filter((v) => v.views > 0 && v.likes !== null).map((v) => (((v.likes ?? 0) + v.comments) / v.views) * 100);
     const eng = engs.length ? Math.round(median(engs) * 10) / 10 : 0;

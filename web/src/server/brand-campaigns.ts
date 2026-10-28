@@ -88,6 +88,21 @@ export async function decidePost(u: User, campaignId: string, videoId: string, s
     from campaigns c where c.id = p.campaign_id and c.brand_id = ${u.id} and p.campaign_id = ${campaignId} and p.video_id = ${videoId}`;
 }
 
+/**
+ * Cumulative views per day since publish (what rollup() expects), from dated snapshots. Days are placed by date, so a
+ * missed nightly run or a late first fetch doesn't shift the curve: gaps carry the last known count, 0 before the first.
+ */
+function dailyCurve(publishedAt: string, snaps: [string, number][] | null, views: number): number[] {
+  if (!snaps?.length) return [views];
+  const DAY = 86_400_000, start = Date.parse(publishedAt.slice(0, 10)), end = Date.parse(snaps[snaps.length - 1][0]);
+  const out: number[] = [];
+  for (let t = start, j = 0, cur = 0; t <= end; t += DAY) {
+    while (j < snaps.length && Date.parse(snaps[j][0]) <= t) cur = snaps[j++][1];
+    out.push(cur);
+  }
+  return out.length ? out : [views];
+}
+
 export type CampaignDetail = {
   id: string; name: string; start: string; end: string; phase: CampaignPhase; rules: TrackingRules;
   creators: string[]; // index = rollup creatorId
@@ -104,11 +119,11 @@ export async function campaignDetail(u: User, id: string): Promise<CampaignDetai
   const posts = (await q`
     select p.video_id, p.status, p.reasons, p.disclosed, p.confidence, v.title, v.url, v.views, v.likes, v.comments, v.published_at::text as published_at,
       v.channel_id, cr.name as creator,
-      (select array_agg(s.views order by s.taken_on) from video_snapshots s where s.video_id = p.video_id) as daily
+      (select json_agg(json_build_array(s.taken_on::text, s.views) order by s.taken_on) from video_snapshots s where s.video_id = p.video_id) as snaps
     from campaign_posts p join videos v using (video_id) join creators cr on cr.channel_id = v.channel_id
     where p.campaign_id = ${id} and p.status in ('filed', 'review', 'organic') order by v.views desc`) as
     { video_id: string; status: string; reasons: string[]; disclosed: boolean; confidence: number; title: string; url: string; views: number; likes: number | null; comments: number;
-      published_at: string; channel_id: string; creator: string; daily: number[] | null }[];
+      published_at: string; channel_id: string; creator: string; snaps: [string, number][] | null }[];
   const items = (await q`
     select x.id, x.deal_id, x.kind, x.due::text as due, x.status, x.fee, x.projected_views, x.video_id, x.video_url, x.draft_url, x.channel_id, cr.name as creator
     from deliverables x join creators cr on cr.channel_id = x.channel_id where x.campaign_id = ${id} order by x.due`) as
@@ -121,7 +136,7 @@ export async function campaignDetail(u: User, id: string): Promise<CampaignDetai
   const today = new Date().toISOString().slice(0, 10);
   const filed = posts.filter((p) => p.status === "filed").map((p) => ({
     video: { id: p.video_id, creatorId: idx(p.channel_id), platform: "YouTube", title: p.title, description: "", publishedAt: p.published_at, url: p.url,
-      views: p.views, likes: p.likes ?? 0, comments: p.comments, daily: p.daily?.length ? p.daily : [p.views] } satisfies VideoPost,
+      views: p.views, likes: p.likes ?? 0, comments: p.comments, daily: dailyCurve(p.published_at, p.snaps, p.views) } satisfies VideoPost,
     match: { confidence: p.confidence, reasons: p.reasons, status: "filed", disclosed: p.disclosed, linked: false } satisfies MatchResult,
   }));
   // Delivered statuses (Approved, Paid) count as live for the roll-up's delivery numbers

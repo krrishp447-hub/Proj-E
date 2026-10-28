@@ -23,6 +23,9 @@ export type YtVideo = {
 
 export type Snapshot = { takenOn: string; subs: number }; // ISO date
 
+/** Uploads a channel's metrics, niche and language are computed from: its latest 20 (more may be stored for SOV). */
+export const LATEST_UPLOADS = 20;
+
 export type ChannelMetrics = {
   channelId: string;
   name: string;
@@ -82,8 +85,14 @@ const SCRIPTS: [string, RegExp][] = [
   ["Hindi", /[ऀ-ॿ]/], ["Bengali", /[ঀ-৿]/], ["Punjabi", /[਀-੿]/], ["Gujarati", /[઀-૿]/],
   ["Tamil", /[஀-௿]/], ["Telugu", /[ఀ-౿]/], ["Kannada", /[ಀ-೿]/], ["Malayalam", /[ഀ-ൿ]/],
 ];
-// Romanised Hindi ("Hinglish") markers — common function words that don't occur in English titles.
-const HINGLISH = /\b(kya|kaise|kaisa|sabse|hai|hain|nahi|mein|wala|wale|bhai|kyu|kyun|lene|kharido|sasta|mat)\b/i;
+// Romanised Hindi ("Hinglish") markers: common words that aren't English words too (no "to", "do", "log", "mat", "par").
+const HINGLISH = new RegExp(String.raw`\b(${[
+  "kya", "kaise", "kaisa", "kaisi", "kyu", "kyun", "kyon", "kab", "kahan", "kitna", "kitne", "hai", "hain", "hoon", "tha", "thi", "nahi", "nahin",
+  "mein", "mai", "mera", "meri", "mere", "tera", "teri", "tere", "apna", "apni", "apne", "humne", "maine", "aap", "tum", "yeh", "woh",
+  "wala", "wale", "wali", "bhai", "bhaiya", "yaar", "dost", "karo", "karna", "karke", "kiya", "kiye", "raha", "rahe", "rahi", "gaya", "gayi", "gaye",
+  "diya", "liya", "bhi", "aur", "lekin", "sabse", "bahut", "bohot", "kuch", "kuchh", "toh", "aaj", "abhi", "pehli", "pehla", "baar", "ghar",
+  "paisa", "paise", "dekho", "dekha", "sasta", "sasti", "lene", "kharido", "accha", "achha", "naya", "nayi", "wapas", "saath", "zindagi", "duniya", "ka", "ki", "ke",
+].join("|")})\b`, "i");
 const NAMED = ["Hindi", "Tamil", "Telugu", "Bengali", "Bangla", "Marathi", "Kannada", "Malayalam", "Gujarati", "Punjabi"];
 
 /** Primary content language: a script or language name in ≥30% of recent titles (min 2), else English. */
@@ -96,12 +105,16 @@ const CODES: Record<string, string> = { hi: "Hindi", en: "English", ta: "Tamil",
  * in titles and the channel description.
  */
 export function contentLanguage(recent: YtVideo[], channelDescription = ""): string {
+  const fromText = detectLanguage([...recent.map((v) => v.snippet.title), channelDescription, channelDescription]);
   const codes = recent.map((v) => CODES[(v.snippet.defaultAudioLanguage ?? "").split("-")[0].toLowerCase()]).filter(Boolean);
   if (recent.length && codes.length / recent.length >= 0.4) {
     const tally = codes.reduce<Record<string, number>>((m, l) => ({ ...m, [l]: (m[l] ?? 0) + 1 }), {});
-    return Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
+    const declared = Object.entries(tally).sort((a, b) => b[1] - a[1])[0][0];
+    // "English" is YouTube's default audio setting, often left untouched by Hindi and regional creators: when the
+    // titles clearly say otherwise, believe the titles. Any other declared language is a deliberate choice.
+    return declared === "English" && fromText !== "English" ? fromText : declared;
   }
-  return detectLanguage([...recent.map((v) => v.snippet.title), channelDescription, channelDescription]);
+  return fromText;
 }
 
 /** Primary language from text alone: a script, language name or Hinglish in ≥30% of samples (min 2), else English. */
@@ -136,6 +149,8 @@ export function isBrandChannel(ch: Pick<YtChannel, "snippet">): boolean {
   const text = `${ch.snippet.title}\n${ch.snippet.description ?? ""}`;
   return (
     BRAND_TITLE.test(ch.snippet.title.trim()) ||
+    / - Topic$/.test(ch.snippet.title.trim()) || // YouTube's auto-generated pages for a game or artist ("Free Fire - Topic"), not a creator
+
     /\bofficial (youtube )?channel of\b|\bthe official (youtube )?channel\b|\bofficial account of\b|\bcustomer (care|support)\b|\bwelcome to the official\b/i.test(text)
   );
 }
@@ -176,7 +191,11 @@ export function estimateAuthenticity(eng: number | null, avgViews: number, subs:
 
 export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[], today = new Date()): ChannelMetrics {
   const subs = n(ch.statistics.subscriberCount);
-  const views = recent.map((v) => n(v.statistics.viewCount)).filter((v) => v > 0);
+  // Videos under a week old are still collecting views: a daily uploader's last 20 would drag the median down. Use
+  // settled videos when there are at least 3, else everything with views (new or rarely-posting channels).
+  const viewed = recent.filter((v) => n(v.statistics.viewCount) > 0);
+  const settled = viewed.filter((v) => today.getTime() - new Date(v.snippet.publishedAt).getTime() >= 7 * 86_400_000);
+  const views = (settled.length >= 3 ? settled : viewed).map((v) => n(v.statistics.viewCount));
   const avgViews = Math.round(median(views));
   // creators can hide like counts (likeCount absent) — those videos say nothing about engagement
   const engs = recent

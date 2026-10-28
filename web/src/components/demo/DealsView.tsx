@@ -86,7 +86,7 @@ function DealDetail({ creator, deal, onUpdate, onDecline }: { creator: Creator; 
       {negotiable ? (
         <form className="d-offer" onSubmit={(e) => { e.preventDefault(); counter(); }}>
           <h3>Make a counter-offer</h3>
-          <label>Fee (₹)<input type="number" min={0} step={1000} required value={draft.fee} onChange={(e) => setDraft({ ...draft, fee: Number(e.target.value) })} /></label>
+          <label>Fee (₹)<input type="number" min={0} step={1} required value={draft.fee} onChange={(e) => setDraft({ ...draft, fee: Number(e.target.value) })} /></label>
           <label>Deliverables<input value={draft.deliverables} onChange={(e) => setDraft({ ...draft, deliverables: e.target.value })} required maxLength={120} /></label>
           <label>Usage rights
             <select value={draft.usage} onChange={(e) => setDraft({ ...draft, usage: e.target.value })}>

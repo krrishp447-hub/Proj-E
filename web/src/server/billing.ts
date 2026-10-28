@@ -2,7 +2,7 @@ import "server-only";
 import type { User } from "./auth";
 import { sql } from "./db";
 
-// The full app (/demo and the APIs behind it) is for brand accounts with a plan: a free trial that starts with the brand
+// The full app (/discover and the APIs behind it) is for brand accounts with a plan: a free trial that starts with the brand
 // profile, then an active subscription. Payments aren't built yet: plans are switched on with `npm run plan`, and the
 // pricing FAQ promises we talk to the brand before any billing.
 export const TRIAL_DAYS = 4;

@@ -17,7 +17,9 @@ export async function getShareOfVoice(brands: BrandTerms[], category: string | n
   // ponytail: biggest 5,000 matching videos; page through them if a category ever has more
   const rows = (await sql`
     select v.video_id as "videoId", v.title, v.description, v.url, v.views, v.published_at::text as "publishedAt",
-      v.channel_id as "channelId", c.name as creator
+      v.channel_id as "channelId", c.name as creator,
+      (select json_agg(json_build_array(s.taken_on::text, s.views) order by s.taken_on) from video_snapshots s
+        where s.video_id = v.video_id and s.taken_on > current_date - 36) as snaps -- for views gained per week
     from videos v join creators c using (channel_id)
     where v.published_at > now() - make_interval(days => ${days}) and not c.is_brand
       and (${category}::text is null or c.niche = ${category} or c.niche2 = ${category})

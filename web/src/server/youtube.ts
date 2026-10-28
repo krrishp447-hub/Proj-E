@@ -1,5 +1,5 @@
 import "server-only";
-import type { YtChannel, YtVideo } from "@/lib/scout/metrics";
+import { LATEST_UPLOADS, type YtChannel, type YtVideo } from "@/lib/scout/metrics";
 
 // YouTube Data API v3. Quota: 10,000 units/day per Google Cloud project.
 // channels.list / playlistItems.list / videos.list cost 1 unit each (up to 50 ids per call).
@@ -44,18 +44,34 @@ export async function fetchChannels(ids: string[]): Promise<YtChannel[] & { quot
   return out;
 }
 
-/** The channel's most recent uploads (2 units: one playlist page + one videos batch). */
-export async function fetchRecentVideos(uploadsPlaylistId: string, max = 20): Promise<YtVideo[]> {
-  // channels with no public uploads have no uploads playlist (YouTube answers 404) — that means "no videos"
-  const list = await get<{ items?: { contentDetails: { videoId: string } }[] }>("playlistItems", {
-    part: "contentDetails",
-    playlistId: uploadsPlaylistId,
-    maxResults: String(max),
-  }).catch((e: Error) => { if (e.message.includes(" 404:")) return { items: [] }; throw e; });
-  const ids = (list.items ?? []).map((i) => i.contentDetails.videoId);
-  if (!ids.length) return [];
-  const vids = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics", id: ids.join(",") });
-  return vids.items ?? [];
+const MAX_HISTORY = 150; // ponytail: 3 playlist pages; a channel posting 2+ a day is cut at ~75 days, raise if SOV needs it
+
+/**
+ * A channel's uploads, newest first: the latest 20, or with `days`, everything published in that window (at least the
+ * latest 20, at most 150). 1 unit per 50 listed + 1 per 50 fetched: 2 for most channels, up to 6 for daily uploaders.
+ */
+export async function fetchRecentVideos(uploadsPlaylistId: string, days?: number): Promise<{ videos: YtVideo[]; units: number }> {
+  const since = days ? Date.now() - days * 86_400_000 : 0;
+  const ids: string[] = [];
+  let units = 0, page: string | undefined;
+  do {
+    // channels with no public uploads have no uploads playlist (YouTube answers 404) — that means "no videos"
+    const list = await get<{ items?: { contentDetails: { videoId: string; videoPublishedAt?: string } }[]; nextPageToken?: string }>("playlistItems", {
+      part: "contentDetails", playlistId: uploadsPlaylistId, maxResults: String(days ? 50 : LATEST_UPLOADS), ...(page ? { pageToken: page } : {}),
+    }).catch((e: Error) => { if (e.message.includes(" 404:")) return { items: [], nextPageToken: undefined }; throw e; });
+    units++;
+    const items = list.items ?? [];
+    const inWindow = (at?: string) => !at || Date.parse(at) >= since;
+    for (const i of items) if (ids.length < LATEST_UPLOADS || inWindow(i.contentDetails.videoPublishedAt)) ids.push(i.contentDetails.videoId);
+    page = days && list.nextPageToken && inWindow(items.at(-1)?.contentDetails.videoPublishedAt) && ids.length < MAX_HISTORY ? list.nextPageToken : undefined;
+  } while (page);
+  const videos: YtVideo[] = [];
+  for (const batch of chunk(ids.slice(0, MAX_HISTORY), 50)) {
+    const r = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics", id: batch.join(",") });
+    units++;
+    videos.push(...(r.items ?? []));
+  }
+  return { videos, units };
 }
 
 /** One page of channel search results in India (100 units — 100× a list call, so discovery is budgeted). */

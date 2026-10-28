@@ -12,6 +12,7 @@ type Case = { q: string; relevant: (c: Creator) => boolean; forbid?: (c: Creator
 const has = (c: Creator, ...words: string[]) => words.some((w) => c.topics.includes(w) || c.tags.some((t) => t.startsWith(w)));
 const niche = (c: Creator, ...n: string[]) => n.includes(c.niche) || (!!c.secondaryNiche && n.includes(c.secondaryNiche));
 const SOUTH = ["Tamil", "Telugu", "Kannada", "Malayalam"];
+const INDIAN = (c: Creator) => c.country === "India" || (c.country === "Unknown" && c.language !== "English");
 
 const CASES: Case[] = [
   { q: "tech", relevant: (c) => niche(c, "Tech"), forbid: (c) => c.niche === "Music" },
@@ -54,6 +55,11 @@ const CASES: Case[] = [
   { q: "gaane sunao", relevant: (c) => niche(c, "Music") },
   { q: "bike ride vlogs", relevant: (c) => niche(c, "Automotive", "Travel") },
   { q: "smartwatch reviews", relevant: (c) => niche(c, "Tech") && has(c, "smartwatch", "watch") },
+  // the market: ScoutBlack is for Indian creators, so a brief without a country still means India; "India" in a brief
+  // mustn't drop channels that never set a country (a third of them) when everything else says Indian
+  { q: "personal finance creators in english", relevant: (c) => niche(c, "Finance") && INDIAN(c) },
+  { q: "comedy creators", relevant: (c) => niche(c, "Entertainment") && INDIAN(c) },
+  { q: "indian cooking channels in hindi", relevant: (c) => niche(c, "Food") && c.language === "Hindi" },
 ];
 
 const sql = neon(process.env.DATABASE_URL!);

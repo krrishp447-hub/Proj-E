@@ -8,7 +8,7 @@ export const site = {
   email: "hello@scoutblack.in",
   address: "Mumbai, India",
   coords: `19°04'33.6"N 72°52'39.7"E`, // central Mumbai
-  demoHref: "/#product", // the homepage taste; the full app (/demo) needs a plan
+  demoHref: "/#product", // the homepage taste; the full app (/discover) needs a plan
   filmHref: "/film",
   // No real profile URLs yet; entries without an href render as plain text instead of dead links.
   // YouTube-first: other profiles come back when they exist.

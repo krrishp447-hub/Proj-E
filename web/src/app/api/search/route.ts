@@ -6,7 +6,7 @@ import { appAccess } from "@/server/billing";
 import { getCreators } from "@/server/creators";
 import { logUnread } from "@/server/unread";
 
-// Creator search for /demo: ranks every creator on the server and returns only the best ~150, so the page never
+// Creator search for /discover: ranks every creator on the server and returns only the best ~150, so the page never
 // ships the full creator list (it was 3.3 MB). `ids`: shortlisted channels to score against this brief as well.
 export async function GET(request: Request) {
   const url = new URL(request.url);
