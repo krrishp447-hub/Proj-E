@@ -6,18 +6,12 @@ export const metadata: Metadata = { title: "Terms — ScoutBlack", alternates: {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms" updated="12 October 2026">
+    <LegalPage title="Terms" updated="27 October 2026">
       <h2>The service</h2>
       <p>
         ScoutBlack helps brands and agencies find, rank and compare creators, and helps creators understand how brands find them.
         Match scores, authenticity estimates and audience-overlap figures are calculated signals to support your decisions —
         not guarantees of campaign results.
-      </p>
-
-      <h2>Demo data</h2>
-      <p>
-        Where the product is labelled &ldquo;Demo · illustrative data&rdquo;, creators and figures are fictional examples and must
-        not be relied on.
       </p>
 
       <h2>Acceptable use</h2>

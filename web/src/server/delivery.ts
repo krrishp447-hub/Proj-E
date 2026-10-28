@@ -182,13 +182,17 @@ export async function checkDeliverables(): Promise<{ confirmed: number; refreshe
     { id: string; deal_id: string; channel_id: string; video_url: string }[];
   for (const p of pending) {
     const vid = youtubeVideoId(p.video_url);
-    if (vid && (await linkVideo(p, vid, p.video_url)) === "live") { out.confirmed++; await fileDeliverablePosts(p.deal_id); await syncStage(p.deal_id); }
+    const r = vid ? await linkVideo(p, vid, p.video_url) : null;
+    if (r === "live") { out.confirmed++; await fileDeliverablePosts(p.deal_id); await syncStage(p.deal_id); }
+    // checked while the quota was out at submit time, and it's someone else's video: back to the creator to resubmit
+    if (r === "wrong-channel") await q`update deliverables set status = 'Planned', video_url = null where id = ${p.id}`;
   }
   const stale = (await q`
     select d.channel_id, d.video_id from deliverables d join videos v on v.video_id = d.video_id
-    where v.fetched_at < now() - interval '6 days' limit 500`) as { channel_id: string; video_id: string }[];
+    where v.fetched_at < now() - interval '6 days' order by v.fetched_at limit 500`) as { channel_id: string; video_id: string }[];
   if (stale.length) {
-    const videos = await fetchVideos(stale.map((s) => s.video_id));
+    let videos;
+    try { videos = await fetchVideos(stale.map((s) => s.video_id)); } catch (e) { if (isQuotaError(e)) return out; throw e; } // out of quota: next night
     const channelOf = new Map(stale.map((s) => [s.video_id, s.channel_id]));
     for (const v of videos) { await saveVideos(q, channelOf.get(v.id)!, [v]); out.refreshed++; }
   }

@@ -2,7 +2,7 @@ import "server-only";
 import { seal, unseal } from "./auth";
 import { startTrial } from "./billing";
 import { sql } from "./db";
-import { exchangeCode, fetchAudience, grantedCreatorScopes, myChannel, refreshAccess, revoke, userInfo, type Role } from "./google";
+import { exchangeCode, fetchAudience, grantedCreatorScopes, isRevoked, myChannel, refreshAccess, revoke, userInfo, type Role } from "./google";
 import { runIngest } from "./ingest";
 import type { BrandTerms } from "@/lib/scout/sov";
 
@@ -75,9 +75,12 @@ export async function syncAudiences(): Promise<{ synced: number; revoked: number
     let access: string;
     try {
       const token = unseal(r.refresh_token);
-      if (!token) throw new Error("unreadable token"); // sealed under an old AUTH_SECRET: treat as revoked
+      if (!token) throw Object.assign(new Error("unreadable token"), { code: "invalid_grant" }); // sealed under an old AUTH_SECRET
       access = await refreshAccess(token);
-    } catch {
+    } catch (e) {
+      // Only a revoked grant ends the connection. A network error, Google outage or misconfigured client must not
+      // disconnect every creator (they'd lose their deals): count it as failed and retry tomorrow.
+      if (!isRevoked(e)) { out.failed++; continue; }
       await db()`delete from channel_connections where channel_id = ${r.channel_id}`;
       out.revoked++;
       continue;

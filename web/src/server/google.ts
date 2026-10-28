@@ -34,9 +34,16 @@ async function token(params: Record<string, string>): Promise<Tokens> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: c.id, client_secret: c.secret, ...params }),
   });
-  if (!res.ok) throw new Error(`Google token ${res.status}`); // body may echo request details — don't surface it
+  if (!res.ok) {
+    // body may echo request details — keep only its error code ("invalid_grant" = the grant was revoked or expired)
+    const code = ((await res.json().catch(() => ({}))) as { error?: unknown }).error;
+    throw Object.assign(new Error(`Google token ${res.status}`), { code: typeof code === "string" ? code : undefined });
+  }
   return res.json() as Promise<Tokens>;
 }
+
+/** True only when Google says the refresh token is no longer valid (revoked by the user, or expired). */
+export const isRevoked = (e: unknown) => (e as { code?: string })?.code === "invalid_grant";
 
 export const exchangeCode = (code: string) => token({ code, grant_type: "authorization_code", redirect_uri: client().redirect });
 export const refreshAccess = async (refreshToken: string) => (await token({ refresh_token: refreshToken, grant_type: "refresh_token" })).access_token;

@@ -6,6 +6,7 @@ import { OfferComposer } from "@/components/account/OfferComposer";
 import { contextualize, parseBrief, score } from "@/lib/scout/engine";
 import { getMyChannel } from "@/server/accounts";
 import { currentUser } from "@/server/auth";
+import { appAccess } from "@/server/billing";
 import { getCreators } from "@/server/creators";
 import { creatorCards, pitchableBrands } from "@/server/offers";
 import { creatorsByIds, findCreators, sendOffers } from "./actions";
@@ -24,6 +25,8 @@ async function Composer({ searchParams }: { searchParams: Search }) {
   const actions = { send: sendOffers, find: findCreators, byIds: creatorsByIds };
 
   if (u.role === "brand") {
+    const access = await appAccess(u); // new offers need a trial or plan
+    if (!access.ok) redirect(`/pricing?app=${access.reason}`);
     const initial = await creatorCards(to); // claimed channels only
     const notOnScout = to.length - initial.length;
     return (

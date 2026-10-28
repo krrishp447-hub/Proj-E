@@ -1,4 +1,5 @@
 import "server-only";
+import { timingSafeEqual } from "node:crypto";
 import { site } from "@/config/site";
 import { sign, type User } from "./auth";
 import { sql } from "./db";
@@ -49,7 +50,8 @@ const unsubscribeToken = (email: string) => sign(`unsubscribe:${email}`);
 export const unsubscribeUrl = (email: string) => `${site.url}/unsubscribe?e=${encodeURIComponent(email)}&t=${encodeURIComponent(unsubscribeToken(email))}`;
 
 export async function unsubscribe(email: string, token: string): Promise<boolean> {
-  if (!email || token !== unsubscribeToken(email)) return false;
+  const want = Buffer.from(email ? unsubscribeToken(email) : ""), got = Buffer.from(token);
+  if (!email || want.length !== got.length || !timingSafeEqual(want, got)) return false;
   await db()`insert into email_unsubscribes (email) values (${email.toLowerCase()}) on conflict do nothing`;
   return true;
 }
@@ -83,7 +85,7 @@ export async function inviteCreator(channelId: string, brandId: string): Promise
       where c.channel_id = ${channelId} and c.public_email is not null
         and not exists (select 1 from channel_connections x where x.channel_id = c.channel_id)
         and not exists (select 1 from contact_optouts o where o.channel_id = c.channel_id)
-        and not exists (select 1 from email_unsubscribes u where u.email = c.public_email)
+        and not exists (select 1 from email_unsubscribes u where u.email = lower(c.public_email)) -- stored lowercased
 `) as { name: string; public_email: string }[];
     if (!c) return "unavailable"; // claimed meanwhile, no public email, opted out or unsubscribed
     const [{ n }] = (await q`select count(*)::int as n from contact_invites where channel_id = ${channelId} and sent_at > now() - interval '7 days'`) as { n: number }[];

@@ -7,7 +7,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
     <main className="legalpage">
       <Link href="/" className="legal-back mono">← ScoutBlack</Link>
       <h1 className="disp big">{title}</h1>
-      <p className="mono legal-meta">Last updated {updated} · Draft — review with legal counsel before launch</p>
+      <p className="mono legal-meta">Last updated {updated}</p>
       <div className="legal-body">{children}</div>
     </main>
   );

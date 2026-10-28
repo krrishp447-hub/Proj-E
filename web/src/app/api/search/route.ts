@@ -1,3 +1,4 @@
+import type { Match } from "@/lib/scout/engine";
 import { HOME_RESULTS, searchAll } from "@/lib/scout/search";
 import { after } from "next/server";
 import { currentUser } from "@/server/auth";
@@ -14,9 +15,13 @@ export async function GET(request: Request) {
   // `limit`: the homepage asks for its few rows only (no near misses)
   const limit = Math.min(100, Math.max(1, Math.floor(Number(url.searchParams.get("limit"))) || 100));
   // the homepage's few rows are public; full results (the app) need a plan, or the page gate means nothing
-  if ((limit > HOME_RESULTS || ids.length) && !(await appAccess(await currentUser())).ok) return Response.json({ error: "plan" }, { status: 402 });
+  const member = (await appAccess(await currentUser())).ok;
+  if ((limit > HOME_RESULTS || ids.length) && !member) return Response.json({ error: "plan" }, { status: 402 });
   const { creators } = await getCreators();
   const result = searchAll(creators, q, limit < 100 ? { limit, missLimit: 0 } : { pinned: ids });
   if (result.unread) after(() => logUnread(q));
-  return Response.json(result);
+  if (member) return Response.json(result);
+  // A connected creator's audience is their private YouTube Analytics: shown to brands in the app, never to the public.
+  const open = (ms: Match[]) => ms.map((m) => ({ ...m, creator: { ...m.creator, geo: [], age: [], male: null } }));
+  return Response.json({ ...result, fits: open(result.fits), misses: open(result.misses), pinned: open(result.pinned) });
 }

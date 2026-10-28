@@ -100,6 +100,9 @@ export async function openDeal(u: User, target: string, title: string, terms: Te
     await q`insert into brands (id, name) values (${b.id}, ${b.company}) on conflict (id) do update set name = excluded.name`;
     brandId = b.id; channelId = u.channelId;
   }
+  // one open deal per brand and channel: a repeat offer or pitch opens the existing deal instead of piling up new ones
+  const [open] = (await q`select id from deals where brand_id = ${brandId} and channel_id = ${channelId} and stage not in ('Declined', 'Paid')`) as { id: string }[];
+  if (open) return open.id;
   await q`insert into deals (id, brand_id, channel_id, title, stage, initiated_by, due, checklist)
     values (${id}, ${brandId}, ${channelId}, ${title}, 'Inbound', ${sideOf(u)}, ${due}, ${JSON.stringify(checklist.map((text) => ({ text, done: false })))}::jsonb)`;
   await addOffer(id, sideOf(u), terms);

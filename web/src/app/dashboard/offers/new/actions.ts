@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validTerms } from "@/lib/scout/deals";
 import { currentUser } from "@/server/auth";
+import { appAccess } from "@/server/billing";
 import { openDeal } from "@/server/deals";
 import { MAX_TARGETS, creatorCards, searchCreatorCards, type CreatorCard } from "@/server/offers";
 
+// New offers are part of the paid app (a trial or plan); deals already open keep working without one.
 async function brandUser() {
   const u = await currentUser();
-  return u?.role === "brand" && u.onboarded ? u : null;
+  return u?.role === "brand" && u.onboarded && (await appAccess(u)).ok ? u : null;
 }
 
 /** Creator picker: search by name/handle, or resolve saved channel ids (the Discover shortlist). Brands only. */
@@ -27,6 +29,10 @@ export async function creatorsByIds(ids: string[]): Promise<CreatorCard[]> {
 export async function sendOffers(fd: FormData) {
   const u = await currentUser();
   if (!u || !u.onboarded) redirect("/login");
+  if (u.role === "brand") {
+    const access = await appAccess(u);
+    if (!access.ok) redirect(`/pricing?app=${access.reason}`);
+  }
   const targets = [...new Set(fd.getAll("target").map(String))].slice(0, u.role === "brand" ? MAX_TARGETS : 1);
   const title = String(fd.get("title") ?? "").trim().slice(0, 120);
   const checklist = String(fd.get("checklist") ?? "").split("\n").map((l) => l.trim().slice(0, 200)).filter(Boolean).slice(0, 30);

@@ -72,6 +72,9 @@ export async function assignDeal(u: User, dealId: string, campaignId: string | n
   await q`update deals set campaign_id = ${campaignId}, updated_at = now() where id = ${dealId}`;
   await q`update deliverables set campaign_id = ${campaignId} where deal_id = ${dealId}`;
   if (d.campaign_id && d.campaign_id !== campaignId) {
+    // the deal's own videos were filed into the old campaign as deliverables: they leave with the deal
+    await q`delete from campaign_posts p where p.campaign_id = ${d.campaign_id} and p.decided_by = 'deliverable'
+      and p.video_id in (select video_id from deliverables where deal_id = ${dealId} and video_id is not null)`;
     await q`delete from campaign_creators cc where cc.campaign_id = ${d.campaign_id} and cc.channel_id = ${d.channel_id}
       and not exists (select 1 from deals x where x.campaign_id = cc.campaign_id and x.channel_id = cc.channel_id)`;
   }

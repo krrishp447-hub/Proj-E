@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Privacy — ScoutBlack", alternates:
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy" updated="12 October 2026">
+    <LegalPage title="Privacy" updated="27 October 2026">
       <h2>What this site collects</h2>
       <p>
         Browsing this website does not require an account, and we do not set advertising or analytics cookies. Our hosting
