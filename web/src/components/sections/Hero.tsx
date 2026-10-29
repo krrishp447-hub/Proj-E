@@ -17,7 +17,7 @@ export function Hero() {
         </h1>
         <div className="btnrow mt-[clamp(28px,3.5vw,48px)]">
           <a className="pbtn" href={site.demoHref}>Try it free →</a>
-          <a className="pbtn ghost" href="#manifesto">See how it works</a>
+          <a className="pbtn ghost" href="#film">See how it works</a>
         </div>
       </div>
       <div className="scrollcue mono" aria-hidden="true">↓ SCROLL</div>

@@ -133,6 +133,41 @@
   .reel figcaption { margin-top: 14px; }
 
   /* ================= PILLARS ================= */
+  /* the explainer film: paper section, the film framed in ink, chapters as a mono strip under it */
+  .film { background: var(--paper); color: var(--ink); }
+  .film-head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 16px clamp(24px, 4vw, 64px); align-items: end; }
+  .film-kick { grid-column: 1 / -1; color: var(--signal-deep); }
+  .film .big { font-size: clamp(48px, 8vw, 128px); }
+  .film .hl { font-style: normal; color: var(--signal-deep); white-space: nowrap; }
+  .film-lede { font-size: clamp(16px, 1.25vw, 19px); line-height: 1.5; max-width: 46ch; margin: 0 0 .4em; color: var(--earth); }
+  .film-frame { position: relative; margin: clamp(36px, 4vw, 56px) 0 0; border-radius: 18px; overflow: hidden; background: var(--ink);
+    box-shadow: 0 0 0 1.5px var(--ink), 0 40px 80px -40px rgb(47 91 234 / .55); }
+  .film-frame video { display: block; width: 100%; aspect-ratio: 16/9; background: var(--ink); }
+  .film-frame video::cue { font-family: var(--body); font-size: clamp(14px, 1.6vw, 22px); background: rgb(12 13 11 / .78); color: var(--paper); }
+  .film-play { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; border: 0; cursor: pointer; color: var(--paper);
+    background: rgb(12 13 11 / .66); transition: background .3s; }
+  .film-play:hover { background: rgb(12 13 11 / .5); }
+  .film-play .disp { font-size: clamp(30px, 4.4vw, 64px); line-height: 1; text-shadow: 0 2px 24px rgb(12 13 11 / .6); }
+  .film-play .mono { opacity: .75; }
+  .film-play-dot { display: grid; place-items: center; width: clamp(72px, 8vw, 112px); aspect-ratio: 1; border-radius: 50%; background: var(--signal); color: var(--ink);
+    font-size: clamp(24px, 2.6vw, 36px); padding-left: .18em; box-shadow: 0 0 0 0 rgb(77 116 255 / .55); animation: film-pulse 2.2s ease-out infinite; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+  .film-play:hover .film-play-dot { transform: scale(1.08); }
+  @keyframes film-pulse { to { box-shadow: 0 0 0 26px rgb(77 116 255 / 0); } }
+  .film-chapters { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1.5px solid var(--ink); }
+  .film-chapters button { width: 100%; height: 100%; display: grid; gap: 6px; text-align: left; padding: 14px 14px 14px 0; border: 0; background: none; cursor: pointer;
+    font: 600 clamp(13px, 1vw, 15px)/1.25 var(--body); color: var(--ink); opacity: .55; border-top: 3px solid transparent; margin-top: -1.5px; transition: opacity .2s, border-color .2s; }
+  .film-chapters button:hover, .film-chapters button.is-on { opacity: 1; }
+  .film-chapters button.is-on { border-top-color: var(--signal); }
+  .film-chapters .mono { font-size: 11px; color: var(--signal-deep); }
+  .film-cta { margin-top: clamp(28px, 3vw, 44px); }
+  .film .pbtn.ghost { color: var(--ink); border-color: var(--ink); }
+  .film .pbtn.ghost:hover { background: var(--ink); color: var(--paper); }
+  @media (max-width: 860px) {
+    .film-head { grid-template-columns: 1fr; }
+    .film-chapters { grid-template-columns: 1fr 1fr; }
+    .film-chapters li:last-child { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .film-play-dot { animation: none; } }
   .pillars { background: var(--ink); color: var(--paper); }
   .pcols { display: grid; grid-template-columns: 1fr 1fr 1fr; position: relative; }
   .pcol { padding: 0 clamp(18px, 2.4vw, 40px); }
