@@ -5,7 +5,7 @@ import { getCompositions, renderMedia, renderStill } from "@remotion/renderer";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
-const out = path.resolve("../web/public/video/niches");
+const out = path.resolve("../../web/public/video/niches");
 mkdirSync(out, { recursive: true });
 const serveUrl = await bundle({ entryPoint: path.resolve("src/index.ts") });
 const comps = (await getCompositions(serveUrl)).filter((c) => c.id.startsWith("Niche-"));

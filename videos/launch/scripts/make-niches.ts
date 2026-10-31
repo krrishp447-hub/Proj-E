@@ -1,7 +1,7 @@
 // Export per-niche stats from the site's demo dataset → src/niches.json (read by the niche reels).
 //   node scripts/make-niches.ts
 import { writeFileSync } from "node:fs";
-import { CREATORS } from "../../web/src/lib/scout/data.ts";
+import { CREATORS } from "../../../web/src/lib/scout/data.ts";
 
 const NICHES = [
   { slug: "tech", name: "Tech & Audio", niche: "Tech", icon: "Headphones", bg: "#4D74FF", fg: "#0C0D0B" },

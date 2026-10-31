@@ -1,10 +1,10 @@
 # ==========================================
 # Excluded files & folders per instructions
 # ==========================================
-app.html
-DECISIONS.md
-demo-video.html
-index.html
+legacy/app.html
+docs/DECISIONS.md
+legacy/demo-video.html
+legacy/index.html
 
 # Excluded demo assets inside web
 web/public/demo-video.html
