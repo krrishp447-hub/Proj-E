@@ -2,6 +2,7 @@
 
 import { BUDGETS, NICHES } from "@/lib/scout/data";
 import { LANGUAGES } from "@/lib/scout/engine";
+import { CITIES } from "@/lib/scout/places";
 import { ChannelCard, type ChannelSummary } from "./Audience";
 import { Stepper } from "./Stepper";
 import { formatCompetitors, type BrandTerms } from "@/lib/scout/sov";
@@ -19,7 +20,7 @@ function Chips({ name, options, checked, label }: { name: string; options: reado
   );
 }
 
-export type CreatorDefaults = { focus: string[]; languages: string[]; rateVideo: number | null; rateShort: number | null; openToCollabs: boolean };
+export type CreatorDefaults = { focus: string[]; languages: string[]; rateVideo: number | null; rateShort: number | null; openToCollabs: boolean; city: string | null };
 
 export function CreatorOnboarding({ action, channel, defaults, fair }: { action: Action; channel: ChannelSummary; defaults: CreatorDefaults; fair: { low: number; high: number } | null }) {
   return (
@@ -49,6 +50,10 @@ export function CreatorOnboarding({ action, channel, defaults, fair }: { action:
               <div className="acct-q">Languages you create in
                 <Chips name="languages" options={LANGUAGES} checked={defaults.languages} label="Languages" />
               </div>
+              <label>Where are you based? <span className="acct-help">Optional. Brands planning city launches and shoots search by it.</span>
+                <input type="text" name="city" maxLength={60} list="city-list" autoComplete="address-level2" defaultValue={defaults.city ?? ""} placeholder="e.g. Mumbai" />
+                <datalist id="city-list">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
+              </label>
             </>
           ),
         },

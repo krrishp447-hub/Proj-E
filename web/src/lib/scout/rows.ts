@@ -6,6 +6,8 @@ export type CreatorRow = {
   subs: number; avg_views: number; eng: number; growth: number; consistency: number; auth: number; suspicious: number;
   language: string; topics: string[] | null; age_days: number; upload_days: number | null; sponsored_pct: number | null; safety: string[] | null; claimed: boolean; has_email: boolean; trend: number[] | null;
   aud_age: number[] | null; aud_male: number | null; aud_geo: [string, number][] | null; // only for creators who connected their channel
+  shorts_pct?: number | null; views_long?: number | null; views_short?: number | null;
+  cities?: string[] | null; based_in?: string | null; aud_cities?: [string, number][] | null;
 };
 
 /** Down-sample a daily series to at most 12 points for the sparkline. */
@@ -49,5 +51,11 @@ export function rowToCreator(r: CreatorRow, id: number): Creator {
     claimed: r.claimed,
     hasEmail: r.has_email,
     source: "youtube",
+    shortsPct: r.shorts_pct ?? null,
+    viewsLong: r.views_long ?? null,
+    viewsShort: r.views_short ?? null,
+    audCities: r.aud_cities ?? [],
+    basedIn: r.based_in ?? null,
+    cityMentions: r.cities ?? [],
   };
 }

@@ -236,7 +236,7 @@ async function CreatorDashboard({ user }: { user: User }) {
             <h2 id="ch-h">Your channel</h2>
             <ChannelCard c={{
               name: ch.name, handle: ch.handle, niche: ch.niche, language: ch.language, subs: ch.subs, avgViews: ch.avg_views, eng: ch.eng,
-              age: ch.age, male: ch.male, geo: ch.geo, avgViewPct: ch.avg_view_pct, synced: !!ch.synced_at,
+              age: ch.age, male: ch.male, geo: ch.geo, cities: ch.cities, avgViewPct: ch.avg_view_pct, synced: !!ch.synced_at,
             }} />
           </section>
         )}

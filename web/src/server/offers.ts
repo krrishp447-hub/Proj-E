@@ -9,10 +9,10 @@ export type CreatorCard = {
 };
 export type BrandCard = { id: string; company: string; category: string | null; brief: string | null }; // never the budget
 
-type Row = { channel_id: string; name: string; handle: string; niche: string; language: string; subs: number; avg_views: number; eng: number };
+type Row = { channel_id: string; name: string; handle: string; niche: string; language: string; subs: number; avg_views: number; rate_views: number; eng: number };
 const card = (r: Row): CreatorCard => ({
   channelId: r.channel_id, name: r.name, handle: r.handle, niche: r.niche, language: r.language, subs: r.subs, views: r.avg_views, eng: r.eng,
-  fair: fairRate(r.avg_views, r.eng),
+  fair: fairRate(r.rate_views, r.eng), // a dedicated video: long-video views
 });
 
 function db() {
@@ -26,7 +26,7 @@ export async function creatorCards(ids: string[]): Promise<CreatorCard[]> {
   const clean = [...new Set(ids)].filter((id) => /^[\w-]{10,40}$/.test(id)).slice(0, MAX_TARGETS);
   if (!clean.length) return [];
   const rows = (await db()`
-    select channel_id, name, handle, niche, language, subs, avg_views, eng from creators c
+    select channel_id, name, handle, niche, language, subs, avg_views, coalesce(views_long, avg_views) as rate_views, eng from creators c
     where channel_id = any(${clean}) and not is_brand
       and exists (select 1 from channel_connections x where x.channel_id = c.channel_id)`) as Row[]; // offers need a claimed channel
   return clean.map((id) => rows.find((r) => r.channel_id === id)).filter((r): r is Row => !!r).map(card);
@@ -38,7 +38,7 @@ export async function searchCreatorCards(q: string): Promise<CreatorCard[]> {
   if (term.length < 2) return [];
   const like = `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   const rows = (await db()`
-    select channel_id, name, handle, niche, language, subs, avg_views, eng from creators c
+    select channel_id, name, handle, niche, language, subs, avg_views, coalesce(views_long, avg_views) as rate_views, eng from creators c
     where not is_brand and (name ilike ${like} or handle ilike ${like})
       and exists (select 1 from channel_connections x where x.channel_id = c.channel_id) order by subs desc limit 8`) as Row[];
   return rows.map(card);

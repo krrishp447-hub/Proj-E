@@ -36,7 +36,7 @@ async function Flow() {
     subs: ch?.subs ?? null, avgViews: ch?.avg_views ?? null, eng: ch?.eng ?? null,
     age: ch?.age ?? [], male: ch?.male ?? null, geo: ch?.geo ?? [], avgViewPct: ch?.avg_view_pct ?? null, synced: !!ch?.synced_at,
   };
-  const fair = ch?.avg_views ? fairRate(ch.avg_views, ch.eng ?? 0) : null;
+  const fair = ch?.rate_views ? fairRate(ch.rate_views, ch.eng ?? 0) : null; // a dedicated video: long-video views
   return (
     <>
       <h1 className="disp big">Your profile</h1>
@@ -45,7 +45,7 @@ async function Flow() {
         action={saveCreatorOnboarding}
         channel={channel}
         fair={fair}
-        defaults={p ?? { focus: ch?.niche && ch.niche !== "Other" ? [ch.niche] : [], languages: ch?.language ? [ch.language] : [], rateVideo: null, rateShort: null, openToCollabs: true }}
+        defaults={p ?? { focus: ch?.niche && ch.niche !== "Other" ? [ch.niche] : [], languages: ch?.language ? [ch.language] : [], rateVideo: null, rateShort: null, openToCollabs: true, city: null }}
       />
     </>
   );

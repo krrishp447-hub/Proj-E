@@ -70,12 +70,14 @@ export async function fetchAudience(access: string): Promise<Audience> {
   const day = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString().slice(0, 10);
   const report = (q: Record<string, string>) =>
     get<Report>(`https://youtubeanalytics.googleapis.com/v2/reports?${new URLSearchParams({ ids: "channel==MINE", startDate: day(90), endDate: day(1), ...q })}`, access);
-  const [ageGender, countries, retention] = await Promise.all([
+  const [ageGender, countries, retention, cities] = await Promise.all([
     report({ metrics: "viewerPercentage", dimensions: "ageGroup,gender" }),
     report({ metrics: "views", dimensions: "country", sort: "-views", maxResults: "25" }),
     report({ metrics: "averageViewPercentage" }),
+    // top cities (YouTube's estimate; the city report must sort by views, ≤ 250 rows). Optional: a failure here keeps the rest
+    report({ metrics: "views", dimensions: "city", sort: "-views", maxResults: "25" }).catch((): Report => ({})),
   ]);
-  return audienceFrom(ageGender, countries, retention);
+  return audienceFrom(ageGender, countries, retention, cities);
 }
 
 /** Revoke ScoutBlack's access at Google (on disconnect / account deletion). Best effort: the token may already be gone. */

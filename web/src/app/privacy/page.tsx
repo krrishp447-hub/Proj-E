@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Privacy — ScoutBlack", alternates:
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy" updated="27 October 2026">
+    <LegalPage title="Privacy" updated="31 October 2026">
       <h2>What this site collects</h2>
       <p>
         Browsing this website does not require an account, and we do not set advertising or analytics cookies. Our hosting
@@ -17,12 +17,18 @@ export default function PrivacyPage() {
       <p>
         ScoutBlack ranks creators using <strong>publicly available channel data</strong> — for example subscriber counts, video
         views, likes and comments — obtained through official platform APIs, including the YouTube API Services. We use it to
-        calculate signals such as engagement rate, posting consistency, growth and an estimated authenticity score.
+        calculate signals such as engagement rate, posting consistency, growth and an estimated authenticity score. From
+        the same public data we also note how much of a channel is Shorts (from video length) and which cities a channel
+        names in its own description and titles; these are shown to brands as inferences, not facts about the creator.
       </p>
       <p>
-        Audience demographics (age, gender, location) and other private analytics are only processed if a creator connects
-        their own account and gives explicit consent. A creator can disconnect at any time, after which we delete the
-        private data obtained through that connection.
+        Audience demographics (age, gender, and location down to the top cities) and other private analytics are only
+        processed if a creator connects their own account and gives explicit consent. A creator can disconnect at any time,
+        after which we delete the private data obtained through that connection.
+      </p>
+      <p>
+        Creators who set up a profile can choose to tell us where they&apos;re based. It is optional, shown to brands on
+        ScoutBlack, and can be changed or removed from the profile at any time.
       </p>
 
       <p>
@@ -49,7 +55,7 @@ export default function PrivacyPage() {
 
       <h2>Retention</h2>
       <p>
-        Public channel statistics are refreshed daily and kept only while a channel is being tracked. Creators can ask us to
+        Public channel statistics are refreshed every few days (within the 30 days YouTube allows) and kept only while a channel is being tracked. Creators can ask us to
         stop tracking their channel and delete its stored data.
       </p>
 

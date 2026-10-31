@@ -6,6 +6,7 @@ import { LANGUAGES } from "@/lib/scout/engine";
 import { saveBrandProfile, saveCreatorProfile } from "@/server/accounts";
 import { currentUser } from "@/server/auth";
 import { parseCompetitors } from "@/lib/scout/sov";
+import { canonCity } from "@/lib/scout/places";
 
 // Server-side validation: never trust the form. Unknown options are dropped, text is trimmed and capped.
 const text = (fd: FormData, k: string, max = 200) => String(fd.get(k) ?? "").trim().slice(0, max);
@@ -30,6 +31,8 @@ export async function saveCreatorOnboarding(fd: FormData) {
     rateVideo: rupees(fd, "rateVideo"),
     rateShort: rupees(fd, "rateShort"),
     openToCollabs: fd.get("openToCollabs") === "on",
+    // a known city in its usual spelling ("bangalore" → Bengaluru), otherwise as typed. Optional.
+    city: canonCity(text(fd, "city", 60)) ?? (text(fd, "city", 60) || null),
   });
   redirect("/dashboard");
 }

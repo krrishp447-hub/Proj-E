@@ -40,6 +40,15 @@ export type Creator = {
   claimed: boolean; // the creator connected this channel on ScoutBlack
   hasEmail: boolean; // a public business email is on file (the address itself is only revealed to signed-in brands)
   source: "youtube";
+  // Formats (from video length): % of recent uploads that are Shorts, and median views per format. null = not known yet.
+  shortsPct?: number | null;
+  viewsLong?: number | null;
+  viewsShort?: number | null;
+  // City, three sources by strength: the verified audience (connected creators), where the creator says they're based,
+  // and cities the channel names in its own text (inferred).
+  audCities?: [string, number][];
+  basedIn?: string | null;
+  cityMentions?: string[];
 };
 
 export const NICHES = ["Tech", "Gaming", "Music", "Entertainment", "Food", "Education", "Finance", "Fitness", "Beauty", "Fashion", "Travel", "Automotive", "Kids", "Parenting", "Sports", "News", "Spiritual", "Lifestyle"];

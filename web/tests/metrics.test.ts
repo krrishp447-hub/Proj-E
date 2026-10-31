@@ -41,6 +41,22 @@ test("deriveMetrics: average views ignore videos still collecting views (under a
   assert.equal(deriveMetrics(channel, vids, [], today).avgViews, 60000);
 });
 
+test("deriveMetrics: Shorts share and views per format from video length; city mentions from the channel's text", () => {
+  const vid = (id: string, views: number, ageDays: number, duration?: string, title = "Budget phone pick"): YtVideo => ({
+    id, snippet: { title, publishedAt: daysAgo(ageDays) }, statistics: { viewCount: String(views), likeCount: "10", commentCount: "1" },
+    ...(duration ? { contentDetails: { duration } } : {}),
+  });
+  const vids = [vid("a", 90_000, 10, "PT45S"), vid("b", 80_000, 12, "PT50S"), vid("c", 70_000, 15, "PT2M10S", "Mumbai street food #shorts"),
+    vid("d", 20_000, 9, "PT14M"), vid("e", 30_000, 20, "PT11M", "Mumbai street food tour"), vid("f", 25_000, 30, "PT9M")];
+  const m = deriveMetrics({ ...channel, snippet: { ...channel.snippet, description: "Food from Bombay" } }, vids, [], today);
+  assert.equal(m.shortsPct, 50); // a, b and the tagged 2:10 c
+  assert.equal(m.viewsShort, 80_000);
+  assert.equal(m.viewsLong, 25_000);
+  assert.deepEqual(m.cities, ["Mumbai"]);
+  const unknown = deriveMetrics(channel, [vid("x", 1000, 10), vid("y", 2000, 10)], [], today); // lengths not fetched yet
+  assert.deepEqual([unknown.shortsPct, unknown.viewsLong, unknown.viewsShort], [null, null, null]);
+});
+
 test("growthFrom uses the snapshot closest to 90 days old, ignores too-recent history", () => {
   assert.equal(growthFrom([{ takenOn: daysAgo(10), subs: 50 }], 100, today), 0);
   assert.equal(growthFrom([{ takenOn: daysAgo(88), subs: 100_000 }, { takenOn: daysAgo(40), subs: 110_000 }], 120_000, today), 20);

@@ -39,9 +39,68 @@ test("market: India by default, an unset country is missing data (never a mismat
   assert.equal(score(base, brief("US tech creators")).fits, false);
 });
 
+test("brand briefs: filler isn't content, lakh/crore sizes, money isn't size, numbers don't eat words", () => {
+  const b = parseBrief("Looking for 20 micro influencers for a skincare launch");
+  assert.deepEqual(b.terms, ["skincare"]); // not "look", "icro" (20 m-icro) or "launch"
+  assert.equal(b.tier, "micro");
+  assert.deepEqual([parseBrief("food creators with 10 lakh+ subscribers").minSubs, parseBrief("food creators with 10 lakh+ subscribers").maxSubs], [1e6, Infinity]);
+  assert.deepEqual([parseBrief("tech between 1 lakh to 5 lakh subs").minSubs, parseBrief("tech between 1 lakh to 5 lakh subs").maxSubs], [1e5, 5e5]);
+  assert.equal(parseBrief("1 crore+ subs").minSubs, 1e7);
+  const money = parseBrief("budget 2 lakh, 5 creators for a fitness app");
+  assert.equal(money.minSubs, undefined); // 2 lakh is the budget, not a size
+  assert.ok(!money.terms.includes("budget") && !money.terms.includes("lakh"));
+  assert.ok(parseBrief("budget phone reviewers").terms.includes("budget")); // the content word survives
+  assert.ok(!parseBrief("₹50k per creator, hindi tech").terms.some((t) => /50|creator/.test(t)));
+});
+
+test("asks ScoutBlack can't serve are named, not silently dropped; brand-deal experience is a preference", () => {
+  assert.ok(parseBrief("female beauty creators").unsupported.includes("Creator gender isn't tracked"));
+  assert.ok(parseBrief("fitness for women creators").unsupported.length === 1); // only the creator's gender, and once
+  assert.equal(understoodNothing(contextualize(parseBrief("creators in Mumbai"), CREATORS)), false);
+  const deals = contextualize(parseBrief("tech creators who have done brand collabs"), CREATORS);
+  assert.equal(deals.wantBrandReady, true);
+  assert.ok(!deals.terms.includes("collab"));
+  const sponsored = score({ ...base, sponsoredPct: 20 }, deals).score, never = score({ ...base, sponsoredPct: 0 }, deals).score;
+  assert.ok(sponsored > never);
+  assert.deepEqual(parseBrief("mom bloggers").niches, ["Parenting"]);
+});
+
+test("city: ranks a verified audience there, then a base, then mentions; never filters; spellings and topics", () => {
+  const b = contextualize(parseBrief("food creators in Bombay"), CREATORS);
+  assert.equal(b.city, "Mumbai");
+  assert.ok(!b.terms.includes("bombay") && !b.terms.includes("mumbai"));
+  assert.match(describe(b).join(" | "), /Mumbai audience or base/);
+  const food = { ...base, niche: "Food" };
+  const s = (c: Partial<typeof base>) => score({ ...food, ...c }, b).score;
+  const aud = s({ audCities: [["Mumbai", 22]] }), based = s({ basedIn: "Mumbai" }), mentions = s({ cityMentions: ["Mumbai"] }), none = s({});
+  assert.ok(aud > based && based > mentions && mentions > none);
+  assert.equal(score(food, b).fits, true); // no city data is not a mismatch
+  assert.equal(parseBrief("creators in Navi Mumbai").city, "Navi Mumbai");
+});
+
+test("format: Shorts / long videos from video length; a requirement when known, neutral when not; views per format", () => {
+  const shorts = contextualize(parseBrief("travel creators who post shorts"), CREATORS);
+  assert.equal(shorts.format, "shorts");
+  assert.equal(score({ ...base, niche: "Travel", shortsPct: 80 }, shorts).fits, true);
+  assert.equal(score({ ...base, niche: "Travel", shortsPct: 5 }, shorts).fits, false); // mostly long videos
+  assert.equal(score({ ...base, niche: "Travel", shortsPct: null }, shorts).fits, true); // not known yet
+  assert.equal(parseBrief("long-form tech reviewers").format, "long");
+  assert.equal(parseBrief("short film makers").format, undefined); // content, not the format
+  // "100K+ views" is checked on the format asked for: a Shorts channel's long videos don't count
+  const views = contextualize(parseBrief("tech shorts with 100k views"), CREATORS);
+  assert.equal(score({ ...base, shortsPct: 90, views: 20_000, viewsShort: 150_000 }, views).fits, true);
+  assert.equal(score({ ...base, shortsPct: 90, views: 150_000, viewsShort: 20_000 }, views).fits, false);
+});
+
+test("an inactive channel (no upload in 90+ days) is a near miss, not a fit", () => {
+  const b = contextualize(parseBrief("tech creators"), CREATORS);
+  assert.equal(score({ ...base, lastUploadDays: 120 }, b).fits, false);
+  assert.equal(score({ ...base, lastUploadDays: 30 }, b).fits, true);
+});
+
 test("size phrasing: M units, under, over, plus", () => {
   assert.deepEqual([parseBrief("1m-2m").minSubs, parseBrief("1m-2m").maxSubs], [1e6, 2e6]);
-  assert.deepEqual([parseBrief("under 100k").minSubs, parseBrief("under 100k").maxSubs], [0, 1e5]);
+  assert.deepEqual([parseBrief("under 100k").minSubs, parseBrief("under 100k").maxSubs], [1_000, 1e5]); // still a bookable channel
   assert.equal(parseBrief("over 1.5m").minSubs, 1.5e6);
   assert.equal(parseBrief("500k+").minSubs, 5e5);
   assert.deepEqual(describe(parseBrief("under 100k")), ["under 100K"]);
@@ -80,10 +139,11 @@ test("content terms skip filter words and niche names", () => {
   assert.deepEqual(parseBrief("ANC earbuds").terms, ["anc", "earbud"]);
 });
 
-test("no size in the brief → creators under 10K are excluded; asking for small creators includes them", () => {
-  const tiny = { ...CREATORS[0], subs: 800, views: 300, eng: 40 };
-  assert.equal(score(tiny, parseBrief("tech creators")).fits, false);
-  assert.equal(score(tiny, parseBrief("tech creators under 5k")).fits, true);
+test("no size in the brief → creators under 10K are excluded; asking for small creators includes them (from 1K)", () => {
+  const small = { ...CREATORS[0], subs: 2_000, views: 300, eng: 40 };
+  assert.equal(score(small, parseBrief("tech creators")).fits, false);
+  assert.equal(score(small, parseBrief("tech creators under 5k")).fits, true);
+  assert.equal(score({ ...small, subs: 232 }, parseBrief("tech creators under 5k")).fits, false); // not a bookable channel
 });
 
 test("engagement on few views earns partial credit only", () => {

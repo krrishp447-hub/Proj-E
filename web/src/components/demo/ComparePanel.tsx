@@ -6,7 +6,7 @@ import { Bar } from "./DetailPanel";
 
 type Row = { label: string; show: (m: Match) => string; value?: (m: Match) => number; has?: (m: Match) => boolean };
 const inr = (n: number) => (n >= 1e5 ? `₹${(n / 1e5).toFixed(1).replace(".0", "")}L` : `₹${Math.round(n / 1000)}K`);
-const rate = (m: Match) => fairRate(m.creator.views, m.creator.eng);
+const rate = (m: Match) => fairRate(m.creator.viewsLong ?? m.creator.views, m.creator.eng);
 const ageIdx = (m: Match) => m.creator.age.indexOf(Math.max(...m.creator.age));
 
 // `value`: higher is better (best per row is highlighted). `has`: hide the row when no creator has the data,

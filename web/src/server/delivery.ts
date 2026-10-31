@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { googleDriveUrl, parseDeliverables, stageFromDelivery, youtubeVideoId, type DeliverableKind, type DeliveryStatus } from "@/lib/scout/delivery";
+import { googleDriveUrl, parseDeliverables, projectedViews, stageFromDelivery, youtubeVideoId, type DeliverableKind, type DeliveryStatus } from "@/lib/scout/delivery";
 import { DISCLOSURE } from "@/lib/scout/campaigns";
 import type { DealStage } from "@/lib/scout/deals";
 import type { User } from "./auth";
@@ -48,18 +48,17 @@ export async function deliverablesFor(dealIds: string[]): Promise<Map<string, De
 export async function createDeliverables(dealId: string) {
   const q = db();
   const [d] = (await q`
-    select d.channel_id, d.campaign_id, coalesce(d.due, current_date + 14)::text as due, c.avg_views,
+    select d.channel_id, d.campaign_id, coalesce(d.due, current_date + 14)::text as due, c.avg_views, c.views_long, c.views_short,
       (select o.deliverables from offers o where o.deal_id = d.id order by o.created_at desc, o.id desc limit 1) as text,
       (select o.fee from offers o where o.deal_id = d.id order by o.created_at desc, o.id desc limit 1) as fee
     from deals d join creators c using (channel_id)
     where d.id = ${dealId} and not exists (select 1 from deliverables x where x.deal_id = d.id)`) as
-    { channel_id: string; campaign_id: string | null; due: string; avg_views: number; text: string | null; fee: number | null }[];
+    { channel_id: string; campaign_id: string | null; due: string; avg_views: number; views_long: number | null; views_short: number | null; text: string | null; fee: number | null }[];
   if (!d) return;
   const kinds = parseDeliverables(d.text ?? "");
   const fee = d.fee ?? 0, each = Math.floor(fee / kinds.length);
   for (const [i, kind] of kinds.entries()) {
-    // ponytail: Shorts projected at half a channel's average views; replace with Shorts-specific averages if they're stored
-    const projected = Math.round(kind === "YouTube Short" ? d.avg_views / 2 : d.avg_views);
+    const projected = projectedViews(kind, { avgViews: d.avg_views, viewsLong: d.views_long, viewsShort: d.views_short });
     await q`insert into deliverables (id, deal_id, campaign_id, channel_id, kind, due, fee, projected_views)
       values (${randomUUID()}, ${dealId}, ${d.campaign_id}, ${d.channel_id}, ${kind}, ${d.due}::date, ${i === 0 ? fee - each * (kinds.length - 1) : each}, ${projected})`;
   }
@@ -156,9 +155,9 @@ export async function addDeliverable(u: User, dealId: string, kind: DeliverableK
   const [d] = (await q`select channel_id, campaign_id, stage from deals where id = ${dealId} and brand_id = ${u.id}`) as { channel_id: string; campaign_id: string | null; stage: DealStage }[];
   if (!d) return "Deal not found.";
   if (!["Contracted", "In production", "Live"].includes(d.stage)) return "Agree the deal first.";
-  const [c] = (await q`select avg_views from creators where channel_id = ${d.channel_id}`) as { avg_views: number }[];
+  const [c] = (await q`select avg_views, views_long, views_short from creators where channel_id = ${d.channel_id}`) as { avg_views: number; views_long: number | null; views_short: number | null }[];
   await q`insert into deliverables (id, deal_id, campaign_id, channel_id, kind, due, projected_views)
-    values (${randomUUID()}, ${dealId}, ${d.campaign_id}, ${d.channel_id}, ${kind}, ${due}::date, ${Math.round(kind === "YouTube Short" ? (c?.avg_views ?? 0) / 2 : c?.avg_views ?? 0)})`;
+    values (${randomUUID()}, ${dealId}, ${d.campaign_id}, ${d.channel_id}, ${kind}, ${due}::date, ${projectedViews(kind, { avgViews: c?.avg_views ?? 0, viewsLong: c?.views_long, viewsShort: c?.views_short })})`;
   return null;
 }
 export async function removeDeliverable(u: User, id: string): Promise<string | null> {

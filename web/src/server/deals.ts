@@ -26,7 +26,7 @@ export type DealView = {
 
 const sideOf = (u: User): Side => (u.role === "brand" ? "brand" : "creator");
 
-type DealRow = { id: string; title: string; stage: DealStage; initiated_by: Side; due: string | null; checklist: ChecklistItem[]; updated_at: string; cp_name: string; cp_sub: string; subs?: number; avg_views: number; eng: number; campaign_id: string | null; channel_id: string };
+type DealRow = { id: string; title: string; stage: DealStage; initiated_by: Side; due: string | null; checklist: ChecklistItem[]; updated_at: string; cp_name: string; cp_sub: string; subs?: number; avg_views: number; rate_views: number; eng: number; campaign_id: string | null; channel_id: string };
 type OfferRow = { deal_id: string; by_party: Side; fee: number; deliverables: string; usage_rights: string; timeline: string; note: string | null; created_at: string };
 
 /** Every deal the user is a party to: brands by brand_id, creators by the channel they've connected. */
@@ -36,11 +36,11 @@ export async function listDeals(u: User): Promise<DealView[]> {
   const rows = (u.role === "brand"
     ? await q`
         select d.id, d.title, d.stage, d.initiated_by, d.due::text as due, d.checklist, d.updated_at::text as updated_at, d.campaign_id, d.channel_id,
-          c.name as cp_name, c.niche || ' · ' || c.language as cp_sub, c.subs, c.avg_views, c.eng
+          c.name as cp_name, c.niche || ' · ' || c.language as cp_sub, c.subs, c.avg_views, c.eng, coalesce(c.views_long, c.avg_views) as rate_views
         from deals d join creators c using (channel_id) where d.brand_id = ${u.id} order by d.updated_at desc`
     : await q`
         select d.id, d.title, d.stage, d.initiated_by, d.due::text as due, d.checklist, d.updated_at::text as updated_at, d.campaign_id, d.channel_id,
-          b.name as cp_name, coalesce(bp.kind || ' · ' || coalesce(bp.category, ''), 'Brand') as cp_sub, c.avg_views, c.eng
+          b.name as cp_name, coalesce(bp.kind || ' · ' || coalesce(bp.category, ''), 'Brand') as cp_sub, c.avg_views, c.eng, coalesce(c.views_long, c.avg_views) as rate_views
         from deals d join brands b on b.id = d.brand_id join creators c using (channel_id) left join brand_profiles bp on bp.user_id::text = d.brand_id
         where d.channel_id = ${u.channelId} order by d.updated_at desc`) as DealRow[];
   if (!rows.length) return [];
@@ -57,7 +57,7 @@ export async function listDeals(u: User): Promise<DealView[]> {
     return {
       id: r.id, title: r.title, stage: r.stage, initiatedBy: r.initiated_by, due: r.due, checklist: r.checklist, updatedAt: r.updated_at,
       counterpart: { name: r.cp_name, sub: r.subs != null ? `${r.cp_sub} · ${fmt(r.subs)} subs` : r.cp_sub }, offers: thread, myTurn: whoseTurn({ stage: r.stage, offers: thread }) === me,
-      fair: r.avg_views ? fairRate(r.avg_views, r.eng) : null,
+      fair: r.rate_views ? fairRate(r.rate_views, r.eng) : null, // a dedicated video: long-video views
       campaignId: r.campaign_id, deliverables: items.get(r.id) ?? [], unread: unread.get(r.id) ?? 0, channelId: r.channel_id,
     };
   });

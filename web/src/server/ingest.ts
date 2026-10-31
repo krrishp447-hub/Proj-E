@@ -13,7 +13,8 @@ export type IngestResult = { seeds: number; updated: number; failed: { channelId
  * Refresh every seeded channel: pull public stats + recent uploads, derive ScoutBlack signals,
  * upsert the creator row and record today's subscriber snapshot, store recent uploads with today's stats,
  * then file new posts into live campaigns.
- * ~2 quota units per channel + 1 per 50 channels, so 1,000 channels ≈ 2,020 of the 10,000 daily units.
+ * ~2 quota units per channel + 1 per 50 channels, so 1,000 channels ≈ 2,020 of the 10,000 daily units per full pass.
+ * Not every channel is refreshed every night (see the tiers in runIngest), so the daily bill is roughly a third of that.
  */
 const PRUNE_BELOW_SUBS = 5_000; // half the search floor (MIN_AUDIENCE), so channels near it still get tracked
 // Share of voice looks back 90 days, but by default only each channel's latest 20 uploads are fetched (a daily uploader's
@@ -24,11 +25,18 @@ const HISTORY_DAYS = Number(process.env.UPLOAD_HISTORY_DAYS) || undefined;
 export async function runIngest(limit = 1000, only?: string[]): Promise<IngestResult> {
   if (!sql) throw new Error("DATABASE_URL is not set");
   const db = sql; // keeps the non-null narrowing inside the parallel workers below
-  // `only`: refresh exactly these channels now (a creator just connected). Otherwise stalest first, skipping
-  // channels refreshed in the last 20h: re-runs only spend quota on new seeds, and consecutive runs rotate through them.
+  // `only`: refresh exactly these channels now (a creator just connected). Otherwise stalest first, skipping channels
+  // not yet due: re-runs only spend quota on new seeds, and consecutive runs rotate through them. Due = age past the
+  // channel's tier: claimed / campaign / deal channels daily, uploaders of the last 30 days every
+  // 3rd night, the rest every 6th. The hour counts sit just under the cadence so the nightly cron's timing jitter can't skip a night.
   const seeds = only ? only.map((channel_id) => ({ channel_id })) : (await db`
     select s.channel_id from channel_seeds s left join creators c using (channel_id)
-    where s.active and (c.fetched_at is null or c.fetched_at < now() - interval '20 hours')
+    where s.active and (c.fetched_at is null or c.fetched_at < now() - case
+      when exists (select 1 from channel_connections x where x.channel_id = s.channel_id)
+        or exists (select 1 from campaign_creators k where k.channel_id = s.channel_id)
+        or exists (select 1 from deals d where d.channel_id = s.channel_id) then interval '20 hours'
+      when c.last_upload > now() - interval '30 days' then interval '60 hours'
+      else interval '132 hours' end)
     order by c.fetched_at nulls first, s.added_at limit ${limit}`) as { channel_id: string }[];
   const ids = seeds.map((s) => s.channel_id);
   const result: IngestResult = { seeds: ids.length, updated: 0, failed: [], quotaUnits: Math.ceil(ids.length / 50) };
@@ -55,15 +63,17 @@ export async function runIngest(limit = 1000, only?: string[]): Promise<IngestRe
       const lastUpload = uploads.length ? uploads.map((u) => u.publishedAt).sort().at(-1)! : null;
       const about = [ch.snippet.description ?? "", ch.brandingSettings?.channel?.keywords ?? ""].join("\n").slice(0, 1500);
       await db`
-        insert into creators (channel_id, name, handle, country, niche, niche2, niche_conf, tags, subs, avg_views, eng, growth, consistency, auth, suspicious, language, is_brand, topics, about, last_upload, sponsored_pct, safety, public_email, yt_topics, fetched_at)
+        insert into creators (channel_id, name, handle, country, niche, niche2, niche_conf, tags, subs, avg_views, eng, growth, consistency, auth, suspicious, language, is_brand, topics, about, last_upload, sponsored_pct, safety, public_email, yt_topics, shorts_pct, views_long, views_short, cities, fetched_at)
         values (${m.channelId}, ${m.name}, ${m.handle}, ${m.country}, ${m.niche}, ${m.secondaryNiche}, ${m.nicheConfidence}, ${m.tags}, ${m.subs}, ${m.avgViews}, ${m.eng}, ${m.growth}, ${m.consistency}, ${m.auth}, ${m.suspicious}, ${m.language}, ${m.isBrand}, ${m.topics}, ${about}, ${lastUpload}, ${sponsoredShare(uploads)}, ${safetyFlags(uploads.map((u) => u.title))},
-          (select case when exists (select 1 from contact_optouts o where o.channel_id = ${m.channelId}) then null else ${publicEmail([about, ...uploads.map((u) => u.description ?? "")])}::text end), ${ch.topicDetails?.topicCategories ?? []}, now())
+          (select case when exists (select 1 from contact_optouts o where o.channel_id = ${m.channelId}) then null else ${publicEmail([about, ...uploads.map((u) => u.description ?? "")])}::text end), ${ch.topicDetails?.topicCategories ?? []},
+          ${m.shortsPct}, ${m.viewsLong}, ${m.viewsShort}, ${m.cities}, now())
         on conflict (channel_id) do update set
           name = excluded.name, handle = excluded.handle, country = excluded.country, niche = excluded.niche, niche2 = excluded.niche2, niche_conf = excluded.niche_conf, tags = excluded.tags,
           subs = excluded.subs, avg_views = excluded.avg_views, eng = excluded.eng, growth = excluded.growth,
           consistency = excluded.consistency, auth = excluded.auth, suspicious = excluded.suspicious,
           language = excluded.language, is_brand = excluded.is_brand, topics = excluded.topics, about = excluded.about,
-          last_upload = excluded.last_upload, sponsored_pct = excluded.sponsored_pct, safety = excluded.safety, public_email = excluded.public_email, yt_topics = excluded.yt_topics, fetched_at = now()`;
+          last_upload = excluded.last_upload, sponsored_pct = excluded.sponsored_pct, safety = excluded.safety, public_email = excluded.public_email, yt_topics = excluded.yt_topics,
+          shorts_pct = excluded.shorts_pct, views_long = excluded.views_long, views_short = excluded.views_short, cities = excluded.cities, fetched_at = now()`;
       await db`
         insert into snapshots (channel_id, taken_on, subs) values (${m.channelId}, current_date, ${m.subs})
         on conflict (channel_id, taken_on) do update set subs = excluded.subs`;
@@ -95,7 +105,7 @@ export async function runIngest(limit = 1000, only?: string[]): Promise<IngestRe
 }
 
 // YouTube API policy: data fetched through the API is refreshed or deleted within 30 days. Active channels are refreshed
-// nightly; frozen ones (pruned from the nightly refresh) get a channel-only refresh once they're 21 days old: 1 quota
+// every 1–6 nights depending on tier; frozen ones (pruned from the nightly refresh) get a channel-only refresh once they're 21 days old: 1 quota
 // unit per 50 channels, ~330 a night (~7 units) keeps all ~7K under 30 days.
 export const FRESH_DAYS = 30;
 const FROZEN_REFRESH_AFTER_DAYS = 21;

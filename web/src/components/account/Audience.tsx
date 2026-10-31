@@ -5,6 +5,7 @@ export type ChannelSummary = {
   name: string | null; handle: string | null; niche: string | null; language: string | null;
   subs: number | null; avgViews: number | null; eng: number | null;
   age: number[]; male: number | null; geo: [string, number][]; avgViewPct: number | null; synced: boolean;
+  cities?: [string, number][]; // top audience cities (brands planning city launches search by them)
 };
 
 const Bar = ({ label, value, text }: { label: string; value: number; text: string }) => (
@@ -28,6 +29,7 @@ export function ChannelCard({ c }: { c: ChannelSummary }) {
         <div className="acct-bars acct-section">
           <span className="acct-badge">✓ Verified audience · YouTube Analytics, last 90 days</span>
           {c.geo.map(([g, v]) => <Bar key={g} label={g} value={v} text={`${v}%`} />)}
+          {c.cities?.map(([city, v]) => <Bar key={`city-${city}`} label={city} value={v} text={`${v}%`} />)}
           {c.age.map((v, i) => <Bar key={AGE_BANDS[i]} label={AGE_BANDS[i]} value={v} text={`${v}%`} />)}
           {c.male !== null && <Bar label="Male" value={c.male} text={`${c.male}%`} />}
         </div>

@@ -22,8 +22,9 @@ export async function getCreators(): Promise<CreatorSource> {
       c.consistency, c.auth, c.suspicious, c.language, c.topics, c.sponsored_pct, c.safety, extract(day from now() - c.fetched_at)::int as age_days, extract(day from now() - c.last_upload)::int as upload_days,
       cc.channel_id is not null as claimed, c.public_email is not null as has_email,
       (select array_agg(s.subs order by s.taken_on) from snapshots s where s.channel_id = c.channel_id and s.taken_on > current_date - 365) as trend,
-      cc.age as aud_age, cc.male as aud_male, cc.geo as aud_geo
-    from creators c left join channel_connections cc using (channel_id)
+      cc.age as aud_age, cc.male as aud_male, cc.geo as aud_geo, cc.cities as aud_cities, cp.city as based_in,
+      c.shorts_pct, c.views_long, c.views_short, c.cities
+    from creators c left join channel_connections cc using (channel_id) left join creator_profiles cp on cp.user_id = cc.user_id
     where not c.is_brand order by c.subs desc`) as CreatorRow[]; // every creator: search runs on the server now
   if (!rows.length) return { creators: [], source: "none", updatedAt: null };
 

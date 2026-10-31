@@ -67,7 +67,7 @@ export async function fetchRecentVideos(uploadsPlaylistId: string, days?: number
   } while (page);
   const videos: YtVideo[] = [];
   for (const batch of chunk(ids.slice(0, MAX_HISTORY), 50)) {
-    const r = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics", id: batch.join(",") });
+    const r = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics,contentDetails", id: batch.join(",") });
     units++;
     videos.push(...(r.items ?? []));
   }
@@ -86,7 +86,7 @@ export async function searchChannels(q: string, pageToken?: string): Promise<{ i
 export async function fetchVideos(ids: string[]): Promise<YtVideo[]> {
   const out: YtVideo[] = [];
   for (const batch of chunk(ids, 50)) {
-    const r = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics", id: batch.join(",") });
+    const r = await get<{ items?: YtVideo[] }>("videos", { part: "snippet,statistics,contentDetails", id: batch.join(",") });
     out.push(...(r.items ?? []));
   }
   return out;

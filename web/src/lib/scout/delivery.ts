@@ -29,6 +29,14 @@ export function parseDeliverables(text: string): DeliverableKind[] {
   return out.length ? out.slice(0, 10) : ["YouTube video"];
 }
 
+/**
+ * Views to expect from one deliverable: the creator's median for that format (from video lengths), falling back to the
+ * overall median (half of it for a Short) while lengths aren't known. Fair rates use the long-video figure.
+ */
+export function projectedViews(kind: DeliverableKind, c: { avgViews: number; viewsLong?: number | null; viewsShort?: number | null }): number {
+  return Math.round(kind === "YouTube Short" ? c.viewsShort ?? c.avgViews / 2 : c.viewsLong ?? c.avgViews);
+}
+
 /** The video id in a YouTube link (watch, youtu.be, shorts, live, embed), or null. */
 export function youtubeVideoId(url: string): string | null {
   const m = url.trim().match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([\w-]{11})(?![\w-])/);

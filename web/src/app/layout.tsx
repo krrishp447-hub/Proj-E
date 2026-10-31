@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Archivo, Space_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 import { site } from "@/config/site";
 import "./globals.css";
 import "@/styles/motion.css";
@@ -25,7 +26,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // suppressHydrationWarning: the inline script below adds the "js" class before hydration.
     <html lang="en" className={`${anton.variable} ${archivo.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        {/* next/script, not a raw <script>: React 19 warns on a script tag in a component */}
+        <Script id="js-class" strategy="beforeInteractive">{"document.documentElement.classList.add('js')"}</Script>
       </head>
       <body>
         {children}

@@ -47,7 +47,7 @@ export function DealsView({ creator, deals, onChange }: { creator: Creator; deal
 
 function DealDetail({ creator, deal, onUpdate, onDecline }: { creator: Creator; deal: Deal; onUpdate: (d: Deal) => void; onDecline: () => void }) {
   const latest = deal.offers.at(-1)!;
-  const fair = fairRate(creator.views, creator.eng);
+  const fair = fairRate(creator.viewsLong ?? creator.views, creator.eng);
   const negotiable = deal.stage === "Inbound" || deal.stage === "Negotiating";
   const [draft, setDraft] = useState<Offer>({ ...latest, by: "creator", fee: Math.max(latest.fee, fair.low), at: DEMO_TODAY, note: "" });
   const below = latest.fee < fair.low;

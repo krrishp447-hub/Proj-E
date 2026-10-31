@@ -17,7 +17,7 @@ const FAQ = [
   { q: "Can creators pay to rank higher?", a: "No. Rankings come only from fit and performance. If we ever offer promoted listings, they will be labelled “Promoted” and shown apart from search results, never mixed into them." },
   { q: "Do brands pay per search?", a: "No. Search, shortlists and compare are unlimited on every plan, so your team can explore freely. Plans differ by seats, outreach volume and how deep the tracking goes." },
   { q: "Does ScoutBlack take a cut of deals?", a: "Not today: 0% commission. Later, when contracts and payments run through ScoutBlack, we may charge a small fee on deals paid through the platform, and only on those. We'll announce it well before it applies." },
-  { q: "Where does the data come from?", a: "Public YouTube data through the official YouTube API, refreshed daily, plus audience data that creators choose to share by connecting their channel. No scraping behind logins." },
+  { q: "Where does the data come from?", a: "Public YouTube data through the official YouTube API, refreshed every few days (daily for channels in a deal or campaign), plus audience data that creators choose to share by connecting their channel. No scraping behind logins." },
   { q: "Is there a free trial for brands?", a: "Yes, 4 days on any brand plan, from the day you set up your brand profile. Sign in with Google and use the full app on live data. We'll contact you before any billing starts; nothing is charged automatically." },
 ];
 

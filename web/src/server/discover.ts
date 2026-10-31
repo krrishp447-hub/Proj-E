@@ -38,7 +38,7 @@ function roundRobin<T>(items: T[], group: (x: T) => string): T[] {
 
 const DAILY_QUOTA = 10_000;
 const HEADROOM = 1_000; // never plan to the last unit
-const PER_CHANNEL = 2.02; // ingest cost per channel per day (see ingest.ts)
+const PER_CHANNEL = 2.02 / 3; // ingest cost per channel per day: one refresh (~2.02 units) every 3rd night (see ingest.ts); ponytail: assumes all active channels are on the 3-day tier, a safe over-estimate while claimed (daily) ones are a handful
 const PER_QUERY = 100 + 50 * PER_CHANNEL; // one search page + refreshing what it can add
 const MAX_QUERIES = 20;
 
@@ -47,7 +47,7 @@ export type DiscoveryResult = { activeSeeds: number; queries: number; added: num
 /**
  * Grow the channel list with whatever quota the daily refresh leaves over. Runs the least-recently-run
  * queries, continuing each from its last page; a query that stops yielding new channels is retired.
- * Stops on its own once refreshing the tracked channels would use the whole quota (~4,000 channels).
+ * Stops on its own once refreshing the tracked channels would use the whole quota (~12,000 channels at one refresh per 3 nights).
  */
 export async function runDiscovery(): Promise<DiscoveryResult> {
   if (!sql) throw new Error("DATABASE_URL is not set");

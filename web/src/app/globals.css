@@ -137,7 +137,7 @@
   .film { background: var(--paper); color: var(--ink); }
   .film-head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 16px clamp(24px, 4vw, 64px); align-items: end; }
   .film-kick { grid-column: 1 / -1; color: var(--signal-deep); }
-  .film .big { font-size: clamp(48px, 8vw, 128px); }
+  .film .big { font-size: clamp(48px, 8vw, 128px); line-height: 1.06; } /* .88 let the comma on line 1 hit the C below it */
   .film .hl { font-style: normal; color: var(--signal-deep); white-space: nowrap; }
   .film-lede { font-size: clamp(16px, 1.25vw, 19px); line-height: 1.5; max-width: 46ch; margin: 0 0 .4em; color: var(--earth); }
   .film-frame { position: relative; margin: clamp(36px, 4vw, 56px) 0 0; border-radius: 18px; overflow: hidden; background: var(--ink);

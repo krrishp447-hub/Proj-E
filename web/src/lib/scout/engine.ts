@@ -1,4 +1,5 @@
 import { NICHES, type Creator, type Platform } from "./data.ts";
+import { citiesIn } from "./places.ts";
 import { canon, contentWords, editDistance, idfOf, stem, topicMatch } from "./topics.ts";
 
 export type Brief = {
@@ -21,6 +22,10 @@ export type Brief = {
   wantEng?: boolean;
   wantGrowth?: boolean;
   safeOnly?: boolean; // "brand safe", "family friendly": flagged channels don't fit
+  wantBrandReady?: boolean; // "who've done brand collabs": creators with recent sponsored videos rank up
+  city?: string; // "Mumbai": ranks up a verified Mumbai audience, a Mumbai base, then mentions (places.ts names)
+  format?: "shorts" | "long"; // "who post Shorts" / "long-form": from video length
+  unsupported: string[]; // asked for something ScoutBlack doesn't track (creator gender): said, not silently dropped
   likeName?: string; // "creators like X"
   // set from the data by contextualize():
   engBar?: number; // "strong engagement" = the niche median
@@ -53,7 +58,8 @@ export const SYNONYMS: Record<string, string[]> = {
   Automotive: ["automobile", "car review", "cars", "bike review", "motorcycle", "superbike", "scooter", "test drive", "royal enfield", "sports bike", "sport bike", "bike ride", "motovlog", "moto vlog"],
   // children's content (rhymes, cartoons) is Kids; content *for parents* is Parenting
   Kids: ["nursery rhyme", "rhymes", "kids song", "cartoon", "for kids", "children", "baby song", "bedtime stor", "moral stor", "kids stor", "toys"],
-  Parenting: ["parenting", "mommy", "newborn", "toddler", "pregnancy", "baby", "baby care", "mom vlog", "mom life", "motherhood", "breastfeed"],
+  Parenting: ["parenting", "mommy", "newborn", "toddler", "pregnancy", "baby", "baby care", "mom vlog", "mom life", "motherhood", "breastfeed",
+    "mom blog", "mom influencer", "mom creator", "mom youtuber", "mommies"],
   Sports: ["cricket", "ipl", "football", "fifa", "kabaddi", "badminton", "tennis", "wwe", "match highlights", "sport"],
   News: ["breaking", "headlines", "politic", "election", "debate", "current affairs", "news analysis"],
   // no deity names (also people's names: "Shivam", "Krishna Kakran" are comedians), no "temple" (travel vlogs visit them)
@@ -73,10 +79,35 @@ const TIERS: [RegExp, string, number, number][] = [
   [/\bmega\b|\bcelebrit/, "mega", 1_000_000, Infinity],
 ];
 
-/** Words that steer filters, not content: kept out of `terms`. */
+/**
+ * Words that steer filters or describe the brand's own campaign, not the creator's content: kept out of `terms`.
+ * Stemmed like the terms they're checked against ("looking" is compared as "look"). Brief filler like "launch" or "post"
+ * matched creators whose titles happen to use the word, and diluted the real topic.
+ */
 const FILTER_WORDS = new Set(["youtube", "insta", "instagram", "reel", "india", "america", "american", "nano", "micro", "macro", "mega", "tier",
-  "mid", "celebrity", "south", "north", "find", "looking", "want", "need", "show", "list", "brand", "campaign", "rate", "avg", "average", "above",
-  "below", "least", "less", "per", "hinglish", "bangla", ...NICHES.map((n) => stem(n.toLowerCase()))]);
+  "mid", "celebrity", "south", "north", "find", "looking", "want", "need", "require", "show", "list", "brand", "campaign", "rate", "avg", "average",
+  "above", "below", "least", "less", "per", "hinglish", "bangla",
+  // the brand's side of the brief
+  "launch", "launching", "promote", "promotion", "promotional", "promoting", "collab", "collaboration", "sponsor", "sponsored", "sponsorship",
+  "partner", "partnership", "deal", "post", "posting", "talk", "talking", "done", "work", "worked", "working", "please", "kindly",
+  "lakh", "lac", "crore", "rupee", "inr", "blogger", "vlogger", "authentic", "genuine", "suitable", "relevant", "perfect", "ideal", "around", "between", "range",
+  ...NICHES.map((n) => n.toLowerCase())].map((w) => canon(stem(w))));
+// "budget" stays a content word ("budget phone"); the money sense is removed whole by BUDGET before terms are read.
+
+// Indian briefs count in lakh and crore: "10 lakh subscribers" is 1M. Units must end the word ("20 micro" is not 20M).
+const UNIT = String.raw`(k|m|lakhs?|lacs?|l|crores?|cr)(?![a-z])`;
+// The brand's money ("budget 2 lakh", "₹50k per creator"): not a size, not a topic.
+const BUDGET = new RegExp(String.raw`\b(?:budget|spend(?:ing)?|fees?|cost)\s*(?:of|is|:|-|around|approx\.?|up\s*to|upto)?\s*(?:₹|rs\.?|inr)?\s*\d[\d,.]*\s*(?:k|l|lakhs?|lacs?|cr|crores?)?(?![a-z])|(?:₹|\brs\.?|\binr)\s*\d[\d,.]*\s*(?:k|l|lakhs?|lacs?|cr|crores?)?(?![a-z])(?:\s*(?:per|each|a)\s*\w+)?|\d[\d,.]*\s*(?:k|l|lakhs?|lacs?|cr|crores?)(?![a-z])\s*(?:budget|rupees)\b`, "g");
+
+// Asked for, but not tracked: shown to the brand as a chip rather than silently ignored.
+const CREATOR_GENDER = /\b(female|male|women|woman|men|man|girls?|boys?|ladies|lady)\b(?=(?:\s+[a-z&-]+){0,2}\s+(?:creators?|influencers?|youtubers?|bloggers?|vloggers?)\b)/;
+// Format, from video length: "who post Shorts" / "long-form", "dedicated videos". "short film" is content, not the format.
+const SHORTS = /\b(?:youtube )?shorts?\b(?! (?:film|story|stories|term))/;
+const LONG = /\blong[- ]?form\b|\blong(?:er)? videos?\b|\bdedicated videos?\b/;
+/** A creator's views for the format the brief wants (long and Shorts draw very different views), else their overall median. */
+const viewsFor = (c: Creator, b: Brief) => (b.format === "shorts" ? c.viewsShort : b.format === "long" ? c.viewsLong : null) ?? c.views;
+// "who've done brand collabs", "worked with brands": prefer creators with recent sponsored videos.
+const BRAND_READY = /\b(?:brand (?:collabs?|collaborations?|deals?|experience|partnerships?|integrations?)|collab(?:oration)?s? with brands|worked with brands|done (?:brand |paid )?(?:collabs?|sponsorships?|promotions?)|sponsored (?:videos?|content|posts?)|paid (?:partnerships?|promotions?))\b/;
 
 // Briefs in Indian scripts and Hinglish: common words → the English words the rest of the parser knows. Other words
 // stay as they are (Indian-script words still match titles in that script). " " drops a filler word.
@@ -136,20 +167,32 @@ function typoFixes(text: string, idf: Map<string, number>, n: number): [string, 
   return fixes;
 }
 
-const amount = (n: string, unit = "") => Number(n) * (unit === "m" ? 1e6 : unit === "k" ? 1e3 : 1);
-const nicheRe = (n: string) => new RegExp(`\\b(${[n.toLowerCase(), ...(SYNONYMS[n] ?? [])].join("|")})`);
+const amount = (n: string, unit = "") =>
+  Number(n) * (unit === "m" ? 1e6 : unit === "k" ? 1e3 : /^(l|lakhs?|lacs?)$/.test(unit) ? 1e5 : /^(cr|crores?)$/.test(unit) ? 1e7 : 1);const nicheRe = (n: string) => new RegExp(`\\b(${[n.toLowerCase(), ...(SYNONYMS[n] ?? [])].join("|")})`);
 const langOf = (w: string) => LANGUAGES.find((l) => [l.toLowerCase(), ...(LANG_ALIASES[l] ?? [])].includes(w));
 
 /** Plain-English brief → structured filters. Transparent rules, not ML; every step shows up in describe(). */
 export function parseBrief(typed: string): Brief {
   const text = typed.normalize("NFC").replace(/[\p{L}\p{M}]+/gu, (w) => WORDS.get(w.toLowerCase()) ?? w);
   let t = ` ${text.toLowerCase()} `;
-  const b: Brief = { text: typed, niches: [], excludeNiches: [], languages: [], excludeLanguages: [], terms: [], excludeTerms: [] };
+  const b: Brief = { text: typed, niches: [], excludeNiches: [], languages: [], excludeLanguages: [], terms: [], excludeTerms: [], unsupported: [] };
   const take = (re: RegExp, f: (m: RegExpMatchArray) => void) => { const m = t.match(re); if (m) { f(m); t = t.replace(m[0], " "); } };
 
+  // 0. The brand's own money ("budget 2 lakh") isn't a size or a topic; asks ScoutBlack can't serve are noted, not dropped.
+  t = t.replace(BUDGET, " ");
+  take(BRAND_READY, () => (b.wantBrandReady = true));
+  // a city ranks creators with an audience there, based there, or who make content about it (it doesn't filter: few
+  // creators have city data yet); its words leave the brief so "Mumbai" isn't also a topic
+  const [city] = citiesIn(t);
+  if (city) { b.city = city; for (const w of city.toLowerCase().split(" ")) t = t.replace(new RegExp(String.raw`\b${w}\b`, "g"), " "); }
+  t = t.replace(/\b(?:bombay|bangalore|madras|calcutta|gurgaon|vizag|mysore|cochin|trivandrum|baroda|banaras|mangalore|calicut)\b/g, " ");
+  take(CREATOR_GENDER, () => b.unsupported.push("Creator gender isn't tracked"));
+  take(SHORTS, () => (b.format = "shorts"));
+  take(LONG, () => (b.format = b.format ? undefined : "long")); // both named: no preference
+
   // 1. Numbers that aren't subscriber counts come out first, so "100k views" isn't read as 100K subs.
-  take(/(\d+(?:\.\d+)?)\s*([km])?\s*\+?\s*(?:avg\.?|average)?\s*views?\b/, (m) => (b.minViews = amount(m[1], m[2])));
-  take(/\bviews?\s*(?:above|over|more than|>|at least|of)\s*(\d+(?:\.\d+)?)\s*([km])?/, (m) => (b.minViews = amount(m[1], m[2])));
+  take(new RegExp(String.raw`(\d+(?:\.\d+)?)\s*${UNIT}?\s*\+?\s*(?:avg\.?|average)?\s*views?\b`), (m) => (b.minViews = amount(m[1], m[2])));
+  take(new RegExp(String.raw`\bviews?\s*(?:above|over|more than|>|at least|of)\s*(\d+(?:\.\d+)?)\s*${UNIT}?`), (m) => (b.minViews = amount(m[1], m[2])));
   take(/\b(?:engagement|eng)(?:\s*rate)?\s*(?:above|over|more than|>=?|at least|of)?\s*(\d+(?:\.\d+)?)\s*%/, (m) => (b.minEng = Number(m[1])));
   take(/(\d+(?:\.\d+)?)\s*%\s*\+?\s*(?:engagement|eng)\b/, (m) => (b.minEng = Number(m[1])));
   // 2. "like / similar to <creator>" — the name runs to a comma or a connecting word
@@ -188,11 +231,13 @@ export function parseBrief(typed: string): Brief {
   b.languages = [...new Set(b.languages)];
 
   // 6. Size: explicit numbers first, then tier words
-  const range = t.match(/(\d+(?:\.\d+)?)\s*([km])?\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)\s*([km])/);
-  const under = t.match(/(?:under|below|less than|<)\s*(\d+(?:\.\d+)?)\s*([km])/);
-  const over = t.match(/(?:over|above|more than|>)\s*(\d+(?:\.\d+)?)\s*([km])|(\d+(?:\.\d+)?)\s*([km])\s*\+/);
+  // units must end the word ("20 micro" is not 20M) and include lakh / crore ("10 lakh+" is 1M+)
+  const range = t.match(new RegExp(String.raw`(\d+(?:\.\d+)?)\s*${UNIT}?\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)\s*${UNIT}`));
+  const under = t.match(new RegExp(String.raw`(?:under|below|less than|upto|up to|<)\s*(\d+(?:\.\d+)?)\s*${UNIT}`));
+  const over = t.match(new RegExp(String.raw`(?:over|above|more than|at least|min(?:imum)?|>)\s*(\d+(?:\.\d+)?)\s*${UNIT}|(\d+(?:\.\d+)?)\s*${UNIT}\s*\+`));
   if (range) [b.minSubs, b.maxSubs] = [amount(range[1], range[2] ?? range[4]), amount(range[3], range[4])];
-  else if (under) [b.minSubs, b.maxSubs] = [0, amount(under[1], under[2])];
+  // "under 50K" still means a bookable channel: the nano floor (1K), not a 200-subscriber account
+  else if (under) [b.minSubs, b.maxSubs] = [1_000, amount(under[1], under[2])];
   else if (over) [b.minSubs, b.maxSubs] = [over[1] ? amount(over[1], over[2]) : amount(over[3], over[4]), Infinity];
   else for (const [re, name, lo, hi] of TIERS) if (re.test(t)) { [b.tier, b.minSubs, b.maxSubs] = [name, lo, hi]; break; }
 
@@ -201,7 +246,8 @@ export function parseBrief(typed: string): Brief {
   take(/\b(?:brand[- ]?safe|family[- ]?friendly|clean content|kid[- ]?safe)\b/, () => (b.safeOnly = true));
 
   // 7. Everything else that carries meaning is a content term: "msi", "bgmi", "skincare", "beginner"
-  b.terms = [...new Set(contentWords(t.replace(/\d+(?:\.\d+)?\s*[km%]?/g, " ")))].filter((w) => !FILTER_WORDS.has(w) && !b.excludeTerms.includes(w));
+  const numbers = new RegExp(String.raw`\d+(?:\.\d+)?\s*(?:${UNIT}|%)?`, "g"); // "20 micro" keeps "micro"
+  b.terms = [...new Set(contentWords(t.replace(numbers, " ")))].filter((w) => !FILTER_WORDS.has(w) && !b.excludeTerms.includes(w));
   return b;
 }
 
@@ -249,7 +295,7 @@ export const RELIABLE_VIEWS = 5_000;
 /** Nothing in the brief was recognised: no niche, language, size, creator, or topic any creator uses. */
 export const understoodNothing = (b: Brief) =>
   !b.niches.length && !b.languages.length && !b.like && !b.country && b.minSubs === undefined && !b.minViews && !b.minEng && !b.excludeNiches.length &&
-  !b.excludeLanguages.length && !b.terms.some((t) => b.idf?.has(t));
+  !b.excludeLanguages.length && !b.wantBrandReady && !b.city && !b.format && !b.unsupported.length && !b.terms.some((t) => b.idf?.has(t));
 
 /** Human-readable chips for what the parser understood. */
 export function describe(b: Brief): string[] {
@@ -263,7 +309,7 @@ export function describe(b: Brief): string[] {
   if (b.country) out.push(b.country);
   if (b.terms.length) out.push(b.terms.join(", "));
   if (b.minSubs !== undefined && b.maxSubs !== undefined) {
-    const size = b.maxSubs === Infinity ? `${fmt(b.minSubs)}+` : b.minSubs === 0 ? `under ${fmt(b.maxSubs)}` : `${fmt(b.minSubs)}–${fmt(b.maxSubs)}`;
+    const size = b.maxSubs === Infinity ? `${fmt(b.minSubs)}+` : b.minSubs <= 1_000 && !b.tier ? `under ${fmt(b.maxSubs)}` : `${fmt(b.minSubs)}–${fmt(b.maxSubs)}`;
     out.push(b.tier ? `${b.tier} (${size})` : size);
   }
   if (b.languages.length) out.push(b.languages.join(" / "));
@@ -272,6 +318,10 @@ export function describe(b: Brief): string[] {
   else if (b.wantEng) out.push(b.engBar ? `engagement ≥ ${b.engBar}%` : "high engagement");
   if (b.wantGrowth) out.push("fast-growing");
   if (b.safeOnly) out.push("brand-safe only");
+  if (b.wantBrandReady) out.push("has done brand deals");
+  if (b.format) out.push(b.format === "shorts" ? "posts Shorts" : "long videos");
+  if (b.city) out.push(`${b.city} audience or base`);
+  out.push(...b.unsupported);
   for (const x of [...b.excludeNiches, ...b.excludeLanguages, ...b.excludeTerms]) out.push(`not ${x}`);
   return out;
 }
@@ -345,7 +395,25 @@ export function score(c: Creator, b: Brief): Match {
     gate(c.subs >= b.minSubs && c.subs <= b.maxSubs, "In size range", 10, c.subs > b.maxSubs ? "Above size range" : "Below size range", 8);
   // No size in the brief → a default floor: below it, engagement is noise and reach too small to book.
   else if (c.subs < MIN_AUDIENCE) { add(`Under ${fmt(MIN_AUDIENCE)} subscribers`, -10, 0); fits = false; }
-  if (b.minViews) gate(c.views >= b.minViews, `Avg views ≥ ${fmt(b.minViews)}`, 8, `Avg views ${fmt(c.views)}`, 8);
+  // Format: what share of recent uploads are Shorts. Asked for, it's a requirement; not known yet (lengths come with the
+  // next refresh), it neither earns nor costs anything.
+  if (b.format) {
+    const p = c.shortsPct;
+    if (p == null) add("Format not known yet", 0, 8);
+    else if (b.format === "shorts") gate(p >= 30, `Posts Shorts · ${p}% of recent uploads`, 8, `Mostly long videos · ${p}% Shorts`, 8);
+    else gate(p <= 70, `Long videos · ${100 - p}% of recent uploads`, 8, `Mostly Shorts · ${p}% Shorts`, 8);
+  }
+  // City: few creators have city data yet, so it ranks rather than filters. Strongest evidence first: YouTube's own
+  // count of where the audience watches (connected creators), then where the creator says they're based, then mentions.
+  if (b.city) {
+    const aud = c.audCities?.find(([name]) => name === b.city)?.[1] ?? 0;
+    if (aud >= 5) add(`Audience · ${aud}% in ${b.city} (verified)`, 12, 12);
+    else if (c.basedIn === b.city) add(`Based in ${b.city}`, 10, 12);
+    else if (c.cityMentions?.includes(b.city)) add(`Mentions ${b.city} in their channel`, 6, 12);
+    else add(`No ${b.city} link found`, 0, 12);
+  }
+  const views = viewsFor(c, b);
+  if (b.minViews) gate(views >= b.minViews, `Avg views ≥ ${fmt(b.minViews)}`, 8, `Avg views ${fmt(views)}`, 8);
   if (b.minEng) gate(c.eng >= b.minEng, `Engagement ≥ ${b.minEng}%`, 8, `Engagement ${c.eng}%`, 8);
 
   // Engagement only earns full credit once views are large enough for the rate to mean something.
@@ -353,13 +421,14 @@ export function score(c: Creator, b: Brief): Match {
   add(`Engagement ${c.eng}%${reliability < 1 ? " (few views)" : ""}`, (Math.min(c.eng, 9) / 9) * 12 * reliability, 12);
   add(`Growth +${c.growth}%`, (Math.min(c.growth, 20) / 20) * 6, 6);
   // Reach: average views per upload, log-scaled so 1K → 0 and 500K+ → full credit (big channels don't swamp the rest).
-  add(`Reach · ${fmt(c.views)} avg views`, Math.max(0, Math.min(1, (Math.log10(Math.max(c.views, 1)) - 3) / (Math.log10(500_000) - 3))) * 8, 8);
+  add(`Reach · ${fmt(views)} avg views${views !== c.views ? ` (${b.format === "shorts" ? "Shorts" : "long videos"})` : ""}`, Math.max(0, Math.min(1, (Math.log10(Math.max(views, 1)) - 3) / (Math.log10(500_000) - 3))) * 8, 8);
   add(`Authenticity ${c.auth}`, ((c.auth - 60) / 40) * 8, 8);
   add(`Track record · ${c.repeat}% repeat`, (c.repeat / 100) * 6 + (c.proven ? 4 : 0), 10);
   // Brand signals from recent uploads (signals.ts). Unknown (not ingested yet) earns and costs nothing.
   if (c.lastUploadDays != null) {
     const d = c.lastUploadDays;
-    if (d > 90) add(`Inactive · last upload ${d}d ago`, 0, 6); // no credit, no penalty: an exact topic match still beats an active non-match
+    // a channel that hasn't posted in 3 months can't be booked: a near miss, however well it matches
+    if (d > 90) { add(`Inactive · last upload ${d}d ago`, 0, 6); fits = false; }
     else add(`Active · uploaded ${d === 0 ? "today" : `${d}d ago`}`, d <= 14 ? 6 : d <= 30 ? 4 : 2, 6);
   }
   if (c.sponsoredPct != null) {
@@ -374,6 +443,11 @@ export function score(c: Creator, b: Brief): Match {
   }
   if (b.wantEng && !b.minEng) { const bar = b.engBar ?? 6.5; add(`High engagement (≥ ${bar}%)`, c.eng >= bar ? 6 : 0, 6); }
   if (b.wantGrowth) add("Fast-growing", c.growth >= 10 ? 6 : 0, 6);
+  // "who've done brand collabs": recent sponsored uploads are the evidence (ad disclosures in titles/descriptions)
+  if (b.wantBrandReady) {
+    const p = c.sponsoredPct ?? 0;
+    add(p > 0 ? `Done brand deals · ${p}% of recent uploads sponsored` : "No recent brand deals", p > 0 ? 8 : 0, 8);
+  }
 
   const earned = signals.reduce((s, x) => s + x.points, 0);
   return { creator: c, score: Math.max(0, Math.min(100, Math.round((earned / max) * 100))), signals, fits };

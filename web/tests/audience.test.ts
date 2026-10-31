@@ -15,5 +15,12 @@ test("audienceFrom folds YouTube Analytics reports into ScoutBlack's bands, gend
 });
 
 test("audienceFrom with no data (a brand-new channel) claims nothing", () => {
-  assert.deepEqual(audienceFrom({}, { rows: [] }, {}), { age: [], male: null, geo: [], avgViewPct: null });
+  assert.deepEqual(audienceFrom({}, { rows: [] }, {}), { age: [], male: null, geo: [], avgViewPct: null, cities: [] });
+});
+
+test("audience cities: share of ALL views, ScoutBlack's city names, merged spellings, top 5", () => {
+  const countries = { rows: [["IN", 9000], ["US", 1000]] }; // 10,000 views in all
+  const cities = { rows: [["Mumbai", 1800], ["Bangalore", 700], ["Bengaluru", 300], ["Springfield", 200], ["12345", 99]] };
+  const a = audienceFrom({}, countries, {}, cities);
+  assert.deepEqual(a.cities, [["Mumbai", 18], ["Bengaluru", 10], ["Springfield", 2]]); // ids dropped, unknown names kept
 });

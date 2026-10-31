@@ -59,7 +59,7 @@ async function syncAudience(channelId: string, access: string) {
   const a = await fetchAudience(access);
   await db()`
     update channel_connections set age = ${a.age}, male = ${a.male}, geo = ${JSON.stringify(a.geo)}::jsonb,
-      avg_view_pct = ${a.avgViewPct}, synced_at = now() where channel_id = ${channelId}`;
+      avg_view_pct = ${a.avgViewPct}, cities = ${JSON.stringify(a.cities)}::jsonb, synced_at = now() where channel_id = ${channelId}`;
 }
 
 /**
@@ -110,15 +110,15 @@ export async function deleteAccount(userId: string) {
   await db()`delete from users where id = ${userId}`;
 }
 
-export type CreatorProfile = { focus: string[]; languages: string[]; rateVideo: number | null; rateShort: number | null; openToCollabs: boolean };
+export type CreatorProfile = { focus: string[]; languages: string[]; rateVideo: number | null; rateShort: number | null; openToCollabs: boolean; city: string | null };
 export type BrandProfile = { company: string; kind: "brand" | "agency"; website: string | null; category: string | null; brief: string | null; budget: string | null; tracked: string[]; pitchable: boolean; competitors: BrandTerms[] };
 
 export async function saveCreatorProfile(userId: string, p: CreatorProfile) {
   await db()`
-    insert into creator_profiles (user_id, focus, languages, rate_video, rate_short, open_to_collabs)
-    values (${userId}, ${p.focus}, ${p.languages}, ${p.rateVideo}, ${p.rateShort}, ${p.openToCollabs})
+    insert into creator_profiles (user_id, focus, languages, rate_video, rate_short, open_to_collabs, city)
+    values (${userId}, ${p.focus}, ${p.languages}, ${p.rateVideo}, ${p.rateShort}, ${p.openToCollabs}, ${p.city})
     on conflict (user_id) do update set focus = excluded.focus, languages = excluded.languages, rate_video = excluded.rate_video,
-      rate_short = excluded.rate_short, open_to_collabs = excluded.open_to_collabs, updated_at = now()`;
+      rate_short = excluded.rate_short, open_to_collabs = excluded.open_to_collabs, city = excluded.city, updated_at = now()`;
   await db()`update users set onboarded_at = coalesce(onboarded_at, now()) where id = ${userId}`;
 }
 
@@ -135,8 +135,8 @@ export async function saveBrandProfile(userId: string, p: BrandProfile) {
 
 export async function getCreatorProfile(userId: string) {
   const [p] = (await db()`select * from creator_profiles where user_id = ${userId}`) as
-    { focus: string[]; languages: string[]; rate_video: number | null; rate_short: number | null; open_to_collabs: boolean }[];
-  return p ? { focus: p.focus, languages: p.languages, rateVideo: p.rate_video, rateShort: p.rate_short, openToCollabs: p.open_to_collabs } : null;
+    { focus: string[]; languages: string[]; rate_video: number | null; rate_short: number | null; open_to_collabs: boolean; city: string | null }[];
+  return p ? { focus: p.focus, languages: p.languages, rateVideo: p.rate_video, rateShort: p.rate_short, openToCollabs: p.open_to_collabs, city: p.city } : null;
 }
 
 export async function getBrandProfile(userId: string): Promise<BrandProfile | null> {
@@ -147,10 +147,11 @@ export async function getBrandProfile(userId: string): Promise<BrandProfile | nu
 /** The connected channel's public stats + private audience, for the creator's own pages. */
 export async function getMyChannel(channelId: string) {
   const [c] = (await db()`
-    select cc.channel_id, cc.age, cc.male, cc.geo, cc.avg_view_pct, cc.synced_at, c.name, c.handle, c.niche, c.language, c.subs, c.avg_views, c.eng
+    select cc.channel_id, cc.age, cc.male, cc.geo, cc.cities, cc.avg_view_pct, cc.synced_at, c.name, c.handle, c.niche, c.language, c.subs, c.avg_views, c.eng,
+      coalesce(c.views_long, c.avg_views) as rate_views
     from channel_connections cc left join creators c using (channel_id) where cc.channel_id = ${channelId}`) as {
-    channel_id: string; age: number[]; male: number | null; geo: [string, number][]; avg_view_pct: number | null; synced_at: string | null;
-    name: string | null; handle: string | null; niche: string | null; language: string | null; subs: number | null; avg_views: number | null; eng: number | null;
+    channel_id: string; age: number[]; male: number | null; geo: [string, number][]; cities: [string, number][]; avg_view_pct: number | null; synced_at: string | null;
+    name: string | null; handle: string | null; niche: string | null; language: string | null; subs: number | null; avg_views: number | null; rate_views: number | null; eng: number | null;
   }[];
   return c ?? null;
 }

@@ -323,3 +323,15 @@ alter table users add column if not exists session_version int not null default 
 alter table brand_profiles add column if not exists pitchable boolean not null default false;
 alter table discovery_queries add column if not exists pages int not null default 0;
 create index if not exists videos_published_idx on videos (published_at);
+
+-- Formats and cities (2026-10-31). Video length is free with videos.list (same 1 unit); Shorts = up to 60 s, or 3 min with #shorts.
+alter table videos add column if not exists duration_s int;
+alter table creators add column if not exists shorts_pct smallint;
+alter table creators add column if not exists views_long int;
+alter table creators add column if not exists views_short int;
+-- cities the channel names in its description or 2+ titles: inferred, shown as "mentions"
+alter table creators add column if not exists cities text[] not null default '{}';
+-- where the creator says they're based (optional onboarding question)
+alter table creator_profiles add column if not exists city text;
+-- connected creators' audience by city (YouTube Analytics city report), [name, % of views]
+alter table channel_connections add column if not exists cities jsonb not null default '[]';

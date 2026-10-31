@@ -2,6 +2,7 @@
 import { NICHES } from "./data.ts";
 import { KEYWORDS } from "./engine.ts";
 import { nicheHits, segment } from "./segment.ts";
+import { cityMentions, durationSeconds, isShort } from "./places.ts";
 import { topicsFrom } from "./topics.ts";
 
 /** The subset of a `channels.list` item we request (part=snippet,statistics,contentDetails,brandingSettings). */
@@ -14,11 +15,12 @@ export type YtChannel = {
   topicDetails?: { topicCategories?: string[] }; // Wikipedia topic URLs YouTube assigns to the channel
 };
 
-/** The subset of a `videos.list` item we request (part=snippet,statistics). */
+/** The subset of a `videos.list` item we request (part=snippet,statistics,contentDetails: the length is free, same 1 unit). */
 export type YtVideo = {
   id: string;
   snippet: { title: string; description?: string; tags?: string[]; publishedAt: string; defaultAudioLanguage?: string; categoryId?: string; channelId?: string };
   statistics: { viewCount?: string; likeCount?: string; commentCount?: string };
+  contentDetails?: { duration?: string }; // ISO 8601, e.g. "PT1M5S"
 };
 
 export type Snapshot = { takenOn: string; subs: number }; // ISO date
@@ -45,6 +47,10 @@ export type ChannelMetrics = {
   language: string;
   isBrand: boolean;
   topics: string[];
+  shortsPct: number | null; // % of recent uploads that are Shorts; null = lengths not known yet
+  viewsLong: number | null; // median views of long videos (settled, as avgViews); null = none among recent uploads
+  viewsShort: number | null; // same for Shorts
+  cities: string[]; // cities the channel names (description, 2+ titles): inferred, shown as "mentions"
 };
 
 export const COUNTRY: Record<string, string> = { IN: "India", US: "US", GB: "UK", AE: "UAE" };
@@ -197,6 +203,15 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
   const settled = viewed.filter((v) => today.getTime() - new Date(v.snippet.publishedAt).getTime() >= 7 * 86_400_000);
   const views = (settled.length >= 3 ? settled : viewed).map((v) => n(v.statistics.viewCount));
   const avgViews = Math.round(median(views));
+  // Shorts and long videos draw very different views: each gets its own median (same settled rule), for format-aware
+  // briefs, fair rates and projected views per deliverable
+  const short = (v: YtVideo) => isShort(durationSeconds(v.contentDetails?.duration), `${v.snippet.title}\n${v.snippet.description ?? ""}`);
+  const known = recent.filter((v) => short(v) !== null);
+  const shortsPct = known.length ? Math.round((known.filter((v) => short(v)).length / known.length) * 100) : null;
+  const formatViews = (wantShort: boolean) => {
+    const pool = viewed.filter((v) => short(v) === wantShort), ok = pool.filter((v) => settled.includes(v));
+    return pool.length ? Math.round(median((ok.length >= 2 ? ok : pool).map((v) => n(v.statistics.viewCount)))) : null;
+  };
   // creators can hide like counts (likeCount absent) — those videos say nothing about engagement
   const engs = recent
     .filter((v) => n(v.statistics.viewCount) > 0 && v.statistics.likeCount !== undefined)
@@ -235,5 +250,9 @@ export function deriveMetrics(ch: YtChannel, recent: YtVideo[], snaps: Snapshot[
     language,
     isBrand: isBrandChannel(ch),
     topics: topicsFrom(recent.map((v) => [v.snippet.title, ...(v.snippet.tags ?? [])].join(" "))),
+    shortsPct,
+    viewsLong: formatViews(false),
+    viewsShort: formatViews(true),
+    cities: cityMentions([ch.snippet.description, ch.brandingSettings?.channel?.keywords].filter(Boolean).join("\n"), recent.map((v) => v.snippet.title)),
   };
 }

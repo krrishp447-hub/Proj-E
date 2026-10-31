@@ -22,6 +22,8 @@ export async function GET(request: Request) {
   if (result.unread) after(() => logUnread(q));
   if (member) return Response.json(result);
   // A connected creator's audience is their private YouTube Analytics: shown to brands in the app, never to the public.
-  const open = (ms: Match[]) => ms.map((m) => ({ ...m, creator: { ...m.creator, geo: [], age: [], male: null } }));
+  // (audience cities too; and where a creator says they're based is for brands in the app, not the public)
+  const open = (ms: Match[]) => ms.map((m) => ({ ...m, creator: { ...m.creator, geo: [], age: [], male: null, audCities: [], basedIn: null },
+    signals: m.signals.filter((s) => !/^Audience · .*%|^Based in/.test(s.label)) }));
   return Response.json({ ...result, fits: open(result.fits), misses: open(result.misses), pinned: open(result.pinned) });
 }
