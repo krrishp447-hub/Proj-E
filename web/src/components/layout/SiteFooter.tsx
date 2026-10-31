@@ -3,9 +3,10 @@ import { site } from "@/config/site";
 import { Logo } from "@/components/ui/Logo";
 
 const navigate = [
-  { href: "#manifesto", label: "Platform" },
-  { href: "#feature", label: "Niches" },
-  { href: "#listing", label: "Results" },
+  { href: "/#manifesto", label: "Platform" },
+  { href: "/#feature", label: "Niches" },
+  { href: "/#listing", label: "Results" },
+  { href: "/how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
 ];
 

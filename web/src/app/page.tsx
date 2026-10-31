@@ -2,7 +2,6 @@ import { ScrollEffects } from "@/components/animations/ScrollEffects";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteNav } from "@/components/layout/SiteNav";
 import { FeatureCarousel } from "@/components/sections/FeatureCarousel";
-import { Film } from "@/components/sections/Film";
 import { Hero } from "@/components/sections/Hero";
 import { Product } from "@/components/sections/Product";
 import { Closing, CtaBand, Listing } from "@/components/sections/Results";
@@ -19,7 +18,6 @@ export default function Home() {
           <Pillars />
           <Collage />
           <FeatureCarousel />
-          <Film />
           <Listing />
           <Product />
           {/* <Proof /> brand marquee hidden for now (src/components/sections/Results.tsx) */}

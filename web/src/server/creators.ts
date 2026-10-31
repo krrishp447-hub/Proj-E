@@ -17,7 +17,9 @@ export async function getCreators(): Promise<CreatorSource> {
   if (!sql) return { creators: [], source: "none", updatedAt: null };
 
   const rows = (await sql`
-    select c.*, extract(day from now() - c.fetched_at)::int as age_days, extract(day from now() - c.last_upload)::int as upload_days,
+    -- only what rowToCreator uses: c.* also carried every channel's 1,500-char "about" text (13 MB per load vs ~5)
+    select c.channel_id, c.name, c.handle, c.country, c.niche, c.niche2, c.niche_conf, c.tags, c.subs, c.avg_views, c.eng, c.growth,
+      c.consistency, c.auth, c.suspicious, c.language, c.topics, c.sponsored_pct, c.safety, extract(day from now() - c.fetched_at)::int as age_days, extract(day from now() - c.last_upload)::int as upload_days,
       cc.channel_id is not null as claimed, c.public_email is not null as has_email,
       (select array_agg(s.subs order by s.taken_on) from snapshots s where s.channel_id = c.channel_id and s.taken_on > current_date - 365) as trend,
       cc.age as aud_age, cc.male as aud_male, cc.geo as aud_geo
